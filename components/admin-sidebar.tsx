@@ -131,6 +131,20 @@ const data = {
       title: "Content Management",
       url: "/admin/content",
       icon: FileText,
+      items: [
+        {
+          title: "Page Content",
+          url: "/admin/content/manage",
+        },
+        {
+          title: "Content Types",
+          url: "/admin/content/content-types",
+        },
+        {
+          title: "Dynamic Content",
+          url: "/admin/content",
+        },
+      ],
     },
   ],
 }

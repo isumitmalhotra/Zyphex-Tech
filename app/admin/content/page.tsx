@@ -12,30 +12,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { useCMSApi, useContentTypes, useContentState, validateContentData, generateSlug } from "@/hooks/use-cms";
-import { ContentType } from "@/types/cms";
+import { ContentType, ContentField, ContentTypeSettings } from "@/types/cms";
 
 // Interfaces
 interface FieldOption {
   label: string;
   value: string;
-}
-
-interface FieldValidation {
-  min?: number;
-  max?: number;
-  pattern?: string;
-  options?: FieldOption[];
-}
-
-interface ContentField {
-  id: string;
-  name: string;
-  label: string;
-  type: string;
-  required?: boolean;
-  placeholder?: string;
-  helpText?: string;
-  validation?: FieldValidation;
 }
 
 interface FormData {
@@ -65,8 +47,8 @@ interface ContentFormProps {
     id: string;
     name: string;
     label: string;
-    fields: string;
-    settings: string;
+    fields: ContentField[];
+    settings: ContentTypeSettings;
   };
   initialData?: {
     id?: string;
@@ -96,8 +78,8 @@ function ContentForm({ contentType, initialData, onSave, onCancel, isLoading }: 
 
   const [errors, setErrors] = useState<Array<{ field: string; message: string }>>([]);
 
-  const fields = JSON.parse(contentType.fields || '[]');
-  const settings = JSON.parse(contentType.settings || '{}');
+  const fields = Array.isArray(contentType.fields) ? contentType.fields : JSON.parse(contentType.fields || '[]');
+  const settings = typeof contentType.settings === 'object' ? contentType.settings : JSON.parse(contentType.settings || '{}');
 
   const handleFieldChange = (fieldName: string, value: unknown) => {
     if (fieldName === 'title') {

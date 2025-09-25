@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, CheckCircle, Code, Database, Globe, Smartphone, Users, Zap } from "lucide-react"
+import { ArrowRight, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { Icon3D } from "@/components/3d-icons"
@@ -41,22 +41,6 @@ async function fetchServices(): Promise<Service[]> {
     console.error('Error fetching services:', error)
     return []
   }
-}
-
-// Icon mapping for services
-const iconMap: Record<string, React.ComponentType> = {
-  'Code': Code,
-  'Globe': Globe,
-  'Database': Database,
-  'Smartphone': Smartphone,
-  'Zap': Zap,
-  'Users': Users,
-}
-
-// Helper function to get icon component
-function getIconComponent(iconName: string | null) {
-  if (!iconName) return Code // Default fallback
-  return iconMap[iconName] || Code
 }
 
 // Helper function to parse features
@@ -213,7 +197,7 @@ export default async function ServicesPage() {
                     <CardHeader className="p-0 mb-6">
                       <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 zyphex-gradient-primary rounded-lg flex items-center justify-center animate-pulse-3d hover-zyphex-glow">
-                          <Icon3D icon={getIconComponent(service.icon)} size={24} color="white" />
+                          <Icon3D icon={service.icon || 'Code'} size={24} color="white" />
                         </div>
                         <div>
                           <CardTitle className="text-2xl zyphex-heading hover:text-blue-400 transition-colors duration-300">

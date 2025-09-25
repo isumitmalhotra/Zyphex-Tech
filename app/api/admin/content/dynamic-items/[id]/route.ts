@@ -1,12 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { z } from 'zod'
 import { 
   getCachedDynamicContentItem, 
   cacheDynamicContentItem, 
   invalidateDynamicContentCache 
 } from '@/lib/cache'
 import { revalidateOnContentChange } from '@/lib/revalidation'
+
+// Validation schema for updating a DynamicContentItem
+const updateDynamicContentItemSchema = z.object({
+  title: z.string().min(1).optional(),
+  slug: z.string().optional(),
+  data: z.record(z.unknown()).optional(),
+  status: z.enum(['draft', 'published', 'archived', 'scheduled']).optional(),
+  featured: z.boolean().optional(),
+  categories: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  author: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
+  publishedAt: z.string().datetime().optional().nullable(),
+  order: z.number().int().min(0).optional()
+})
 
 interface RouteParams {
   id: string
@@ -18,9 +35,23 @@ export async function GET(
   { params }: { params: RouteParams }
 ) {
   try {
-    const session = await getServerSession()
-    if (!session || session.user?.role !== 'ADMIN') {
+    const session = await getServerSession(authOptions)
+
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Only admin can access dynamic content management
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Validate ID parameter
+    if (!params.id || typeof params.id !== 'string') {
+      return NextResponse.json(
+        { error: 'Valid item ID is required' },
+        { status: 400 }
+      )
     }
 
     // Try to get from cache first
@@ -70,12 +101,39 @@ export async function PUT(
   { params }: { params: RouteParams }
 ) {
   try {
-    const session = await getServerSession()
-    if (!session || session.user?.role !== 'ADMIN') {
+    const session = await getServerSession(authOptions)
+
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Only admin can update dynamic content items
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Validate ID parameter
+    if (!params.id || typeof params.id !== 'string') {
+      return NextResponse.json(
+        { error: 'Valid item ID is required' },
+        { status: 400 }
+      )
+    }
+
     const body = await request.json()
+
+    // Validate input using Zod
+    const validationResult = updateDynamicContentItemSchema.safeParse(body)
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { 
+          error: 'Validation failed', 
+          details: validationResult.error.errors 
+        },
+        { status: 400 }
+      )
+    }
+
     const {
       title,
       slug,
@@ -88,7 +146,7 @@ export async function PUT(
       metadata,
       publishedAt,
       order
-    } = body
+    } = validationResult.data
 
     // Check if item exists
     const existing = await prisma.dynamicContentItem.findUnique({
@@ -181,9 +239,23 @@ export async function DELETE(
   { params }: { params: RouteParams }
 ) {
   try {
-    const session = await getServerSession()
-    if (!session || session.user?.role !== 'ADMIN') {
+    const session = await getServerSession(authOptions)
+
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Only admin can delete dynamic content items
+    if (session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // Validate ID parameter
+    if (!params.id || typeof params.id !== 'string') {
+      return NextResponse.json(
+        { error: 'Valid item ID is required' },
+        { status: 400 }
+      )
     }
 
     // Check if item exists

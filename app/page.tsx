@@ -1,4 +1,3 @@
-"use client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,126 +8,128 @@ import InteractiveShowcase from "@/components/interactive-showcase"
 import { Hero3DClean } from "@/components/hero-3d-clean"
 import { SubtleBackground, MinimalParticles } from "@/components/subtle-background"
 import { Icon3D } from "@/components/3d-icons"
-import { useScrollAnimation } from "@/components/scroll-animations"
-import { useEffect, useState } from "react"
+import { getPageContent, getItemsByContentType } from "@/lib/content"
+import type { ContentSection, ContentItem } from "@/lib/content"
+import ClientAnimations from "@/components/client-animations"
 
-// Define types for our content
-interface ContentSection {
+// Type for parsed content data
+interface ParsedContent {
+  description?: string
+  ctaText?: string
+  ctaSecondary?: string
+  features?: string[]
+  reasons?: Array<{
+    title: string
+    description: string
+    icon?: string
+  }>
+  [key: string]: unknown
+}
+
+// Type for fallback blog post data
+interface FallbackPost {
   id: string
-  sectionKey: string
-  title: string | null
-  subtitle: string | null
-  content: {
-    description?: string
-    ctaText?: string
-    ctaSecondary?: string
-    features?: string[]
-    reasons?: Array<{
-      title: string
-      description: string
-      icon: string
-    }>
-  } | string | null
-  imageUrl: string | null
-  order: number
-  createdAt: Date
-  updatedAt: Date
-}
-
-interface ApiResponse {
-  success: boolean
-  data: Record<string, ContentSection>
-  sections: ContentSection[]
-}
-
-async function fetchContentSections(): Promise<Record<string, ContentSection>> {
-  try {
-    const response = await fetch('/api/content?keys=hero,about,services-intro,why-choose-us,cta', {
-      cache: 'no-store' // Client-side fetch, don't use server-side caching options
-    })
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch content')
-    }
-    
-    const data: ApiResponse = await response.json()
-    return data.success ? data.data : {}
-  } catch (error) {
-    console.error('Error fetching content sections:', error)
-    // Return fallback content if API fails
-    return {
-      hero: {
-        id: 'fallback',
-        sectionKey: 'hero',
-        title: 'Transform Your Business with Remote Excellence',
-        subtitle: 'Leading Remote IT Solutions Provider',
-        content: {
-          description: 'Zyphex Tech delivers innovative technology solutions through expert remote teams. From custom software to cloud migration, we drive growth and efficiency from anywhere in the world.',
-          ctaText: 'Get Free Consultation',
-          ctaSecondary: 'View Our Work'
-        },
-        imageUrl: null,
-        order: 1,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    } as Record<string, ContentSection>
+  title: string
+  data: {
+    excerpt: string
+    imageUrl: string
   }
+  publishedAt: Date
+  categories: string[]
+  slug: string
 }
 
-export default function HomePage() {
-  const [contentSections, setContentSections] = useState<Record<string, ContentSection>>({
-    hero: {
-      id: 'default',
-      sectionKey: 'hero',
-      title: 'Transform Your Business with Remote Excellence',
-      subtitle: 'Leading Remote IT Solutions Provider',
-      content: {
-        description: 'Zyphex Tech delivers innovative technology solutions through expert remote teams. From custom software to cloud migration, we drive growth and efficiency from anywhere in the world.',
-        ctaText: 'Get Free Consultation',
-        ctaSecondary: 'View Our Work'
-      },
-      imageUrl: null,
-      order: 1,
-      createdAt: new Date(),
-      updatedAt: new Date()
+
+
+// Helper function to safely parse JSON content
+function parseContent(content: unknown): ParsedContent {
+  if (typeof content === 'string') {
+    try {
+      return JSON.parse(content) as ParsedContent
+    } catch {
+      return {}
     }
-  } as Record<string, ContentSection>)
+  }
+  return (content as ParsedContent) || {}
+}
+
+// Helper function to get section by key
+function getSectionByKey(sections: ContentSection[], key: string): ContentSection | null {
+  return sections.find(section => section.sectionKey === key || section.sectionKey === `home-${key}`) || null
+}
+
+export default async function HomePage() {
+  // Fetch content from CMS
+  let pageContent
+  let blogPosts: ContentItem[] = []
   
-  useScrollAnimation()
-
-  useEffect(() => {
-    // Trigger initial animations for hero section after a short delay
-    const timer = setTimeout(() => {
-      const heroElements = document.querySelectorAll('.scroll-reveal-left, .scroll-reveal-scale, .scroll-reveal')
-      heroElements.forEach((el) => {
-        const rect = el.getBoundingClientRect()
-        // If element is in the top portion of the viewport, animate it immediately
-        if (rect.top < window.innerHeight * 0.8) {
-          el.classList.add('revealed')
-        }
-      })
-    }, 200)
-
-    // Try to fetch dynamic content but don't break if it fails
-    const fetchData = async () => {
-      try {
-        const sections = await fetchContentSections()
-        console.log('Fetched dynamic sections:', sections)
-        if (sections && Object.keys(sections).length > 0) {
-          setContentSections(prev => ({ ...prev, ...sections }))
-        }
-      } catch (err) {
-        console.error('Failed to fetch dynamic content, using static content:', err)
+  try {
+    pageContent = await getPageContent('home')
+    // Also fetch some featured blog posts for the updates section
+    blogPosts = await getItemsByContentType('blog', {
+      featured: true,
+      limit: 3
+    })
+  } catch (error) {
+    console.error('Error fetching page content:', error)
+    pageContent = {
+      pageSlug: 'home',
+      sections: [],
+      items: [],
+      metadata: {
+        totalSections: 0,
+        activeSections: 0,
+        totalItems: 0,
+        publishedItems: 0,
+        lastUpdated: new Date()
       }
     }
-    fetchData()
+  }
 
-    return () => clearTimeout(timer)
-  }, [])
+  // Get specific sections by key
+  const heroSection = getSectionByKey(pageContent.sections, 'hero')
+  const aboutSection = getSectionByKey(pageContent.sections, 'about')
+  const whyChooseUsSection = getSectionByKey(pageContent.sections, 'why-choose-us')
+
+  // Helper function to get content data
+  const getContentData = (section: ContentSection | null): ParsedContent => {
+    if (!section) return {}
+    return parseContent(section.layoutSettings)
+  }
+
+  // Helper functions for blog post data
+  const getPostImage = (post: ContentItem | FallbackPost): string => {
+    if ('data' in post && post.data && typeof post.data === 'object') {
+      return (post.data as { imageUrl?: string }).imageUrl || "/placeholder.svg"
+    }
+    return "/placeholder.svg"
+  }
+
+  const getPostCategory = (post: ContentItem | FallbackPost): string => {
+    return post.categories?.[0] || "Blog"
+  }
+
+  const getPostDate = (post: ContentItem | FallbackPost): string => {
+    if (post.publishedAt) {
+      return post.publishedAt.toLocaleDateString()
+    }
+    return new Date().toLocaleDateString()
+  }
+
+  const getPostExcerpt = (post: ContentItem | FallbackPost): string => {
+    if ('data' in post && post.data && typeof post.data === 'object') {
+      return (post.data as { excerpt?: string }).excerpt || ""
+    }
+    return ""
+  }
+
+  const getPostSlug = (post: ContentItem | FallbackPost): string => {
+    return post.slug || post.id
+  }
 
   return (
     <>
+      <ClientAnimations />
       {/* Hero Section */}
       <section className="relative zyphex-gradient-bg section-padding overflow-hidden">
         <SubtleBackground />
@@ -142,19 +143,19 @@ export default function HomePage() {
                   🚀 Leading Remote IT Solutions Provider
                 </Badge>
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold zyphex-heading leading-tight">
-                  {contentSections.hero?.title || 'Transform Your Business with'}
+                  {heroSection?.title || 'Transform Your Business with'}
                   <span className="zyphex-accent-text animate-metallic-shine block mt-2">
-                    Remote Excellence
+                    {heroSection?.subtitle || 'Remote Excellence'}
                   </span>
                 </h1>
                 <p className="text-base sm:text-lg lg:text-xl zyphex-subheading leading-relaxed max-w-2xl">
-                  {(typeof contentSections.hero?.content === 'object' && contentSections.hero?.content?.description) || contentSections.hero?.subtitle || 'Zyphex Tech delivers innovative technology solutions through expert remote teams. From custom software to cloud migration, we drive growth and efficiency from anywhere in the world.'}
+                  {heroSection?.description || getContentData(heroSection)?.description || 'Zyphex Tech delivers innovative technology solutions through expert remote teams. From custom software to cloud migration, we drive growth and efficiency from anywhere in the world.'}
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 scroll-reveal-scale">
                 <Button size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 zyphex-button-primary hover-zyphex-lift w-full sm:w-auto" asChild>
                   <Link href="/contact">
-                    {(typeof contentSections.hero?.content === 'object' && contentSections.hero?.content?.ctaText) || 'Get Free Consultation'}
+                    {getContentData(heroSection)?.ctaText || 'Get Free Consultation'}
                     <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
                   </Link>
                 </Button>
@@ -165,7 +166,7 @@ export default function HomePage() {
                   asChild
                 >
                   <Link href="/services">
-                    {(typeof contentSections.hero?.content === 'object' && contentSections.hero?.content?.ctaSecondary) || 'View Our Services'}
+                    {getContentData(heroSection)?.ctaSecondary || 'View Our Services'}
                   </Link>
                 </Button>
               </div>
@@ -201,15 +202,15 @@ export default function HomePage() {
         <div className="container mx-auto container-padding relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-6 scroll-reveal">
             <h2 className="text-3xl lg:text-4xl font-bold zyphex-heading">
-              {contentSections.about?.title || 'Empowering Businesses Through Technology'}
+              {aboutSection?.title || 'Empowering Businesses Through Technology'}
             </h2>
             <p className="text-lg zyphex-subheading leading-relaxed">
-              {contentSections.about?.subtitle || 'Founded with a vision to bridge the gap between complex technology and business success, our agency combines deep technical expertise with strategic thinking. We don&apos;t just build solutions; we craft digital experiences that transform how businesses operate and grow.'}
+              {aboutSection?.description || aboutSection?.subtitle || 'Founded with a vision to bridge the gap between complex technology and business success, our agency combines deep technical expertise with strategic thinking. We don&apos;t just build solutions; we craft digital experiences that transform how businesses operate and grow.'}
             </p>
             <div className="flex justify-center pt-4">
               <Button variant="outline" className="zyphex-button-secondary hover-zyphex-lift bg-transparent" asChild>
                 <Link href="/about">
-                  {(typeof contentSections.about?.content === 'object' && contentSections.about?.content?.ctaText) || 'Learn More About Us'}
+                  {getContentData(aboutSection)?.ctaText || 'Learn More About Us'}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -335,16 +336,15 @@ export default function HomePage() {
             <div className="space-y-8 scroll-reveal-left">
               <div className="space-y-4">
                 <h2 className="text-3xl lg:text-4xl font-bold zyphex-heading">
-                  {contentSections['why-choose-us']?.title || 'Why Leading Companies Choose Us'}
+                  {whyChooseUsSection?.title || 'Why Leading Companies Choose Us'}
                 </h2>
                 <p className="text-lg zyphex-subheading">
-                  {contentSections['why-choose-us']?.subtitle || 'We combine technical excellence with business acumen to deliver solutions that not only work but drive real results.'}
+                  {whyChooseUsSection?.description || whyChooseUsSection?.subtitle || 'We combine technical excellence with business acumen to deliver solutions that not only work but drive real results.'}
                 </p>
               </div>
               <div className="space-y-6">
-                {(typeof contentSections['why-choose-us']?.content === 'object' && 
-                  contentSections['why-choose-us']?.content?.reasons) ? 
-                  contentSections['why-choose-us'].content.reasons.map((reason, index) => (
+                {getContentData(whyChooseUsSection)?.reasons ? 
+                  getContentData(whyChooseUsSection).reasons?.map((reason: { title: string; description: string }, index: number) => (
                     <div key={index} className="flex gap-4 scroll-reveal" style={{ animationDelay: `${index * 200}ms` }}>
                       <div className="flex items-center justify-center flex-shrink-0 mt-1">
                         <CheckCircle className="h-6 w-6 text-green-500" />
@@ -413,32 +413,41 @@ export default function HomePage() {
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
+            {(blogPosts.length > 0 ? blogPosts : [
               {
+                id: "1",
                 title: "The Future of Cloud Computing in 2024",
-                excerpt:
-                  "Exploring emerging trends in cloud technology and how businesses can leverage them for competitive advantage.",
-                date: "Dec 15, 2024",
-                category: "Cloud Technology",
-                image: "/placeholder.svg?height=200&width=400",
+                data: {
+                  excerpt: "Exploring emerging trends in cloud technology and how businesses can leverage them for competitive advantage.",
+                  imageUrl: "/placeholder.svg?height=200&width=400",
+                },
+                publishedAt: new Date("2024-12-15"),
+                categories: ["Cloud Technology"],
+                slug: "future-cloud-computing-2024"
               },
               {
+                id: "2", 
                 title: "AI Integration in Business Applications",
-                excerpt:
-                  "How artificial intelligence is transforming business processes and creating new opportunities for growth.",
-                date: "Dec 10, 2024",
-                category: "Artificial Intelligence",
-                image: "/placeholder.svg?height=200&width=400",
+                data: {
+                  excerpt: "How artificial intelligence is transforming business processes and creating new opportunities for growth.",
+                  imageUrl: "/placeholder.svg?height=200&width=400",
+                },
+                publishedAt: new Date("2024-12-10"),
+                categories: ["Artificial Intelligence"],
+                slug: "ai-integration-business"
               },
               {
-                title: "Cybersecurity Best Practices for SMBs",
-                excerpt:
-                  "Essential security measures every small and medium business should implement to protect their digital assets.",
-                date: "Dec 5, 2024",
-                category: "Security",
-                image: "/placeholder.svg?height=200&width=400",
+                id: "3",
+                title: "Cybersecurity Best Practices for SMBs", 
+                data: {
+                  excerpt: "Essential security measures every small and medium business should implement to protect their digital assets.",
+                  imageUrl: "/placeholder.svg?height=200&width=400",
+                },
+                publishedAt: new Date("2024-12-05"),
+                categories: ["Security"],
+                slug: "cybersecurity-smb-practices"
               },
-            ].map((post, index) => (
+            ]).map((post, index) => (
               <Card
                 key={index}
                 className={`zyphex-card hover-zyphex-lift overflow-hidden scroll-reveal-scale`}
@@ -446,30 +455,37 @@ export default function HomePage() {
               >
                 <div className="relative overflow-hidden">
                   <Image
-                    src={post.image || "/placeholder.svg"}
+                    src={getPostImage(post)}
                     alt={post.title}
                     width={400}
                     height={200}
                     className="w-full h-48 object-cover hover:scale-110 transition-transform duration-500"
                   />
                   <Badge className="absolute top-4 left-4 zyphex-gradient-primary animate-zyphex-glow">
-                    {post.category}
+                    {getPostCategory(post)}
                   </Badge>
                 </div>
                 <CardHeader>
-                  <div className="text-sm zyphex-subheading mb-2">{post.date}</div>
+                  <div className="text-sm zyphex-subheading mb-2">
+                    {getPostDate(post)}
+                  </div>
                   <CardTitle className="text-xl zyphex-heading hover:text-blue-400 transition-colors duration-300">
                     {post.title}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <CardDescription className="zyphex-subheading leading-relaxed">{post.excerpt}</CardDescription>
+                  <CardDescription className="zyphex-subheading leading-relaxed">
+                    {getPostExcerpt(post)}
+                  </CardDescription>
                   <Button
                     variant="ghost"
                     className="mt-4 p-0 h-auto font-medium zyphex-accent-text hover:translate-x-1 transition-all duration-300"
+                    asChild
                   >
-                    Read More
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <Link href={`/blog/${getPostSlug(post)}`}>
+                      Read More
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>

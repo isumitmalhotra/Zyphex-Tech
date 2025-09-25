@@ -253,6 +253,7 @@ model DynamicContentSection {
   title          String?
   subtitle       String?
   description    String?
+  imageUrl       String?  // URL for section image
   layoutSettings String   // JSON string for layout configuration
   isActive       Boolean  @default(true)
   order          Int      @default(0)

@@ -91,10 +91,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const isPasswordValid = await compare(
+        const isPasswordValid = user.password ? await compare(
           credentials.password,
           user.password
-        );
+        ) : false;
 
         if (!isPasswordValid) {
           return null;
