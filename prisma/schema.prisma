@@ -1,0 +1,267 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Define your models here
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  projects      Project[]
+  teams         Team[]
+  accounts      Account[]
+  sessions      Session[]
+  emailVerified DateTime?
+  image         String?
+}
+
+model Client {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  phone     String?
+  address   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  status      Status    @default(PLANNING)
+  budget      Float?
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id])
+  users       User[]
+  teams       Team[]
+}
+
+model Team {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  users       User[]
+  projects    Project[]
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum Status {
+  PLANNING
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  ON_HOLD
+}
+
+// NextAuth.js Models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(uuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+// Content Management Models
+model ContentSection {
+  id          String   @id @default(uuid())
+  sectionKey  String   @unique // e.g., 'hero', 'about', 'services'
+  title       String?
+  subtitle    String?
+  content     String?  // JSON string for complex content
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  icon        String?
+  imageUrl    String?
+  features    String?  // JSON array of features
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PortfolioItem {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String?  @unique
+  description String
+  category    String
+  client      String?
+  technologies String? // JSON array of technologies
+  imageUrl    String
+  featuredImage String? // For compatibility with frontend
+  projectUrl  String?
+  liveUrl     String? // For compatibility with frontend
+  githubUrl   String?
+  featured    Boolean  @default(false)
+  published   Boolean  @default(true)
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BlogPost {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  excerpt     String
+  content     String
+  author      String
+  imageUrl    String?
+  tags        String?  // JSON array of tags
+  published   Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MediaAsset {
+  id          String   @id @default(uuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int
+  url         String
+  alt         String?
+  category    String?  // e.g., 'portfolio', 'blog', 'content'
+  uploadedBy  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Enhanced Content Management Models for Dynamic Content Types
+model ContentType {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., 'hero', 'feature', 'testimonial'
+  label       String   // Display name
+  description String?
+  icon        String?
+  fields      String   // JSON string of ContentField[]
+  settings    String   // JSON string of content type settings
+  isSystem    Boolean  @default(false) // Whether this is a system-defined content type
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  contentItems     DynamicContentItem[]
+  contentSections  DynamicContentSection[]
+}
+
+model DynamicContentItem {
+  id            String   @id @default(uuid())
+  contentTypeId String
+  slug          String?
+  title         String
+  data          String   // JSON string containing dynamic field data
+  status        String   @default("draft") // 'draft' | 'published' | 'archived'
+  featured      Boolean  @default(false)
+  publishedAt   DateTime?
+  order         Int      @default(0)
+  categories    String?  // JSON array of categories
+  tags          String?  // JSON array of tags
+  author        String?
+  metadata      String?  // JSON string for SEO metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  contentType   ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  
+  @@unique([contentTypeId, slug])
+  @@index([contentTypeId, status])
+  @@index([contentTypeId, featured])
+  @@index([status, publishedAt])
+}
+
+model DynamicContentSection {
+  id             String   @id @default(uuid())
+  contentTypeId  String
+  sectionKey     String   @unique // e.g., 'homepage-hero', 'about-features'
+  title          String?
+  subtitle       String?
+  description    String?
+  layoutSettings String   // JSON string for layout configuration
+  isActive       Boolean  @default(true)
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Relations
+  contentType    ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  
+  @@index([contentTypeId, isActive])
+  @@index([sectionKey, isActive])
+}

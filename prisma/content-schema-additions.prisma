@@ -1,0 +1,74 @@
+// Enhanced Prisma schema additions for flexible content types
+// Add these models to your schema.prisma file
+
+model ContentType {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., 'hero', 'feature', 'testimonial'
+  label       String   // Display name
+  description String?
+  icon        String?
+  fields      String   // JSON string of ContentField[]
+  settings    String   // JSON string of content type settings
+  isSystem    Boolean  @default(false) // Whether this is a system-defined content type
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  contentItems     DynamicContentItem[]
+  contentSections  DynamicContentSection[]
+}
+
+model DynamicContentItem {
+  id            String   @id @default(uuid())
+  contentTypeId String
+  slug          String?
+  title         String
+  data          String   // JSON string containing dynamic field data
+  status        String   @default("draft") // 'draft' | 'published' | 'archived'
+  featured      Boolean  @default(false)
+  publishedAt   DateTime?
+  order         Int      @default(0)
+  categories    String?  // JSON array of categories
+  tags          String?  // JSON array of tags
+  author        String?
+  metadata      String?  // JSON string for SEO metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  contentType   ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  
+  @@unique([contentTypeId, slug])
+  @@index([contentTypeId, status])
+  @@index([contentTypeId, featured])
+  @@index([status, publishedAt])
+}
+
+model DynamicContentSection {
+  id             String   @id @default(uuid())
+  contentTypeId  String
+  sectionKey     String   @unique // e.g., 'homepage-hero', 'about-features'
+  title          String?
+  subtitle       String?
+  description    String?
+  layoutSettings String   // JSON string for layout configuration
+  isActive       Boolean  @default(true)
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Relations
+  contentType    ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+  
+  @@index([contentTypeId, isActive])
+  @@index([sectionKey, isActive])
+}
+
+// Migration script to create sample content types
+// Run this after adding the models to your schema
+model ContentTypeSeed {
+  id        String   @id @default(uuid())
+  executed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
