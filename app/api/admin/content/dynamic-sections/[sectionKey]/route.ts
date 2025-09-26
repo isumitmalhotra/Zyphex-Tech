@@ -11,6 +11,7 @@ const updateDynamicContentSectionSchema = z.object({
   description: z.string().optional(),
   imageUrl: z.string().url().optional().or(z.literal('')),
   layoutSettings: z.string().optional(), // JSON string for layout configuration
+  contentData: z.string().optional(), // JSON string for dynamic field content
 })
 
 // GET /api/admin/content/dynamic-sections/[sectionKey] - Get a DynamicContentSection by sectionKey
@@ -49,6 +50,8 @@ export async function GET(
             id: true,
             name: true,
             label: true,
+            fields: true,
+            settings: true,
           },
         },
       },
@@ -112,7 +115,7 @@ export async function PUT(
       )
     }
 
-    const { title, subtitle, description, imageUrl, layoutSettings } = validationResult.data
+    const { title, subtitle, description, imageUrl, layoutSettings, contentData } = validationResult.data
 
     // Check if the DynamicContentSection exists
     const existingSection = await prisma.dynamicContentSection.findUnique({
@@ -138,6 +141,18 @@ export async function PUT(
       }
     }
 
+    // Validate contentData if provided (should be valid JSON)
+    if (contentData !== undefined) {
+      try {
+        JSON.parse(contentData)
+      } catch {
+        return NextResponse.json(
+          { error: 'contentData must be a valid JSON string' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Build update data object (only include fields that are provided)
     const updateData: {
       title?: string
@@ -145,6 +160,7 @@ export async function PUT(
       description?: string
       imageUrl?: string | null
       layoutSettings?: string
+      contentData?: string | null
       updatedAt: Date
     } = {
       updatedAt: new Date()
@@ -155,6 +171,7 @@ export async function PUT(
     if (description !== undefined) updateData.description = description
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl || null
     if (layoutSettings !== undefined) updateData.layoutSettings = layoutSettings
+    if (contentData !== undefined) updateData.contentData = contentData || null
 
     // Update the DynamicContentSection
     const updatedSection = await prisma.dynamicContentSection.update({

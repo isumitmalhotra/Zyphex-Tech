@@ -3,22 +3,180 @@
 // Union type for all possible field values
 export type FieldValue = string | number | boolean | string[] | Record<string, unknown> | Date | null
 
+// Enhanced field type definitions
+export type ContentFieldType = 
+  | 'text'           // Single line text input
+  | 'textarea'       // Multi-line text input
+  | 'richtext'       // Rich text editor (HTML)
+  | 'email'          // Email input with validation
+  | 'url'            // URL input with validation
+  | 'tel'            // Telephone input
+  | 'number'         // Number input
+  | 'integer'        // Integer input
+  | 'float'          // Float/decimal input
+  | 'boolean'        // Checkbox/toggle
+  | 'select'         // Dropdown selection
+  | 'multiselect'    // Multiple selection
+  | 'radio'          // Radio button group
+  | 'checkbox'       // Checkbox group
+  | 'date'           // Date picker
+  | 'datetime'       // Date and time picker
+  | 'time'           // Time picker
+  | 'image'          // Single image upload
+  | 'images'         // Multiple image upload
+  | 'file'           // Single file upload
+  | 'files'          // Multiple file upload
+  | 'color'          // Color picker
+  | 'json'           // JSON editor
+  | 'slug'           // URL-friendly slug generator
+  | 'tags'           // Tag input field
+  | 'relation'       // Relation to other content
+  | 'group'          // Group of fields
+  | 'repeater'       // Repeatable field group
+
+// Validation rules for content fields
+export interface ContentFieldValidation {
+  required?: boolean
+  minLength?: number
+  maxLength?: number
+  min?: number
+  max?: number
+  pattern?: string
+  customMessage?: string
+  unique?: boolean
+}
+
+// Options for select, radio, and checkbox fields
+export interface ContentFieldOption {
+  label: string
+  value: string | number | boolean
+  disabled?: boolean
+  color?: string
+  icon?: string
+}
+
+// Configuration for different field types
+export interface ContentFieldConfig {
+  // Text fields
+  placeholder?: string
+  maxLength?: number
+  rows?: number // For textarea
+  
+  // Number fields
+  step?: number
+  
+  // Select/Choice fields
+  options?: ContentFieldOption[]
+  multiple?: boolean
+  searchable?: boolean
+  allowCustom?: boolean
+  
+  // File/Image fields
+  maxSize?: number // in bytes
+  allowedTypes?: string[] // MIME types
+  maxFiles?: number
+  dimensions?: {
+    width?: number
+    height?: number
+    aspectRatio?: string
+  }
+  
+  // Rich text
+  toolbar?: string[]
+  allowHtml?: boolean
+  
+  // Relation fields
+  relationTo?: string // Content type name
+  relationDisplay?: string // Field to display
+  
+  // Group/Repeater fields
+  fields?: ContentField[] // For groups and repeaters
+  minItems?: number
+  maxItems?: number
+  
+  // Layout
+  width?: 'full' | 'half' | 'third' | 'quarter'
+  className?: string
+  
+  // Conditional display
+  showIf?: {
+    field: string
+    value: FieldValue
+    operator?: 'equals' | 'not_equals' | 'contains' | 'greater_than' | 'less_than'
+  }
+}
+
 export interface ContentField {
   id: string
   name: string
   label: string
-  type: 'text' | 'textarea' | 'richtext' | 'image' | 'url' | 'number' | 'boolean' | 'select' | 'multiselect' | 'json' | 'date'
-  required?: boolean
-  placeholder?: string
-  defaultValue?: FieldValue
-  validation?: {
-    min?: number
-    max?: number
-    pattern?: string
-    options?: string[]
-  }
+  type: ContentFieldType
   description?: string
+  defaultValue?: FieldValue
+  validation?: ContentFieldValidation
+  config?: ContentFieldConfig
+  group?: string
   order: number
+  admin?: {
+    hidden?: boolean
+    readOnly?: boolean
+    position?: 'sidebar' | 'main'
+  }
+}
+
+// Enhanced content type settings
+export interface ContentTypeSettings {
+  // Display settings
+  displayField?: string           // Field to use as title/name
+  sortBy?: string                 // Default sort field
+  sortOrder?: 'asc' | 'desc'      // Default sort order
+  
+  // Layout settings
+  layout?: 'table' | 'cards' | 'list'
+  columns?: string[]              // Columns to show in table view
+  
+  // Features
+  hasSlug?: boolean
+  hasStatus?: boolean
+  hasPublishing?: boolean
+  hasOrdering?: boolean
+  hasFeatured?: boolean
+  hasCategories?: boolean
+  hasTags?: boolean
+  hasAuthor?: boolean
+  allowComments?: boolean
+  hasMetadata?: boolean
+  
+  // Permissions
+  permissions?: {
+    create?: string[]             // Roles that can create
+    read?: string[]               // Roles that can read
+    update?: string[]             // Roles that can update
+    delete?: string[]             // Roles that can delete
+  }
+  
+  // SEO settings
+  enableSEO?: boolean
+  seoFields?: string[]            // Fields to use for SEO
+  
+  // Publishing
+  enableDrafts?: boolean
+  enableScheduling?: boolean
+  enableVersioning?: boolean
+  
+  // API settings
+  enableAPI?: boolean
+  apiEndpoints?: string[]
+  
+  // Hooks
+  hooks?: {
+    beforeCreate?: string
+    afterCreate?: string
+    beforeUpdate?: string
+    afterUpdate?: string
+    beforeDelete?: string
+    afterDelete?: string
+  }
 }
 
 export interface ContentType {
@@ -28,20 +186,13 @@ export interface ContentType {
   description?: string
   icon?: string
   fields: ContentField[]
-  settings: {
-    hasSlug?: boolean
-    hasStatus?: boolean
-    hasPublishing?: boolean
-    hasOrdering?: boolean
-    hasFeatured?: boolean
-    hasCategories?: boolean
-    hasTags?: boolean
-    hasAuthor?: boolean
-    allowComments?: boolean
-    hasMetadata?: boolean
-  }
+  settings?: ContentTypeSettings
+  category?: string
+  template?: string
   isSystem: boolean
   isActive: boolean
+  allowMultiple?: boolean
+  maxInstances?: number
   createdAt: Date
   updatedAt: Date
 }

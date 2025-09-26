@@ -208,16 +208,23 @@ model ContentType {
   label       String   // Display name
   description String?
   icon        String?
-  fields      String   // JSON string of ContentField[]
-  settings    String   // JSON string of content type settings
+  fields      String   // JSON string of ContentField[] - Enhanced field definitions
+  settings    String?  // JSON string of content type settings (layout, validation, etc.)
+  category    String?  // Category for organization (e.g., 'sections', 'components', 'pages')
+  template    String?  // Optional template identifier for rendering
   isSystem    Boolean  @default(false) // Whether this is a system-defined content type
   isActive    Boolean  @default(true)
+  allowMultiple Boolean @default(true) // Whether multiple instances can be created
+  maxInstances Int?    // Maximum number of instances allowed (null = unlimited)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
   // Relations
   contentItems     DynamicContentItem[]
   contentSections  DynamicContentSection[]
+  
+  @@index([category, isActive])
+  @@index([isSystem, isActive])
 }
 
 model DynamicContentItem {
@@ -255,6 +262,7 @@ model DynamicContentSection {
   description    String?
   imageUrl       String?  // URL for section image
   layoutSettings String   // JSON string for layout configuration
+  contentData    String?  // JSON string for dynamic field content
   isActive       Boolean  @default(true)
   order          Int      @default(0)
   createdAt      DateTime @default(now())
@@ -265,4 +273,23 @@ model DynamicContentSection {
   
   @@index([contentTypeId, isActive])
   @@index([sectionKey, isActive])
+}
+
+// Page Management Model
+model Page {
+  id          String   @id @default(uuid())
+  slug        String   @unique // URL slug e.g., 'home', 'about', 'services'
+  title       String   // Display title e.g., 'Home Page', 'About Us'
+  description String?  // Optional description for admin/SEO
+  path        String   // Full path e.g., '/', '/about', '/services'
+  isActive    Boolean  @default(true)
+  isSystem    Boolean  @default(false) // Whether this is a system page (cannot be deleted)
+  order       Int      @default(0)
+  metaTitle   String?  // SEO meta title
+  metaDescription String? // SEO meta description
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([slug, isActive])
+  @@index([isActive, order])
 }

@@ -1,4 +1,4 @@
-import { ContentField } from '@/types/content'
+import { ContentField, ContentTypeSettings } from '@/types/content'
 
 export interface ContentTypeTemplate {
   name: string
@@ -6,18 +6,11 @@ export interface ContentTypeTemplate {
   description: string
   icon: string
   fields: ContentField[]
-  settings: {
-    hasSlug?: boolean
-    hasStatus?: boolean
-    hasPublishing?: boolean
-    hasOrdering?: boolean
-    hasFeatured?: boolean
-    hasCategories?: boolean
-    hasTags?: boolean
-    hasAuthor?: boolean
-    hasMetadata?: boolean
-  }
-  category: 'layout' | 'content' | 'marketing' | 'media'
+  settings?: ContentTypeSettings
+  category: 'layout' | 'content' | 'marketing' | 'media' | 'ecommerce' | 'forms'
+  template?: string
+  allowMultiple?: boolean
+  maxInstances?: number
 }
 
 export const contentTypeTemplates: ContentTypeTemplate[] = [
@@ -33,8 +26,14 @@ export const contentTypeTemplates: ContentTypeTemplate[] = [
         name: 'headline',
         label: 'Headline',
         type: 'text',
-        required: true,
-        placeholder: 'Enter main headline',
+        validation: {
+          required: true,
+          maxLength: 120
+        },
+        config: {
+          placeholder: 'Enter main headline',
+          maxLength: 120
+        },
         order: 0
       },
       {
@@ -42,8 +41,14 @@ export const contentTypeTemplates: ContentTypeTemplate[] = [
         name: 'subtitle',
         label: 'Subtitle',
         type: 'textarea',
-        required: false,
-        placeholder: 'Enter supporting text',
+        validation: {
+          maxLength: 300
+        },
+        config: {
+          placeholder: 'Enter supporting text',
+          rows: 3,
+          maxLength: 300
+        },
         order: 1
       },
       {
@@ -51,7 +56,16 @@ export const contentTypeTemplates: ContentTypeTemplate[] = [
         name: 'backgroundImage',
         label: 'Background Image',
         type: 'image',
-        required: false,
+        validation: {
+          required: false
+        },
+        config: {
+          maxSize: 5242880, // 5MB
+          allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          dimensions: {
+            aspectRatio: '16:9'
+          }
+        },
         order: 2
       },
       {
@@ -59,8 +73,13 @@ export const contentTypeTemplates: ContentTypeTemplate[] = [
         name: 'ctaText',
         label: 'Call-to-Action Text',
         type: 'text',
-        required: false,
-        placeholder: 'Get Started',
+        validation: {
+          maxLength: 50
+        },
+        config: {
+          placeholder: 'Get Started',
+          maxLength: 50
+        },
         order: 3
       },
       {
@@ -68,8 +87,12 @@ export const contentTypeTemplates: ContentTypeTemplate[] = [
         name: 'ctaUrl',
         label: 'Call-to-Action URL',
         type: 'url',
-        required: false,
-        placeholder: '/contact',
+        validation: {
+          required: false
+        },
+        config: {
+          placeholder: '/contact'
+        },
         order: 4
       }
     ],
@@ -502,6 +525,224 @@ export const contentTypeTemplates: ContentTypeTemplate[] = [
       hasAuthor: false,
       hasMetadata: true
     }
+  },
+  
+  // Advanced Content Type showcasing new field types
+  {
+    name: 'advanced_form',
+    label: 'Advanced Form Content',
+    description: 'Comprehensive form showcasing all available field types',
+    icon: '🔧',
+    category: 'forms',
+    fields: [
+      {
+        id: 'title',
+        name: 'title',
+        label: 'Form Title',
+        type: 'text',
+        validation: {
+          required: true,
+          maxLength: 100
+        },
+        config: {
+          placeholder: 'Enter form title'
+        },
+        order: 0
+      },
+      {
+        id: 'description',
+        name: 'description',
+        label: 'Description',
+        type: 'richtext',
+        validation: {
+          maxLength: 500
+        },
+        config: {
+          toolbar: ['bold', 'italic', 'link', 'bulletList']
+        },
+        order: 1
+      },
+      {
+        id: 'email',
+        name: 'email',
+        label: 'Contact Email',
+        type: 'email',
+        validation: {
+          required: true
+        },
+        config: {
+          placeholder: 'contact@example.com'
+        },
+        order: 2
+      },
+      {
+        id: 'phone',
+        name: 'phone',
+        label: 'Phone Number',
+        type: 'tel',
+        config: {
+          placeholder: '+1 (555) 123-4567'
+        },
+        order: 3
+      },
+      {
+        id: 'price',
+        name: 'price',
+        label: 'Price',
+        type: 'float',
+        validation: {
+          min: 0
+        },
+        config: {
+          step: 0.01,
+          placeholder: '0.00'
+        },
+        order: 4
+      },
+      {
+        id: 'priority',
+        name: 'priority',
+        label: 'Priority Level',
+        type: 'select',
+        validation: {
+          required: true
+        },
+        config: {
+          options: [
+            { label: 'Low', value: 'low' },
+            { label: 'Medium', value: 'medium' },
+            { label: 'High', value: 'high' },
+            { label: 'Urgent', value: 'urgent', color: '#ef4444' }
+          ]
+        },
+        order: 5
+      },
+      {
+        id: 'categories',
+        name: 'categories',
+        label: 'Categories',
+        type: 'multiselect',
+        config: {
+          options: [
+            { label: 'Technology', value: 'tech' },
+            { label: 'Design', value: 'design' },
+            { label: 'Marketing', value: 'marketing' },
+            { label: 'Business', value: 'business' }
+          ],
+          searchable: true
+        },
+        order: 6
+      },
+      {
+        id: 'isActive',
+        name: 'isActive',
+        label: 'Active Status',
+        type: 'boolean',
+        defaultValue: true,
+        order: 7
+      },
+      {
+        id: 'publishDate',
+        name: 'publishDate',
+        label: 'Publish Date',
+        type: 'datetime',
+        validation: {
+          required: true
+        },
+        order: 8
+      },
+      {
+        id: 'featuredImage',
+        name: 'featuredImage',
+        label: 'Featured Image',
+        type: 'image',
+        config: {
+          maxSize: 2097152, // 2MB
+          allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          dimensions: {
+            width: 1200,
+            height: 630
+          }
+        },
+        order: 9
+      },
+      {
+        id: 'gallery',
+        name: 'gallery',
+        label: 'Image Gallery',
+        type: 'images',
+        config: {
+          maxFiles: 10,
+          maxSize: 1048576, // 1MB per image
+          allowedTypes: ['image/jpeg', 'image/png']
+        },
+        order: 10
+      },
+      {
+        id: 'brandColor',
+        name: 'brandColor',
+        label: 'Brand Color',
+        type: 'color',
+        defaultValue: '#3b82f6',
+        order: 11
+      },
+      {
+        id: 'tags',
+        name: 'tags',
+        label: 'Tags',
+        type: 'tags',
+        config: {
+          placeholder: 'Add tags...'
+        },
+        order: 12
+      },
+      {
+        id: 'slug',
+        name: 'slug',
+        label: 'URL Slug',
+        type: 'slug',
+        validation: {
+          required: true,
+          unique: true
+        },
+        config: {
+          showIf: {
+            field: 'isActive',
+            value: true,
+            operator: 'equals'
+          }
+        },
+        order: 13
+      },
+      {
+        id: 'metadata',
+        name: 'metadata',
+        label: 'Custom Metadata',
+        type: 'json',
+        description: 'Additional metadata in JSON format',
+        order: 14
+      }
+    ],
+    settings: {
+      displayField: 'title',
+      sortBy: 'publishDate',
+      sortOrder: 'desc',
+      layout: 'table',
+      columns: ['title', 'priority', 'isActive', 'publishDate'],
+      hasSlug: true,
+      hasStatus: true,
+      hasPublishing: true,
+      hasOrdering: true,
+      hasFeatured: true,
+      hasCategories: true,
+      hasTags: true,  
+      hasAuthor: true,
+      hasMetadata: true,
+      enableSEO: true,
+      enableDrafts: true,
+      enableAPI: true
+    },
+    allowMultiple: true
   }
 ]
 
@@ -511,4 +752,9 @@ export const getTemplatesByCategory = (category: string) => {
 
 export const getTemplateByName = (name: string) => {
   return contentTypeTemplates.find(template => template.name === name)
+}
+
+export const getAllCategories = () => {
+  const categories = contentTypeTemplates.map(template => template.category)
+  return [...new Set(categories)].sort()
 }

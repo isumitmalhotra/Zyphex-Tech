@@ -137,8 +137,16 @@ const data = {
           url: "/admin/content/manage",
         },
         {
+          title: "Pages Management",
+          url: "/admin/content/pages",
+        },
+        {
           title: "Content Types",
           url: "/admin/content/content-types",
+        },
+        {
+          title: "Media Library",
+          url: "/admin/content/media",
         },
         {
           title: "Dynamic Content",

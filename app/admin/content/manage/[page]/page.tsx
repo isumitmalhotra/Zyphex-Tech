@@ -19,35 +19,126 @@ import {
   AccordionItem, 
   AccordionTrigger 
 } from "@/components/ui/accordion"
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+
 import { toast } from "@/hooks/use-toast"
+import { DynamicForm } from "@/components/admin/dynamic-form"
+import { ContentField } from "@/types/content"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { 
   ArrowLeft, 
   Save, 
   Eye, 
   Loader2,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Edit
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
-// Validation schema for section form
-const sectionFormSchema = z.object({
+// Create dynamic validation schema based on content type fields
+const createSectionFormSchema = (fields: ContentField[]) => {
+  const schemaObject: Record<string, z.ZodTypeAny> = {}
+  
+  fields.forEach(field => {
+    let fieldSchema: z.ZodTypeAny
+    
+    switch (field.type) {
+      case 'text':
+      case 'textarea':
+      case 'email':
+      case 'url':
+      case 'tel':
+      case 'slug':
+        fieldSchema = z.string()
+        if (field.validation?.maxLength) {
+          fieldSchema = (fieldSchema as z.ZodString).max(field.validation.maxLength)
+        }
+        if (field.validation?.minLength) {
+          fieldSchema = (fieldSchema as z.ZodString).min(field.validation.minLength)
+        }
+        if (field.validation?.pattern) {
+          fieldSchema = (fieldSchema as z.ZodString).regex(new RegExp(field.validation.pattern))
+        }
+        break
+        
+      case 'richtext':
+        fieldSchema = z.string()
+        break
+        
+      case 'number':
+      case 'integer':
+      case 'float':
+        fieldSchema = z.number()
+        if (field.validation?.min !== undefined) {
+          fieldSchema = (fieldSchema as z.ZodNumber).min(field.validation.min)
+        }
+        if (field.validation?.max !== undefined) {
+          fieldSchema = (fieldSchema as z.ZodNumber).max(field.validation.max)
+        }
+        break
+        
+      case 'boolean':
+        fieldSchema = z.boolean()
+        break
+        
+      case 'date':
+      case 'datetime':
+      case 'time':
+        fieldSchema = z.string().or(z.date())
+        break
+        
+      case 'image':
+      case 'file':
+        fieldSchema = z.string().url().or(z.literal(''))
+        break
+        
+      case 'images':
+      case 'files':
+        fieldSchema = z.array(z.string().url())
+        break
+        
+      case 'select':
+        fieldSchema = z.string()
+        break
+        
+      case 'multiselect':
+      case 'tags':
+        fieldSchema = z.array(z.string())
+        break
+        
+      case 'color':
+        fieldSchema = z.string().regex(/^#[0-9A-F]{6}$/i)
+        break
+        
+      case 'json':
+        fieldSchema = z.any()
+        break
+        
+      default:
+        fieldSchema = z.string()
+    }
+    
+    // Make field optional if not required
+    if (!field.validation?.required) {
+      fieldSchema = fieldSchema.optional()
+    }
+    
+    schemaObject[field.name] = fieldSchema
+  })
+  
+  return z.object(schemaObject)
+}
+
+// Default schema for backward compatibility
+const defaultSectionSchema = z.object({
   title: z.string().optional(),
   subtitle: z.string().optional(), 
   description: z.string().optional(),
   imageUrl: z.string().url().optional().or(z.literal('')),
 })
 
-type SectionFormData = z.infer<typeof sectionFormSchema>
+type SectionFormData = Record<string, unknown>
 
 // Page slug to title mapping
 const pageMap: Record<string, { title: string; path: string }> = {
@@ -67,6 +158,7 @@ interface DynamicContentSection {
   description?: string
   imageUrl?: string
   layoutSettings: string
+  contentData?: string
   isActive: boolean
   order: number
   createdAt: string
@@ -75,8 +167,12 @@ interface DynamicContentSection {
     id: string
     name: string
     label: string
+    fields: string // JSON string of ContentField[]
+    settings?: string // JSON string of settings
   }
 }
+
+
 
 export default function PageContentEditor() {
   const params = useParams()
@@ -87,6 +183,7 @@ export default function PageContentEditor() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savingStates, setSavingStates] = useState<Record<string, boolean>>({})
+  const [editingStates, setEditingStates] = useState<Record<string, boolean>>({})
 
   const pageInfo = pageMap[pageSlug]
 
@@ -95,66 +192,37 @@ export default function PageContentEditor() {
       setLoading(true)
       setError(null)
       
-      // Fetch sections by page slug - we'll construct sectionKeys based on the page
-      // For now, we'll create mock data matching the expected structure
-      const mockSections: DynamicContentSection[] = [
-        {
-          id: "1",
-          sectionKey: `${pageSlug}-hero`,
-          title: "Hero Section",
-          subtitle: "Main hero section content",
-          description: "This is the primary hero section that appears at the top of the page.",
-          imageUrl: "/placeholder.jpg",
-          layoutSettings: JSON.stringify({ layout: "hero", columns: 1 }),
-          isActive: true,
-          order: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          contentType: {
-            id: "hero-type",
-            name: "hero",
-            label: "Hero Section"
-          }
-        },
-        {
-          id: "2", 
-          sectionKey: `${pageSlug}-features`,
-          title: "Features Section",
-          subtitle: "Key features and benefits",
-          description: "Showcase the main features and benefits of your services.",
-          imageUrl: undefined,
-          layoutSettings: JSON.stringify({ layout: "grid", columns: 3 }),
-          isActive: true,
-          order: 1,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          contentType: {
-            id: "features-type",
-            name: "features",
-            label: "Features Section"
-          }
-        },
-        {
-          id: "3",
-          sectionKey: `${pageSlug}-cta`,
-          title: "Call to Action",
-          subtitle: "Encourage user engagement",
-          description: "A compelling call-to-action to convert visitors into customers.",
-          imageUrl: "/placeholder-logo.png",
-          layoutSettings: JSON.stringify({ layout: "centered", columns: 1 }),
-          isActive: false,
-          order: 2,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          contentType: {
-            id: "cta-type", 
-            name: "cta",
-            label: "Call to Action"
-          }
-        }
+      // Define possible section keys for this page
+      const possibleSectionKeys = [
+        `${pageSlug}-hero`,
+        `${pageSlug}-features`, 
+        `${pageSlug}-services`,
+        `${pageSlug}-about`,
+        `${pageSlug}-testimonials`,
+        `${pageSlug}-cta`,
+        `${pageSlug}-gallery`,
+        `${pageSlug}-contact`,
+        `${pageSlug}-team`
       ]
-
-      setSections(mockSections.sort((a, b) => a.order - b.order))
+      
+      // Fetch data for each possible section
+      const sectionPromises = possibleSectionKeys.map(async (sectionKey) => {
+        try {
+          const response = await fetch(`/api/admin/content/dynamic-sections/${sectionKey}`)
+          if (response.ok) {
+            return await response.json()
+          }
+          return null
+        } catch (error) {
+          console.warn(`Failed to fetch section ${sectionKey}:`, error)
+          return null
+        }
+      })
+      
+      const sectionResults = await Promise.all(sectionPromises)
+      const existingSections = sectionResults.filter(Boolean) as DynamicContentSection[]
+      
+      setSections(existingSections.sort((a, b) => a.order - b.order))
     } catch (err) {
       console.error('Error loading sections:', err)
       setError('Failed to load page sections. Please try again.')
@@ -239,6 +307,20 @@ export default function PageContentEditor() {
         variant: "destructive"
       })
     }
+  }
+
+  const handleEditToggle = (sectionKey: string, isEditing: boolean) => {
+    setEditingStates(prev => ({ ...prev, [sectionKey]: isEditing }))
+  }
+
+  const handleSectionSave = async (sectionKey: string, data: SectionFormData) => {
+    await handleSectionUpdate(sectionKey, data)
+    // Exit edit mode after successful save
+    setEditingStates(prev => ({ ...prev, [sectionKey]: false }))
+  }
+
+  const handleCancelEdit = (sectionKey: string) => {
+    setEditingStates(prev => ({ ...prev, [sectionKey]: false }))
   }
 
   if (!pageInfo) {
@@ -348,8 +430,11 @@ export default function PageContentEditor() {
                         <div className="pt-4">
                           <SectionForm
                             section={section}
-                            onSave={(data) => handleSectionUpdate(section.sectionKey, data)}
+                            onSave={(data) => handleSectionSave(section.sectionKey, data)}
                             isSaving={savingStates[section.sectionKey] || false}
+                            isEditing={editingStates[section.sectionKey] || false}
+                            onEditToggle={(editing) => handleEditToggle(section.sectionKey, editing)}
+                            onCancel={() => handleCancelEdit(section.sectionKey)}
                           />
                         </div>
                       </AccordionContent>
@@ -401,141 +486,406 @@ export default function PageContentEditor() {
   )
 }
 
-// Section Form Component
+// Section View/Edit Component
 function SectionForm({ 
   section, 
   onSave, 
-  isSaving 
+  isSaving,
+  isEditing,
+  onEditToggle,
+  onCancel
 }: { 
   section: DynamicContentSection
   onSave: (data: SectionFormData) => void
   isSaving: boolean
+  isEditing: boolean
+  onEditToggle: (editing: boolean) => void
+  onCancel: () => void
 }) {
-  const form = useForm<SectionFormData>({
-    resolver: zodResolver(sectionFormSchema),
-    defaultValues: {
-      title: section.title || "",
-      subtitle: section.subtitle || "",
-      description: section.description || "",
-      imageUrl: section.imageUrl || ""
+  // Parse content type fields
+  const contentTypeFields: ContentField[] = React.useMemo(() => {
+    try {
+      return JSON.parse(section.contentType.fields || '[]') as ContentField[]
+    } catch (error) {
+      console.error('Error parsing content type fields:', error)
+      return []
     }
+  }, [section.contentType.fields])
+
+  // Create dynamic schema based on fields
+  const dynamicSchema = React.useMemo(() => {
+    if (contentTypeFields.length > 0) {
+      return createSectionFormSchema(contentTypeFields)
+    }
+    return defaultSectionSchema
+  }, [contentTypeFields])
+
+  // Create default values from section data and field definitions
+  const defaultValues = React.useMemo(() => {
+    const values: Record<string, unknown> = {}
+    
+    // Parse stored content data
+    let storedData: Record<string, unknown> = {}
+    if (section.contentData) {
+      try {
+        storedData = JSON.parse(section.contentData)
+      } catch (error) {
+        console.error('Error parsing stored content data:', error)
+      }
+    }
+    
+    if (contentTypeFields.length > 0) {
+      // Use dynamic fields
+      contentTypeFields.forEach(field => {
+        // Priority: storedData > section basic fields > field default value > type default
+        if (storedData[field.name] !== undefined) {
+          // Use stored dynamic content data
+          values[field.name] = storedData[field.name]
+        } else if (field.name === 'title') {
+          values[field.name] = section.title || field.defaultValue || ''
+        } else if (field.name === 'subtitle') { 
+          values[field.name] = section.subtitle || field.defaultValue || ''
+        } else if (field.name === 'description') {
+          values[field.name] = section.description || field.defaultValue || ''
+        } else if (field.name === 'imageUrl') {
+          values[field.name] = section.imageUrl || field.defaultValue || ''
+        } else {
+          // Set default value for custom fields
+          values[field.name] = field.defaultValue || (
+            field.type === 'boolean' ? false :
+            field.type === 'number' || field.type === 'integer' || field.type === 'float' ? 0 :
+            field.type === 'multiselect' || field.type === 'tags' || field.type === 'images' || field.type === 'files' ? [] :
+            ''
+          )
+        }
+      })
+    } else {
+      // Fallback to basic fields
+      values.title = section.title || ''
+      values.subtitle = section.subtitle || ''
+      values.description = section.description || ''
+      values.imageUrl = section.imageUrl || ''
+    }
+    
+    return values
+  }, [section, contentTypeFields])
+
+  const form = useForm<Record<string, unknown>>({
+    resolver: zodResolver(dynamicSchema),
+    defaultValues
   })
 
-  const onSubmit = async (data: SectionFormData) => {
-    onSave(data)
+  // Update form when section data changes
+  useEffect(() => {
+    form.reset(defaultValues)
+  }, [defaultValues, form])
+
+  const onSubmit = async (data: Record<string, unknown>) => {
+    // Separate basic fields from dynamic content
+    const { title, subtitle, description, imageUrl, ...dynamicFields } = data
+    
+    // Prepare the payload
+    const payload: Record<string, unknown> = {}
+    
+    // Include basic fields if they exist
+    if (title !== undefined) payload.title = title
+    if (subtitle !== undefined) payload.subtitle = subtitle
+    if (description !== undefined) payload.description = description
+    if (imageUrl !== undefined) payload.imageUrl = imageUrl
+    
+    // Store all dynamic fields as JSON
+    if (Object.keys(dynamicFields).length > 0) {
+      payload.contentData = JSON.stringify(dynamicFields)
+    }
+    
+    onSave(payload)
   }
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Section Title</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Enter section title"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  The main title for this section
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="subtitle"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Subtitle</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Enter subtitle (optional)"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  A secondary title or tagline
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Enter section description"
-                  rows={4}
-                  {...field}
-                />
-              </FormControl>
-              <FormDescription>
-                Detailed description or content for this section
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <ImageUpload
-                  value={field.value}
-                  onChange={field.onChange}
-                  onRemove={() => field.onChange('')}
-                  disabled={isSaving}
-                />
-              </FormControl>
-              <FormDescription>
-                Upload an image for this section or enter an image URL
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex justify-end space-x-2">
-          <Button 
-            type="button" 
-            variant="outline"
-            onClick={() => form.reset()}
-            disabled={isSaving}
-          >
-            Reset
-          </Button>
-          <Button type="submit" disabled={isSaving}>
-            {isSaving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
+  if (isEditing) {
+    // Edit Mode: Show form
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Edit className="h-4 w-4" />
+            Edit Content
+          </CardTitle>
+          <CardDescription>
+            Make changes to this section&apos;s content
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Dynamic Form Fields */}
+            {contentTypeFields.length > 0 ? (
+              <DynamicForm 
+                fields={contentTypeFields}
+                form={form}
+                disabled={isSaving}
+              />
             ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </>
+              // Fallback to basic fields if no content type fields defined
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Section Title</Label>
+                    <Input
+                      id="title"
+                      placeholder="Enter section title"
+                      {...form.register('title')}
+                      disabled={isSaving}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="subtitle">Subtitle</Label>
+                    <Input
+                      id="subtitle"
+                      placeholder="Enter subtitle (optional)"
+                      {...form.register('subtitle')}
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Enter section description"
+                    rows={4}
+                    {...form.register('description')}
+                    disabled={isSaving}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Section Image</Label>
+                  <ImageUpload
+                    value={form.watch('imageUrl') as string}
+                    onChange={(url) => form.setValue('imageUrl', url)}
+                    onRemove={() => form.setValue('imageUrl', '')}
+                    disabled={isSaving}
+                  />
+                </div>
+              </div>
             )}
+
+            <Separator />
+
+            <div className="flex justify-end space-x-2">
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={onCancel}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // View Mode: Show content with Edit button
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Eye className="h-4 w-4" />
+            Section Content
+          </div>
+          <Button
+            onClick={() => onEditToggle(true)}
+            size="sm"
+            variant="outline"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
           </Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Dynamic Content Display */}
+        {(() => {
+          const hasContent = contentTypeFields.length > 0 ? 
+            contentTypeFields.some(field => {
+              const value = field.name === 'title' ? section.title :
+                          field.name === 'subtitle' ? section.subtitle :
+                          field.name === 'description' ? section.description :
+                          field.name === 'imageUrl' ? section.imageUrl :
+                          null
+              return value && value !== ''
+            }) :
+            section.title || section.subtitle || section.description || section.imageUrl
+
+          if (!hasContent) {
+            return (
+              <div className="text-center py-8 text-muted-foreground">
+                <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <p>No content has been set for this section yet.</p>
+                <p className="text-sm">Click &quot;Edit&quot; to add content.</p>
+              </div>
+            )
+          }
+
+          return (
+            <div className="space-y-4">
+              {contentTypeFields.length > 0 ? (
+                // Render fields based on content type definition
+                contentTypeFields.map(field => {
+                  let value: unknown = null
+                  
+                  // Map field names to section properties
+                  if (field.name === 'title') {
+                    value = section.title
+                  } else if (field.name === 'subtitle') {
+                    value = section.subtitle  
+                  } else if (field.name === 'description') {
+                    value = section.description
+                  } else if (field.name === 'imageUrl') {
+                    value = section.imageUrl
+                  }
+
+                  // Skip fields with no content
+                  if (!value || value === '') return null
+
+                  return (
+                    <div key={field.id}>
+                      <Label className="text-sm font-medium text-muted-foreground">
+                        {field.label}
+                      </Label>
+                      
+                      {/* Render different field types */}
+                      {field.type === 'image' && typeof value === 'string' && (
+                        <div className="mt-2 relative h-48 w-full rounded-lg border overflow-hidden">
+                          <Image
+                            src={value}
+                            alt={field.label}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                          />
+                        </div>
+                      )}
+                      
+                      {field.type === 'richtext' && typeof value === 'string' && (
+                        <div className="mt-2 prose prose-sm max-w-none">
+                          <div dangerouslySetInnerHTML={{ __html: value }} />
+                        </div>
+                      )}
+                      
+                      {(field.type === 'textarea' || field.type === 'text') && typeof value === 'string' && (
+                        <div className={`mt-2 ${field.type === 'text' ? 'text-lg font-semibold' : 'prose prose-sm max-w-none'}`}>
+                          <p className="whitespace-pre-wrap">{value}</p>
+                        </div>
+                      )}
+                      
+                      {field.type === 'boolean' && typeof value === 'boolean' && (
+                        <div className="mt-2">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {value ? 'Yes' : 'No'}
+                          </span>
+                        </div>
+                      )}
+                      
+                      {(field.type === 'url' || field.type === 'email') && typeof value === 'string' && (
+                        <div className="mt-2">
+                          <a 
+                            href={field.type === 'email' ? `mailto:${value}` : value}
+                            className="text-blue-600 hover:text-blue-800 underline"
+                            target={field.type === 'url' ? '_blank' : undefined}
+                            rel={field.type === 'url' ? 'noopener noreferrer' : undefined}
+                          >
+                            {value}
+                          </a>
+                        </div>
+                      )}
+                      
+                      {/* Default text display for other field types */}
+                      {!['image', 'richtext', 'textarea', 'text', 'boolean', 'url', 'email'].includes(field.type) && (
+                        <div className="mt-2">
+                          <p>{String(value)}</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                }).filter(Boolean)
+              ) : (
+                // Fallback to basic fields
+                <>
+                  {section.title && (
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Title</Label>
+                      <p className="text-lg font-semibold">{section.title}</p>
+                    </div>
+                  )}
+                  
+                  {section.subtitle && (
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Subtitle</Label>
+                      <p className="text-base text-muted-foreground">{section.subtitle}</p>
+                    </div>
+                  )}
+                  
+                  {section.description && (
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                      <div className="prose prose-sm max-w-none">
+                        <p className="whitespace-pre-wrap">{section.description}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {section.imageUrl && (
+                    <div>
+                      <Label className="text-sm font-medium text-muted-foreground">Image</Label>
+                      <div className="mt-2 relative h-48 w-full rounded-lg border overflow-hidden">
+                        <Image
+                          src={section.imageUrl}
+                          alt={section.title || "Section image"}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )
+        })()}
+        
+        <div className="flex items-center justify-between pt-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            Last updated: {new Date(section.updatedAt).toLocaleString()}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className={`h-2 w-2 rounded-full ${section.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+            <span className="text-sm text-muted-foreground">
+              {section.isActive ? 'Published' : 'Draft'}
+            </span>
+          </div>
         </div>
-      </form>
-    </Form>
+      </CardContent>
+    </Card>
   )
 }
