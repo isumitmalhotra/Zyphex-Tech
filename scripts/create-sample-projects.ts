@@ -1,6 +1,6 @@
-import { PrismaClient, Status } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function createSampleProjects() {
   try {
@@ -68,7 +68,7 @@ async function createSampleProjects() {
         {
           name: 'E-commerce Platform Development',
           description: 'Complete e-commerce solution with payment integration, inventory management, and customer portal.',
-          status: Status.IN_PROGRESS,
+          status: 'IN_PROGRESS' as const,
           budget: 15000,
           startDate: new Date('2024-10-01'),
           endDate: new Date('2024-12-31'),
@@ -80,7 +80,7 @@ async function createSampleProjects() {
         {
           name: 'Mobile App Development',
           description: 'Cross-platform mobile application for iOS and Android with real-time features.',
-          status: Status.REVIEW,
+          status: 'REVIEW' as const,
           budget: 25000,
           startDate: new Date('2024-09-15'),
           endDate: new Date('2025-01-15'),
@@ -92,7 +92,7 @@ async function createSampleProjects() {
         {
           name: 'Corporate Website Redesign',
           description: 'Modern, responsive website redesign with CMS integration and SEO optimization.',
-          status: Status.PLANNING,
+          status: 'PLANNING' as const,
           budget: 8000,
           startDate: new Date('2025-01-01'),
           endDate: new Date('2025-03-31'),
@@ -104,7 +104,7 @@ async function createSampleProjects() {
         {
           name: 'API Integration Project',
           description: 'Integration of third-party APIs and development of custom REST endpoints.',
-          status: Status.COMPLETED,
+          status: 'COMPLETED' as const,
           budget: 5000,
           startDate: new Date('2024-08-01'),
           endDate: new Date('2024-09-30'),

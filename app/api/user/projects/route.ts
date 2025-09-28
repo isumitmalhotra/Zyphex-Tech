@@ -89,7 +89,7 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json(projects)
+    return NextResponse.json({ projects })
   } catch (error) {
     console.error("Fetch projects error:", error)
     return NextResponse.json(

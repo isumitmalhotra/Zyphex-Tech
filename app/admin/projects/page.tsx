@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -23,111 +25,96 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Search, Filter, MoreHorizontal, Calendar, Users, Eye, Edit, Trash2 } from "lucide-react"
+import { Plus, Search, Filter, MoreHorizontal, Calendar, Users, Eye, Edit, Trash2, RefreshCw, AlertCircle } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
+import { useAdminProjects } from "@/hooks/use-admin-data"
+import { CreateProjectDialog } from "@/components/admin/create-project-dialog"
+import { useState } from "react"
 
 export default function ProjectsPage() {
-  const projects = [
-    {
-      id: "PRJ-001",
-      name: "E-commerce Platform Redesign",
-      client: "TechStart Inc.",
-      status: "In Progress",
-      priority: "High",
-      progress: 75,
-      budget: "$45,000",
-      spent: "$33,750",
-      startDate: "Nov 15, 2024",
-      dueDate: "Dec 30, 2024",
-      team: ["John D.", "Sarah M.", "Mike R."],
-      type: "Web Development",
-    },
-    {
-      id: "PRJ-002",
-      name: "Mobile App Development",
-      client: "RetailMax",
-      status: "Review",
-      priority: "Medium",
-      progress: 90,
-      budget: "$32,000",
-      spent: "$28,800",
-      startDate: "Oct 20, 2024",
-      dueDate: "Jan 15, 2025",
-      team: ["Alice K.", "Bob L."],
-      type: "Mobile Development",
-    },
-    {
-      id: "PRJ-003",
-      name: "Cloud Infrastructure Migration",
-      client: "DataFlow Solutions",
-      status: "Planning",
-      priority: "High",
-      progress: 25,
-      budget: "$78,000",
-      spent: "$19,500",
-      startDate: "Dec 1, 2024",
-      dueDate: "Feb 28, 2025",
-      team: ["David W.", "Emma T.", "Frank H.", "Grace P."],
-      type: "Cloud Solutions",
-    },
-    {
-      id: "PRJ-004",
-      name: "Analytics Dashboard",
-      client: "FinanceHub",
-      status: "Completed",
-      priority: "Low",
-      progress: 100,
-      budget: "$25,000",
-      spent: "$24,200",
-      startDate: "Sep 10, 2024",
-      dueDate: "Dec 15, 2024",
-      team: ["Helen C.", "Ivan S."],
-      type: "Data Analytics",
-    },
-    {
-      id: "PRJ-005",
-      name: "Security Audit & Implementation",
-      client: "SecureBank",
-      status: "On Hold",
-      priority: "High",
-      progress: 40,
-      budget: "$55,000",
-      spent: "$22,000",
-      startDate: "Nov 1, 2024",
-      dueDate: "Jan 30, 2025",
-      team: ["Jack M.", "Kate N."],
-      type: "Security",
-    },
-  ]
+  const { projects, isLoading, error, mutate } = useAdminProjects()
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+
+  // Filter projects based on search and status
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         project.client.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === "all" || project.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return "bg-green-500/20 text-green-400 border-green-500/30"
-      case "In Progress":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/30"
-      case "Review":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-      case "Planning":
-        return "bg-purple-500/20 text-purple-400 border-purple-500/30"
-      case "On Hold":
-        return "bg-red-500/20 text-red-400 border-red-500/30"
-      default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
+    switch (status.toLowerCase()) {
+      case 'completed': return 'bg-green-500'
+      case 'in_progress': return 'bg-blue-500'
+      case 'review': return 'bg-yellow-500'
+      case 'planning': return 'bg-gray-500'
+      case 'on_hold': return 'bg-orange-500'
+      case 'cancelled': return 'bg-red-500'
+      default: return 'bg-gray-500'
     }
   }
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "High":
-        return "bg-red-500/20 text-red-400 border-red-500/30"
-      case "Medium":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-      case "Low":
-        return "bg-green-500/20 text-green-400 border-green-500/30"
-      default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
+    switch (priority.toLowerCase()) {
+      case 'urgent': return 'destructive'
+      case 'high': return 'destructive'
+      case 'medium': return 'default'
+      case 'low': return 'secondary'
+      default: return 'secondary'
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <SubtleBackground />
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <Card className="zyphex-card">
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <SubtleBackground />
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <Alert className="border-red-500">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load projects. Please try again.
+              <Button onClick={() => mutate()} variant="outline" size="sm" className="ml-2">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -160,10 +147,7 @@ export default function ProjectsPage() {
             <h1 className="text-3xl font-bold zyphex-heading">Project Management</h1>
             <p className="zyphex-subheading">Manage and track all your active projects and their progress.</p>
           </div>
-          <Button className="zyphex-button-primary hover-zyphex-lift">
-            <Plus className="mr-2 h-4 w-4" />
-            New Project
-          </Button>
+          <CreateProjectDialog onProjectCreated={() => mutate()} />
         </div>
 
         {/* Filters and Search */}
@@ -174,6 +158,8 @@ export default function ProjectsPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Search projects..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 zyphex-glass-effect border-gray-600 focus:border-blue-400"
                 />
               </div>
@@ -209,50 +195,54 @@ export default function ProjectsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {projects.map((project) => (
+                {filteredProjects.map((project) => (
                   <TableRow key={project.id} className="border-gray-700 hover:bg-gray-800/50">
                     <TableCell>
                       <div className="space-y-1">
                         <div className="font-medium zyphex-heading">{project.name}</div>
                         <div className="text-xs zyphex-subheading">
-                          {project.id} • {project.type}
+                          {project.id} • {project.description || 'No description'}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="zyphex-subheading">{project.client}</TableCell>
+                    <TableCell className="zyphex-subheading">{project.client.name}</TableCell>
                     <TableCell>
                       <Badge className={`${getStatusColor(project.status)} border`}>{project.status}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge className={`${getPriorityColor(project.priority)} border`}>{project.priority}</Badge>
+                      <Badge variant={getPriorityColor(project.priority)}>{project.priority}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <div className="w-16 h-2 bg-gray-700 rounded-full overflow-hidden">
                           <div
                             className="h-full zyphex-gradient-primary transition-all duration-300"
-                            style={{ width: `${project.progress}%` }}
+                            style={{ width: `${project.completionRate}%` }}
                           ></div>
                         </div>
-                        <span className="text-xs zyphex-subheading">{project.progress}%</span>
+                        <span className="text-xs zyphex-subheading">{project.completionRate}%</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <div className="text-sm zyphex-heading">{project.budget}</div>
-                        <div className="text-xs zyphex-subheading">Spent: {project.spent}</div>
+                        <div className="text-sm zyphex-heading">
+                          {project.budget ? `$${project.budget.toLocaleString()}` : 'No budget'}
+                        </div>
+                        <div className="text-xs zyphex-subheading">
+                          Spent: {project.budgetUsed ? `$${project.budgetUsed.toLocaleString()}` : '$0'}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-1 text-sm zyphex-subheading">
                         <Calendar className="h-3 w-3" />
-                        <span>{project.dueDate}</span>
+                        <span>{project.endDate ? new Date(project.endDate).toLocaleDateString() : 'No due date'}</span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-1">
                         <Users className="h-3 w-3 zyphex-accent-text" />
-                        <span className="text-xs zyphex-subheading">{project.team.length} members</span>
+                        <span className="text-xs zyphex-subheading">{project.users.length} members</span>
                       </div>
                     </TableCell>
                     <TableCell>

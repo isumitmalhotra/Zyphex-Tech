@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
@@ -11,24 +11,28 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const tasks = await prisma.task.findMany({
+    const invoices = await prisma.invoice.findMany({
       where: {
-        OR: [
-          { assigneeId: session.user.id },
-          { createdBy: session.user.id },
-          { project: { users: { some: { id: session.user.id } } } }
-        ]
+        project: {
+          users: {
+            some: { id: session.user.id }
+          }
+        }
       },
       include: {
-        project: { include: { client: true } },
-        assignee: { select: { id: true, name: true, email: true } }
+        client: true,
+        project: {
+          include: {
+            users: { select: { id: true, name: true, email: true } }
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     })
 
-    return NextResponse.json({ tasks })
+    return NextResponse.json({ invoices })
   } catch (error) {
-    console.error('Error fetching tasks:', error)
+    console.error('Error fetching invoices:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

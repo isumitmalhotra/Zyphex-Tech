@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -91,7 +91,7 @@ const VIEW_MODES = [
   { value: 'list', label: 'List View', icon: List }
 ]
 
-export default function MediaLibraryPage() {
+function MediaLibraryContent() {
   const searchParams = useSearchParams()
   const selectMode = searchParams.get('select') === 'true'
   const callback = searchParams.get('callback')
@@ -781,5 +781,13 @@ function MediaAssetCard({
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+export default function MediaLibraryPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <MediaLibraryContent />
+    </Suspense>
   )
 }

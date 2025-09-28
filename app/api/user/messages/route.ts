@@ -19,51 +19,33 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Mock messages data for testing (in real app you'd have a Message model)
-    const messages = [
-      {
-        id: '1',
-        subject: 'Project Update: E-commerce Platform',
-        content: 'Hi! I wanted to update you on the progress of your e-commerce platform project.',
-        senderId: 'team-member-1',
-        recipientId: user.id,
-        projectId: '1',
-        createdAt: '2024-09-24T10:30:00Z',
-        read: false,
-        from: {
-          name: 'John Smith',
-          email: 'john@zyphextech.com'
+    // Get real messages from database
+    const messages = await prisma.message.findMany({
+      where: {
+        receiverId: user.id
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true
+          }
         }
       },
-      {
-        id: '2',
-        subject: 'Invoice Ready for Review',
-        content: 'Your invoice for the second phase of development is ready for review.',
-        senderId: 'billing-team',
-        recipientId: user.id,
-        createdAt: '2024-09-23T14:20:00Z',
-        read: false,
-        from: {
-          name: 'Sarah Johnson',
-          email: 'billing@zyphextech.com'
-        }
-      },
-      {
-        id: '3',
-        subject: 'Welcome to Zyphex Tech!',
-        content: 'Welcome to Zyphex Tech! We are excited to work with you.',
-        senderId: 'support-team',
-        recipientId: user.id,
-        createdAt: '2024-09-20T09:00:00Z',
-        read: true,
-        from: {
-          name: 'Support Team',
-          email: 'support@zyphextech.com'
-        }
+      orderBy: {
+        createdAt: 'desc'
       }
-    ]
+    })
 
-    const unreadCount = messages.filter(m => !m.read).length
+    const unreadCount = messages.filter(m => !m.readAt).length
 
     return NextResponse.json({
       messages,

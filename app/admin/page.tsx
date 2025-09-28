@@ -1,10 +1,12 @@
-"use client"
+﻿"use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -24,105 +26,103 @@ import {
   Clock,
   CheckCircle,
   ArrowRight,
+  RefreshCw,
+  AlertCircle,
 } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 import { Icon3D } from "@/components/3d-icons"
+import { useAdminDashboard } from "@/hooks/use-admin-dashboard"
 
 export default function AdminDashboard() {
+  const { data, error, isLoading, mutate } = useAdminDashboard()
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <SubtleBackground />
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="zyphex-card">
+                <CardHeader>
+                  <Skeleton className="h-4 w-24" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-8 w-16 mb-2" />
+                  <Skeleton className="h-3 w-32" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <SubtleBackground />
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <Alert className="border-red-500">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to load dashboard data. Please try again.
+              <Button onClick={() => mutate()} variant="outline" size="sm" className="ml-2">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    )
+  }
+
+  if (!data) {
+    return null
+  }
+
+  const { overview, recentProjects, recentActivities } = data
+
   const stats = [
     {
       title: "Total Revenue",
-      value: "$124,500",
-      change: "+12.5%",
-      trend: "up",
+      value: overview.totalRevenue ? `$${overview.totalRevenue.toLocaleString()}` : "$0",
+      change: overview.revenueChange ? `${overview.revenueChange > 0 ? '+' : ''}${overview.revenueChange.toFixed(1)}%` : "0%",
+      trend: overview.revenueChange >= 0 ? "up" : "down",
       icon: "DollarSign",
       description: "From last month",
     },
     {
       title: "Active Projects",
-      value: "23",
-      change: "+3",
+      value: overview.activeProjects.toString(),
+      change: `+${overview.activeProjects}`,
       trend: "up",
       icon: "Briefcase",
       description: "Currently in progress",
     },
     {
       title: "Total Clients",
-      value: "156",
-      change: "+8",
+      value: overview.totalClients.toString(),
+      change: `${overview.totalClients} total`,
       trend: "up",
       icon: "Users",
       description: "Active client base",
     },
     {
       title: "Completion Rate",
-      value: "94.2%",
-      change: "-2.1%",
-      trend: "down",
+      value: `${overview.projectCompletionRate.toFixed(1)}%`,
+      change: `${overview.completedProjects}/${overview.totalProjects}`,
+      trend: overview.projectCompletionRate >= 80 ? "up" : "down",
       icon: "BarChart3",
       description: "Project success rate",
-    },
-  ]
-
-  const recentProjects = [
-    {
-      name: "E-commerce Platform",
-      client: "TechStart Inc.",
-      status: "In Progress",
-      progress: 75,
-      dueDate: "Dec 30, 2024",
-      priority: "High",
-    },
-    {
-      name: "Mobile App Development",
-      client: "RetailMax",
-      status: "Review",
-      progress: 90,
-      dueDate: "Jan 15, 2025",
-      priority: "Medium",
-    },
-    {
-      name: "Cloud Migration",
-      client: "DataFlow Solutions",
-      status: "Planning",
-      progress: 25,
-      dueDate: "Feb 28, 2025",
-      priority: "High",
-    },
-    {
-      name: "Analytics Dashboard",
-      client: "FinanceHub",
-      status: "Completed",
-      progress: 100,
-      dueDate: "Dec 15, 2024",
-      priority: "Low",
-    },
-  ]
-
-  const recentActivities = [
-    {
-      action: "New project proposal submitted",
-      client: "TechVision Corp",
-      time: "2 hours ago",
-      type: "proposal",
-    },
-    {
-      action: "Payment received",
-      client: "RetailMax",
-      time: "4 hours ago",
-      type: "payment",
-    },
-    {
-      action: "Project milestone completed",
-      client: "DataFlow Solutions",
-      time: "6 hours ago",
-      type: "milestone",
-    },
-    {
-      action: "New client onboarded",
-      client: "StartupXYZ",
-      time: "1 day ago",
-      type: "client",
     },
   ]
 
@@ -207,26 +207,17 @@ export default function AdminDashboard() {
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2">
                         <h4 className="font-medium zyphex-heading">{project.name}</h4>
-                        <Badge
-                          variant={
-                            project.priority === "High"
-                              ? "destructive"
-                              : project.priority === "Medium"
-                                ? "default"
-                                : "secondary"
-                          }
-                          className="text-xs"
-                        >
-                          {project.priority}
-                        </Badge>
                       </div>
-                      <p className="text-sm zyphex-subheading">{project.client}</p>
+                      <p className="text-sm zyphex-subheading">{project.client?.name || 'No client'}</p>
                       <div className="flex items-center space-x-4 text-xs zyphex-subheading">
                         <span className="flex items-center">
                           <Calendar className="mr-1 h-3 w-3" />
-                          {project.dueDate}
+                          {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'No due date'}
                         </span>
-                        <span>{project.progress}% complete</span>
+                        <span className="flex items-center">
+                          <DollarSign className="mr-1 h-3 w-3" />
+                          {project.budget ? `$${project.budget.toLocaleString()}` : 'No budget'}
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -267,10 +258,10 @@ export default function AdminDashboard() {
                     <div className="w-2 h-2 rounded-full zyphex-gradient-primary mt-2 animate-zyphex-glow"></div>
                     <div className="space-y-1 flex-1">
                       <p className="text-sm font-medium zyphex-heading">{activity.action}</p>
-                      <p className="text-xs zyphex-subheading">{activity.client}</p>
+                      <p className="text-xs zyphex-subheading">{activity.user?.name || activity.user?.email || 'Unknown user'}</p>
                       <p className="text-xs zyphex-subheading flex items-center">
                         <Clock className="mr-1 h-3 w-3" />
-                        {activity.time}
+                        {new Date(activity.createdAt).toLocaleString()}
                       </p>
                     </div>
                   </div>

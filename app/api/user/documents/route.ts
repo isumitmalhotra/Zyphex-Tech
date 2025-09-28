@@ -19,52 +19,36 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Mock documents data - in real app, you'd have a Document model
-    const mockDocuments = [
-      {
-        id: "1",
-        name: "Project Requirements.pdf",
-        size: "2.4 MB",
-        type: "pdf",
-        category: "requirements",
-        uploadedAt: "2025-09-15T10:30:00Z",
-        projectId: "1",
-        projectName: "E-commerce Website"
+    // Get real documents from database
+    const documents = await prisma.document.findMany({
+      where: {
+        OR: [
+          { userId: user.id },
+          { project: { users: { some: { id: user.id } } } }
+        ]
       },
-      {
-        id: "2",
-        name: "Design Mockups.figma",
-        size: "15.2 MB", 
-        type: "design",
-        category: "design",
-        uploadedAt: "2025-09-18T14:20:00Z",
-        projectId: "1",
-        projectName: "E-commerce Website"
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        project: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
       },
-      {
-        id: "3",
-        name: "Contract Agreement.pdf",
-        size: "1.8 MB",
-        type: "pdf", 
-        category: "contracts",
-        uploadedAt: "2025-09-10T09:15:00Z",
-        projectId: "2",
-        projectName: "Mobile App Development"
-      },
-      {
-        id: "4",
-        name: "API Documentation.md",
-        size: "856 KB",
-        type: "document",
-        category: "documentation",
-        uploadedAt: "2025-09-20T16:45:00Z",
-        projectId: "2",
-        projectName: "Mobile App Development"
+      orderBy: {
+        createdAt: 'desc'
       }
-    ]
+    })
 
     return NextResponse.json({
-      documents: mockDocuments,
+      documents,
       success: true
     })
 

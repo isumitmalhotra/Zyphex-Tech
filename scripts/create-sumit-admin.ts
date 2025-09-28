@@ -7,13 +7,13 @@ async function createSumitAdmin() {
     
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: 'sumit.malhotra@zyphextech.com' }
+      where: { email: 'sumitmalhotra@zyphextech.com' }
     })
 
     if (existingUser) {
       console.log('⚠️ User already exists, deleting first...')
       await prisma.user.delete({
-        where: { email: 'sumit.malhotra@zyphextech.com' }
+        where: { email: 'sumitmalhotra@zyphextech.com' }
       })
       console.log('✅ Deleted existing user')
     }
@@ -24,7 +24,7 @@ async function createSumitAdmin() {
 
     const admin = await prisma.user.create({
       data: {
-        email: 'sumit.malhotra@zyphextech.com',
+        email: 'sumitmalhotra@zyphextech.com',
         name: 'Sumit Malhotra',
         password: hashedPassword,
         role: 'ADMIN',
@@ -40,11 +40,11 @@ async function createSumitAdmin() {
     console.log('🆔 ID:', admin.id)
     
     console.log('\n=== Login Instructions ===')
-    console.log('1. Go to: http://localhost:3000/login')
+    console.log('1. Go to: http://localhost:3001/login (dev server running on 3001)')
     console.log('2. Use credentials login (not social login)')
-    console.log('3. Email: sumit.malhotra@zyphextech.com')
+    console.log('3. Email: sumitmalhotra@zyphextech.com')
     console.log('4. Password: Sumit@001')
-    console.log('5. Access admin panel at: http://localhost:3000/admin')
+    console.log('5. Access admin panel at: http://localhost:3001/admin')
     
     // List all admin users
     console.log('\n=== All Admin Users ===')
