@@ -44,6 +44,7 @@ export interface ContentFieldValidation {
   pattern?: string
   customMessage?: string
   unique?: boolean
+  options?: string[]
 }
 
 // Options for select, radio, and checkbox fields
@@ -112,6 +113,8 @@ export interface ContentField {
   label: string
   type: ContentFieldType
   description?: string
+  placeholder?: string
+  required?: boolean
   defaultValue?: FieldValue
   validation?: ContentFieldValidation
   config?: ContentFieldConfig

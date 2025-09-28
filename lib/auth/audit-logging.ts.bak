@@ -1,0 +1,455 @@
+import { prisma } from '@/lib/prisma'import { prisma } from '@/lib/prisma'
+
+
+
+export interface AuditEvent {export enum AuditEvent {
+
+  id?: string  // Authentication Events
+
+  userId?: string  USER_LOGIN = 'USER_LOGIN',
+
+  action: string  USER_LOGOUT = 'USER_LOGOUT',
+
+  resource: string  LOGIN_FAILED = 'LOGIN_FAILED',
+
+  resourceId?: string  PASSWORD_CHANGED = 'PASSWORD_CHANGED',
+
+  details?: Record<string, any>  PASSWORD_RESET_REQUESTED = 'PASSWORD_RESET_REQUESTED',
+
+  ipAddress?: string  PASSWORD_RESET_COMPLETED = 'PASSWORD_RESET_COMPLETED',
+
+  userAgent?: string  EMAIL_VERIFIED = 'EMAIL_VERIFIED',
+
+  timestamp?: Date
+
+}  // Authorization Events
+
+  ACCESS_DENIED = 'ACCESS_DENIED',
+
+export async function logAuthEvent(event: AuditEvent): Promise<void> {  ROLE_CHANGED = 'ROLE_CHANGED',
+
+  try {  PERMISSION_GRANTED = 'PERMISSION_GRANTED',
+
+    await prisma.auditLog.create({  PERMISSION_REVOKED = 'PERMISSION_REVOKED',
+
+      data: {
+
+        userId: event.userId,  // User Management Events
+
+        action: event.action,  USER_CREATED = 'USER_CREATED',
+
+        resource: event.resource,  USER_UPDATED = 'USER_UPDATED',
+
+        resourceId: event.resourceId,  USER_DELETED = 'USER_DELETED',
+
+        details: event.details ? JSON.stringify(event.details) : null,  USER_SUSPENDED = 'USER_SUSPENDED',
+
+        ipAddress: event.ipAddress,  USER_REACTIVATED = 'USER_REACTIVATED',
+
+        userAgent: event.userAgent,
+
+        timestamp: event.timestamp || new Date(),  // Project Events
+
+      },  PROJECT_CREATED = 'PROJECT_CREATED',
+
+    })  PROJECT_UPDATED = 'PROJECT_UPDATED',
+
+  } catch (error) {  PROJECT_DELETED = 'PROJECT_DELETED',
+
+    console.error('Failed to log audit event:', error)  PROJECT_MEMBER_ADDED = 'PROJECT_MEMBER_ADDED',
+
+  }  PROJECT_MEMBER_REMOVED = 'PROJECT_MEMBER_REMOVED',
+
+}
+
+  // Client Events
+
+export async function logUserAction(  CLIENT_CREATED = 'CLIENT_CREATED',
+
+  userId: string,  CLIENT_UPDATED = 'CLIENT_UPDATED',
+
+  action: string,  CLIENT_DELETED = 'CLIENT_DELETED',
+
+  resource: string,
+
+  resourceId?: string,  // Task Events
+
+  details?: Record<string, any>  TASK_CREATED = 'TASK_CREATED',
+
+): Promise<void> {  TASK_UPDATED = 'TASK_UPDATED',
+
+  await logAuthEvent({  TASK_DELETED = 'TASK_DELETED',
+
+    userId,  TASK_ASSIGNED = 'TASK_ASSIGNED',
+
+    action,  TASK_STATUS_CHANGED = 'TASK_STATUS_CHANGED',
+
+    resource,
+
+    resourceId,  // Document Events
+
+    details,  DOCUMENT_UPLOADED = 'DOCUMENT_UPLOADED',
+
+  })  DOCUMENT_DOWNLOADED = 'DOCUMENT_DOWNLOADED',
+
+}  DOCUMENT_DELETED = 'DOCUMENT_DELETED',
+
+  DOCUMENT_SHARED = 'DOCUMENT_SHARED',
+
+export async function getAuditLogs(
+
+  filters?: {  // Financial Events
+
+    userId?: string  INVOICE_CREATED = 'INVOICE_CREATED',
+
+    action?: string  INVOICE_UPDATED = 'INVOICE_UPDATED',
+
+    resource?: string  INVOICE_DELETED = 'INVOICE_DELETED',
+
+    startDate?: Date  INVOICE_SENT = 'INVOICE_SENT',
+
+    endDate?: Date  PAYMENT_RECEIVED = 'PAYMENT_RECEIVED',
+
+  },
+
+  limit = 100  // System Events
+
+) {  SYSTEM_BACKUP_CREATED = 'SYSTEM_BACKUP_CREATED',
+
+  return prisma.auditLog.findMany({  SYSTEM_BACKUP_RESTORED = 'SYSTEM_BACKUP_RESTORED',
+
+    where: {  SYSTEM_SETTINGS_CHANGED = 'SYSTEM_SETTINGS_CHANGED',
+
+      ...(filters?.userId && { userId: filters.userId }),  DATA_EXPORTED = 'DATA_EXPORTED',
+
+      ...(filters?.action && { action: filters.action }),  DATA_IMPORTED = 'DATA_IMPORTED',
+
+      ...(filters?.resource && { resource: filters.resource }),
+
+      ...(filters?.startDate && { timestamp: { gte: filters.startDate } }),  // Security Events
+
+      ...(filters?.endDate && { timestamp: { lte: filters.endDate } }),  SUSPICIOUS_ACTIVITY_DETECTED = 'SUSPICIOUS_ACTIVITY_DETECTED',
+
+    },  MULTIPLE_LOGIN_ATTEMPTS = 'MULTIPLE_LOGIN_ATTEMPTS',
+
+    orderBy: {  IP_ADDRESS_BLOCKED = 'IP_ADDRESS_BLOCKED',
+
+      timestamp: 'desc',  API_RATE_LIMIT_EXCEEDED = 'API_RATE_LIMIT_EXCEEDED'
+
+    },}
+
+    take: limit,
+
+    include: {export interface AuditLogData {
+
+      user: {  userId?: string
+
+        select: {  event: AuditEvent
+
+          id: true,  entityType?: 'User' | 'Project' | 'Client' | 'Task' | 'Document' | 'Invoice' | 'System'
+
+          name: true,  entityId?: string
+
+          email: true,  entityTitle?: string
+
+        },  description: string
+
+      },  metadata?: Record<string, string | number | boolean | null>
+
+    },  ipAddress?: string
+
+  })  userAgent?: string
+
+}  success?: boolean
+  error?: string
+}
+
+/**
+ * Create an audit log entry
+ */
+export async function createAuditLog(data: AuditLogData): Promise<void> {
+  try {
+    await prisma.activityLog.create({
+      data: {
+        userId: data.userId || '',
+        action: data.event,
+        entityType: data.entityType || 'System',
+        entityId: data.entityId || '',
+        entityTitle: data.entityTitle || '',
+        changes: data.description,
+        metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent
+      }
+    })
+  } catch (error) {
+    // Log audit errors but don't throw to avoid disrupting main functionality
+    console.error('Failed to create audit log:', error)
+  }
+}
+
+/**
+ * Log authentication events
+ */
+export async function logAuthEvent(
+  event: AuditEvent.USER_LOGIN | AuditEvent.USER_LOGOUT | AuditEvent.LOGIN_FAILED,
+  userId: string | null,
+  ipAddress: string,
+  userAgent: string,
+  success: boolean = true,
+  error?: string
+): Promise<void> {
+  await createAuditLog({
+    userId: userId || undefined,
+    event,
+    description: `User ${event.toLowerCase().replace('_', ' ')}`,
+    ipAddress,
+    userAgent,
+    success,
+    error
+  })
+}
+
+/**
+ * Log authorization failures
+ */
+export async function logAccessDenied(
+  userId: string,
+  resource: string,
+  requiredPermissions: string[],
+  ipAddress: string,
+  userAgent: string
+): Promise<void> {
+  await createAuditLog({
+    userId,
+    event: AuditEvent.ACCESS_DENIED,
+    description: `Access denied to ${resource}`,
+    metadata: {
+      resource,
+      requiredPermissions: requiredPermissions.join(','),
+      timestamp: new Date().toISOString()
+    },
+    ipAddress,
+    userAgent,
+    success: false
+  })
+}
+
+/**
+ * Log user management events
+ */
+export async function logUserEvent(
+  event: AuditEvent.USER_CREATED | AuditEvent.USER_UPDATED | AuditEvent.USER_DELETED | AuditEvent.ROLE_CHANGED,
+  performedBy: string,
+  targetUserId: string,
+  targetUserEmail: string,
+  changes?: Record<string, string | number | boolean | null>,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<void> {
+  await createAuditLog({
+    userId: performedBy,
+    event,
+    entityType: 'User',
+    entityId: targetUserId,
+    entityTitle: targetUserEmail,
+    description: `User ${event.toLowerCase().replace('_', ' ')}: ${targetUserEmail}`,
+    metadata: changes ? {
+      changesJson: JSON.stringify(changes),
+      timestamp: new Date().toISOString()
+    } : undefined,
+    ipAddress,
+    userAgent
+  })
+}
+
+/**
+ * Log project events
+ */
+export async function logProjectEvent(
+  event: AuditEvent.PROJECT_CREATED | AuditEvent.PROJECT_UPDATED | AuditEvent.PROJECT_DELETED,
+  userId: string,
+  projectId: string,
+  projectTitle: string,
+  changes?: Record<string, string | number | boolean | null>,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<void> {
+  await createAuditLog({
+    userId,
+    event,
+    entityType: 'Project',
+    entityId: projectId,
+    entityTitle: projectTitle,
+    description: `Project ${event.toLowerCase().replace('_', ' ')}: ${projectTitle}`,
+    metadata: changes ? {
+      changesJson: JSON.stringify(changes),
+      timestamp: new Date().toISOString()
+    } : undefined,
+    ipAddress,
+    userAgent
+  })
+}
+
+/**
+ * Log client events
+ */
+export async function logClientEvent(
+  event: AuditEvent.CLIENT_CREATED | AuditEvent.CLIENT_UPDATED | AuditEvent.CLIENT_DELETED,
+  userId: string,
+  clientId: string,
+  clientName: string,
+  changes?: Record<string, string | number | boolean | null>,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<void> {
+  await createAuditLog({
+    userId,
+    event,
+    entityType: 'Client',
+    entityId: clientId,
+    entityTitle: clientName,
+    description: `Client ${event.toLowerCase().replace('_', ' ')}: ${clientName}`,
+    metadata: changes ? {
+      changesJson: JSON.stringify(changes),
+      timestamp: new Date().toISOString()
+    } : undefined,
+    ipAddress,
+    userAgent
+  })
+}
+
+/**
+ * Log financial events
+ */
+export async function logFinancialEvent(
+  event: AuditEvent.INVOICE_CREATED | AuditEvent.INVOICE_UPDATED | AuditEvent.INVOICE_DELETED | AuditEvent.PAYMENT_RECEIVED,
+  userId: string,
+  invoiceId: string,
+  invoiceNumber: string,
+  amount?: number,
+  currency?: string,
+  ipAddress?: string,
+  userAgent?: string
+): Promise<void> {
+  await createAuditLog({
+    userId,
+    event,
+    entityType: 'Invoice',
+    entityId: invoiceId,
+    entityTitle: invoiceNumber,
+    description: `Invoice ${event.toLowerCase().replace('_', ' ')}: ${invoiceNumber}`,
+    metadata: amount && currency ? {
+      amount,
+      currency,
+      timestamp: new Date().toISOString()
+    } : undefined,
+    ipAddress,
+    userAgent
+  })
+}
+
+/**
+ * Log security events
+ */
+export async function logSecurityEvent(
+  event: AuditEvent.SUSPICIOUS_ACTIVITY_DETECTED | AuditEvent.MULTIPLE_LOGIN_ATTEMPTS | AuditEvent.IP_ADDRESS_BLOCKED,
+  userId: string | null,
+  description: string,
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL',
+  ipAddress: string,
+  userAgent?: string,
+  metadata?: Record<string, string | number | boolean | null>
+): Promise<void> {
+  await createAuditLog({
+    userId: userId || undefined,
+    event,
+    description,
+    metadata: {
+      severity,
+      timestamp: new Date().toISOString(),
+      ...metadata
+    },
+    ipAddress,
+    userAgent,
+    success: false
+  })
+}
+
+/**
+ * Get audit logs with filtering and pagination
+ */
+export async function getAuditLogs(options: {
+  userId?: string
+  event?: AuditEvent
+  entityType?: string
+  entityId?: string
+  startDate?: Date
+  endDate?: Date
+  ipAddress?: string
+  success?: boolean
+  page?: number
+  limit?: number
+  orderBy?: 'timestamp' | 'event' | 'userId'
+  orderDirection?: 'asc' | 'desc'
+}) {
+  const {
+    userId,
+    event,
+    entityType,
+    entityId,
+    startDate,
+    endDate,
+    ipAddress,
+    page = 1,
+    limit = 50,
+    orderBy = 'timestamp',
+    orderDirection = 'desc'
+  } = options
+
+  const skip = (page - 1) * limit
+
+  const where = {
+    ...(userId && { userId }),
+    ...(event && { action: event }),
+    ...(entityType && { entityType }),
+    ...(entityId && { entityId }),
+    ...(ipAddress && { ipAddress }),
+    ...(startDate || endDate ? {
+      timestamp: {
+        ...(startDate && { gte: startDate }),
+        ...(endDate && { lte: endDate })
+      }
+    } : {})
+  }
+
+  const [logs, total] = await Promise.all([
+    prisma.activityLog.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
+      },
+      orderBy: {
+        [orderBy]: orderDirection
+      },
+      skip,
+      take: limit
+    }),
+    prisma.activityLog.count({ where })
+  ])
+
+  return {
+    logs,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit)
+  }
+}

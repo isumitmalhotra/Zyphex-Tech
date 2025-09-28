@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -19,39 +19,91 @@ model User {
   role          Role      @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // Soft delete capability
+  
+  // Existing relations
   projects      Project[]
   teams         Team[]
   accounts      Account[]
   sessions      Session[]
   emailVerified DateTime?
   image         String?
+  
+  // New relations for IT Services Platform
+  timeEntries       TimeEntry[]
+  assignedTasks     Task[] @relation("TaskAssignee")
+  createdTasks      Task[] @relation("TaskCreator")
+  activityLogs      ActivityLog[]
+  sentMessages      Message[] @relation("MessageSender")
+  receivedMessages  Message[] @relation("MessageReceiver")
+  documents         Document[]
+  teamMemberships   TeamMember[]
+  contactLogs       ContactLog[]
+  resourceProfile   ResourceProfile?
+  
+  @@index([email])
+  @@index([role])
+  @@index([deletedAt])
 }
 
 model Client {
-  id        String    @id @default(uuid())
-  name      String
-  email     String    @unique
-  phone     String?
-  address   String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  projects  Project[]
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @unique
+  phone       String?
+  address     String?
+  company     String?
+  website     String?
+  timezone    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Soft delete capability
+  
+  // Relations
+  projects    Project[]
+  invoices    Invoice[]
+  contactLogs ContactLog[]
+  
+  @@index([email])
+  @@index([name])
+  @@index([deletedAt])
 }
 
 model Project {
-  id          String    @id @default(uuid())
-  name        String
-  description String?
-  status      Status    @default(PLANNING)
-  budget      Float?
-  startDate   DateTime?
-  endDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  clientId    String
-  client      Client    @relation(fields: [clientId], references: [id])
-  users       User[]
-  teams       Team[]
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  status          ProjectStatus @default(PLANNING)
+  priority        Priority  @default(MEDIUM)
+  budget          Decimal?  @db.Decimal(12, 2)
+  budgetUsed      Decimal?  @db.Decimal(12, 2) @default(0)
+  hourlyRate      Decimal?  @db.Decimal(8, 2)
+  startDate       DateTime?
+  endDate         DateTime?
+  estimatedHours  Int?
+  actualHours     Int?
+  completionRate  Int       @default(0) // Percentage
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime? // Soft delete capability
+  
+  // Relations
+  clientId        String
+  client          Client    @relation(fields: [clientId], references: [id])
+  users           User[]
+  teams           Team[]
+  tasks           Task[]
+  timeEntries     TimeEntry[]
+  invoices        Invoice[]
+  messages        Message[]
+  documents       Document[]
+  teamMembers     TeamMember[]
+  
+  @@index([clientId])
+  @@index([status])
+  @@index([priority])
+  @@index([startDate, endDate])
+  @@index([deletedAt])
 }
 
 model Team {
@@ -60,22 +112,414 @@ model Team {
   description String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime? // Soft delete capability
   users       User[]
   projects    Project[]
+  teamMembers TeamMember[]
+  
+  @@index([name])
+  @@index([deletedAt])
 }
 
+// IT Services Platform Models
+model TimeEntry {
+  id          String    @id @default(uuid())
+  userId      String
+  taskId      String?
+  projectId   String?
+  hours       Decimal   @db.Decimal(5, 2)
+  billable    Boolean   @default(true)
+  date        DateTime
+  description String?
+  rate        Decimal?  @db.Decimal(8, 2)
+  amount      Decimal?  @db.Decimal(10, 2)
+  status      TimeEntryStatus @default(DRAFT)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  user        User      @relation(fields: [userId], references: [id])
+  task        Task?     @relation(fields: [taskId], references: [id])
+  project     Project?  @relation(fields: [projectId], references: [id])
+  
+  @@index([userId])
+  @@index([taskId])
+  @@index([projectId])
+  @@index([date])
+  @@index([billable])
+}
+
+model Invoice {
+  id          String    @id @default(uuid())
+  clientId    String
+  projectId   String?
+  invoiceNumber String  @unique
+  amount      Decimal   @db.Decimal(12, 2)
+  tax         Decimal?  @db.Decimal(12, 2) @default(0)
+  total       Decimal   @db.Decimal(12, 2)
+  status      InvoiceStatus @default(DRAFT)
+  dueDate     DateTime
+  paidAt      DateTime?
+  lineItems   String    // JSON array of line items
+  notes       String?
+  terms       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  client      Client    @relation(fields: [clientId], references: [id])
+  project     Project?  @relation(fields: [projectId], references: [id])
+  
+  @@index([clientId])
+  @@index([projectId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([invoiceNumber])
+}
+
+model Task {
+  id            String    @id @default(uuid())
+  projectId     String
+  assigneeId    String?
+  createdBy     String
+  title         String
+  description   String?
+  status        TaskStatus @default(TODO)
+  priority      Priority  @default(MEDIUM)
+  dueDate       DateTime?
+  startDate     DateTime?
+  completedAt   DateTime?
+  estimatedHours Int?
+  actualHours   Int?
+  dependencies  String?   // JSON array of task IDs
+  tags          String?   // JSON array of tags
+  order         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  project       Project   @relation(fields: [projectId], references: [id])
+  assignee      User?     @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator       User      @relation("TaskCreator", fields: [createdBy], references: [id])
+  timeEntries   TimeEntry[]
+  
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([createdBy])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+}
+
+model ActivityLog {
+  id          String    @id @default(uuid())
+  userId      String
+  action      String    // e.g., 'CREATE', 'UPDATE', 'DELETE'
+  entityType  String    // e.g., 'PROJECT', 'TASK', 'CLIENT'
+  entityId    String
+  changes     String?   // JSON object of changes
+  ipAddress   String?
+  userAgent   String?
+  metadata    String?   // JSON object for additional context
+  createdAt   DateTime  @default(now())
+  
+  // Relations
+  user        User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+model Message {
+  id          String    @id @default(uuid())
+  senderId    String
+  receiverId  String?   // Null for broadcast messages
+  projectId   String?
+  subject     String?
+  content     String
+  messageType MessageType @default(DIRECT)
+  priority    Priority  @default(MEDIUM)
+  readAt      DateTime?
+  parentId    String?   // For threaded messages
+  attachments String?   // JSON array of attachment URLs
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  sender      User      @relation("MessageSender", fields: [senderId], references: [id])
+  receiver    User?     @relation("MessageReceiver", fields: [receiverId], references: [id])
+  project     Project?  @relation(fields: [projectId], references: [id])
+  parent      Message?  @relation("MessageThread", fields: [parentId], references: [id])
+  replies     Message[] @relation("MessageThread")
+  
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([projectId])
+  @@index([createdAt])
+  @@index([readAt])
+}
+
+model Document {
+  id          String    @id @default(uuid())
+  projectId   String?
+  userId      String
+  filename    String
+  originalName String
+  filePath    String
+  fileSize    Int
+  mimeType    String
+  version     Int       @default(1)
+  description String?
+  category    String?   // e.g., 'CONTRACT', 'PROPOSAL', 'DELIVERABLE'
+  isPublic    Boolean   @default(false)
+  downloadCount Int     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  project     Project?  @relation(fields: [projectId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+  
+  @@index([projectId])
+  @@index([userId])
+  @@index([filename])
+  @@index([mimeType])
+  @@index([category])
+}
+
+model TeamMember {
+  id            String    @id @default(uuid())
+  userId        String
+  projectId     String?
+  teamId        String?
+  role          TeamRole  @default(MEMBER)
+  hourlyRate    Decimal?  @db.Decimal(8, 2)
+  allocatedHours Int?
+  capacity      Int?      // Percentage of time allocated
+  startDate     DateTime?
+  endDate       DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id])
+  project       Project?  @relation(fields: [projectId], references: [id])
+  team          Team?     @relation(fields: [teamId], references: [id])
+  
+  @@unique([userId, projectId])
+  @@unique([userId, teamId])
+  @@index([userId])
+  @@index([projectId])
+  @@index([teamId])
+  @@index([role])
+}
+
+model Lead {
+  id          String    @id @default(uuid())
+  companyName String
+  contactName String
+  email       String
+  phone       String?
+  website     String?
+  source      LeadSource @default(WEBSITE)
+  status      LeadStatus @default(NEW)
+  value       Decimal?  @db.Decimal(12, 2)
+  notes       String?
+  assignedTo  String?
+  lastContact DateTime?
+  nextFollowUp DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  deals       Deal[]
+  
+  @@index([email])
+  @@index([status])
+  @@index([source])
+  @@index([assignedTo])
+  @@index([nextFollowUp])
+}
+
+model Deal {
+  id          String    @id @default(uuid())
+  leadId      String
+  title       String
+  value       Decimal   @db.Decimal(12, 2)
+  stage       DealStage @default(PROSPECT)
+  probability Int       @default(0) // Percentage
+  closeDate   DateTime?
+  wonAt       DateTime?
+  lostAt      DateTime?
+  lostReason  String?
+  description String?
+  assignedTo  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  lead        Lead      @relation(fields: [leadId], references: [id])
+  
+  @@index([leadId])
+  @@index([stage])
+  @@index([closeDate])
+  @@index([assignedTo])
+}
+
+model ContactLog {
+  id          String    @id @default(uuid())
+  clientId    String
+  userId      String
+  type        ContactType @default(EMAIL)
+  subject     String?
+  content     String
+  outcome     String?
+  nextAction  String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  
+  // Relations
+  client      Client    @relation(fields: [clientId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+  
+  @@index([clientId])
+  @@index([userId])
+  @@index([type])
+  @@index([scheduledAt])
+  @@index([createdAt])
+}
+
+model ResourceProfile {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  skills        String    // JSON array of skills
+  hourlyRate    Decimal?  @db.Decimal(8, 2)
+  currency      String    @default("USD")
+  capacity      Int       @default(40) // Hours per week
+  availability  String    // JSON object with availability schedule
+  timezone      String?
+  bio           String?
+  resume        String?   // URL to resume file
+  portfolio     String?   // URL to portfolio
+  languages     String?   // JSON array of languages
+  certifications String?  // JSON array of certifications
+  yearsExperience Int?
+  isAvailable   Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([hourlyRate])
+  @@index([isAvailable])
+}
+
+// Enums
 enum Role {
   ADMIN
   MANAGER
+  DEVELOPER
+  CLIENT
   USER
 }
 
-enum Status {
+enum ProjectStatus {
   PLANNING
   IN_PROGRESS
   REVIEW
   COMPLETED
   ON_HOLD
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  TESTING
+  DONE
+  CANCELLED
+}
+
+enum TimeEntryStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum TeamRole {
+  LEAD
+  SENIOR
+  MEMBER
+  OBSERVER
+}
+
+enum LeadSource {
+  WEBSITE
+  REFERRAL
+  SOCIAL_MEDIA
+  EMAIL_CAMPAIGN
+  COLD_CALL
+  TRADE_SHOW
+  PARTNER
+  OTHER
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum DealStage {
+  PROSPECT
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum ContactType {
+  EMAIL
+  PHONE
+  MEETING
+  VIDEO_CALL
+  MESSAGE
+  OTHER
+}
+
+enum MessageType {
+  DIRECT
+  BROADCAST
+  NOTIFICATION
+  SYSTEM
 }
 
 // NextAuth.js Models

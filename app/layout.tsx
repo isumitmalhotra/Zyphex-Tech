@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import Header from "@/components/header"
-import Footer from "@/components/footer"
+import ConditionalFooter from "@/components/conditional-footer"
 import { ScrollProgressBar, ZyphexParticles } from "@/components/scroll-animations"
 import AuthProvider from "@/providers/AuthProvider"
 import { ReactQueryProvider } from "@/providers/ReactQueryProvider"
@@ -37,7 +37,7 @@ export default function RootLayout({
               <div className="relative z-10 flex flex-col min-h-screen">
                 <Header />
                 <main className="relative flex-1">{children}</main>
-                <Footer />
+                <ConditionalFooter />
               </div>
             </div>
           </ReactQueryProvider>

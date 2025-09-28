@@ -169,7 +169,7 @@ export function DynamicField({ field, form, disabled = false }: DynamicFieldProp
         return (
           <div className="flex items-center space-x-2">
             <Switch
-              checked={value || false}
+              checked={Boolean(value)}
               onCheckedChange={(checked) => setValue(field.name, checked)}
               disabled={disabled}
             />
@@ -180,7 +180,7 @@ export function DynamicField({ field, form, disabled = false }: DynamicFieldProp
       case 'select':
         return (
           <Select
-            value={value || ''}
+            value={String(value || '')}
             onValueChange={(newValue) => setValue(field.name, newValue)}
             disabled={disabled}
           >
@@ -265,13 +265,13 @@ export function DynamicField({ field, form, disabled = false }: DynamicFieldProp
                 disabled={disabled}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {value ? format(new Date(value), 'PPP') : 'Pick a date'}
+                {value ? format(new Date(value as string), 'PPP') : 'Pick a date'}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar
                 mode="single"
-                selected={value ? new Date(value) : undefined}
+                selected={value ? new Date(value as string) : undefined}
                 onSelect={(date) => setValue(field.name, date?.toISOString())}
                 initialFocus
               />
@@ -284,7 +284,7 @@ export function DynamicField({ field, form, disabled = false }: DynamicFieldProp
           <div className="flex items-center space-x-2">
             <div 
               className="w-10 h-10 rounded border cursor-pointer flex items-center justify-center"
-              style={{ backgroundColor: value || field.defaultValue || '#000000' }}
+              style={{ backgroundColor: String(value || field.defaultValue || '#000000') }}
               onClick={() => {
                 // In a real implementation, this would open a color picker
                 const colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6']
@@ -295,7 +295,7 @@ export function DynamicField({ field, form, disabled = false }: DynamicFieldProp
               <Palette className="w-4 h-4 text-white mix-blend-difference" />
             </div>
             <Input
-              value={value || field.defaultValue || '#000000'}
+              value={String(value || field.defaultValue || '#000000')}
               onChange={(e) => setValue(field.name, e.target.value)}
               placeholder="#000000"
               disabled={disabled}
@@ -368,9 +368,9 @@ export function DynamicField({ field, form, disabled = false }: DynamicFieldProp
               acceptedTypes={field.config?.allowedTypes || ['image/*']}
               className="w-full"
             />
-            {value && (
+            {Boolean(value) && (
               <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/50 rounded p-2">
-                <span className="truncate flex-1 mr-2">{value}</span>
+                <span className="truncate flex-1 mr-2">{String(value)}</span>
                 <Button
                   type="button"
                   variant="ghost"
@@ -436,7 +436,7 @@ export function DynamicField({ field, form, disabled = false }: DynamicFieldProp
               }}
             />
             <p className="text-xs text-muted-foreground">
-              URL: /{value || 'your-slug'}
+              URL: /{String(value || 'your-slug')}
             </p>
           </div>
         )

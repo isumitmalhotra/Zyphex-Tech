@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const skip = (page - 1) * pageSize;
 
   const where = search
-    ? { OR: [ { title: { contains: search, mode: 'insensitive' } }, { subtitle: { contains: search, mode: 'insensitive' } }, { content: { contains: search, mode: 'insensitive' } } ] }
+    ? { OR: [ { title: { contains: search, mode: 'insensitive' as const } }, { subtitle: { contains: search, mode: 'insensitive' as const } }, { content: { contains: search, mode: 'insensitive' as const } } ] }
     : {};
 
   const [sections, total] = await Promise.all([
