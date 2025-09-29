@@ -1,20 +1,15 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { withPermissions } from '@/lib/auth/middleware';
+import { Permission } from '@/lib/auth/permissions';
 
-export async function GET() {
+export const GET = withPermissions([Permission.VIEW_TEAMS])(async (_request) => {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const teamMembers = await prisma.user.findMany({
       where: {
         deletedAt: null,
-        role: { in: ['DEVELOPER', 'MANAGER', 'ADMIN'] }
+        role: { in: ['TEAM_MEMBER', 'PROJECT_MANAGER', 'ADMIN', 'SUPER_ADMIN'] }
       },
       include: {
         teamMemberships: {
@@ -37,4 +32,4 @@ export async function GET() {
     console.error('Error fetching team members:', error);
     return NextResponse.json({ error: 'Failed to fetch team members' }, { status: 500 });
   }
-}
+})

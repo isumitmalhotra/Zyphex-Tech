@@ -40,10 +40,94 @@ model User {
   teamMemberships   TeamMember[]
   contactLogs       ContactLog[]
   resourceProfile   ResourceProfile?
+  userPermissions   UserPermission[]
+  auditLogs         AuditLog[]
+  refreshTokens     RefreshToken[]
   
   @@index([email])
   @@index([role])
   @@index([deletedAt])
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique // e.g., 'create_project', 'view_financials'
+  description String?
+  category    String?  // e.g., 'projects', 'users', 'financials'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  rolePermissions RolePermission[]
+  userPermissions UserPermission[]
+  
+  @@index([name])
+  @@index([category])
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  role         Role
+  permissionId String
+  createdAt    DateTime   @default(now())
+  
+  // Relations
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([role, permissionId])
+  @@index([role])
+}
+
+model UserPermission {
+  id           String     @id @default(uuid())
+  userId       String
+  permissionId String
+  grantedBy    String?    // User ID who granted this permission
+  expiresAt    DateTime?  // Optional expiration
+  createdAt    DateTime   @default(now())
+  
+  // Relations
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, permissionId])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  // Null for system actions
+  action      String   // e.g., 'LOGIN', 'CREATE_PROJECT', 'PERMISSION_GRANTED'
+  resource    String?  // e.g., 'USER', 'PROJECT', 'CLIENT'
+  resourceId  String?  // ID of the affected resource
+  details     String?  // JSON string with additional details
+  ipAddress   String?
+  userAgent   String?
+  success     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  user        User?    @relation(fields: [userId], references: [id])
+  
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
 }
 
 model Client {
@@ -422,9 +506,10 @@ model ResourceProfile {
 
 // Enums
 enum Role {
+  SUPER_ADMIN
   ADMIN
-  MANAGER
-  DEVELOPER
+  PROJECT_MANAGER
+  TEAM_MEMBER
   CLIENT
   USER
 }

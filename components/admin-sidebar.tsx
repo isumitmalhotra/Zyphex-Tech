@@ -16,6 +16,8 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { usePermission, useUser } from "@/hooks/use-permissions"
+import { Permission } from "@/lib/auth/permissions"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -159,6 +161,32 @@ const data = {
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
+  const user = useUser()
+  
+  // Permission-based navigation filtering
+  const hasViewDashboard = usePermission(Permission.VIEW_DASHBOARD)
+  const hasViewAnalytics = usePermission(Permission.VIEW_ANALYTICS)
+  const hasViewProjects = usePermission(Permission.VIEW_PROJECTS)
+  const hasViewClients = usePermission(Permission.VIEW_CLIENTS)
+  const hasManageSettings = usePermission(Permission.MANAGE_SETTINGS)
+  
+  // Filter navigation items based on permissions
+  const filteredNavItems = data.navMain.filter(item => {
+    switch (item.title) {
+      case 'Dashboard':
+        return hasViewDashboard
+      case 'Analytics':
+        return hasViewAnalytics
+      case 'Projects':
+        return hasViewProjects
+      case 'Clients':
+        return hasViewClients
+      case 'Content Management':
+        return hasManageSettings || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
+      default:
+        return true
+    }
+  })
 
   return (
     <Sidebar collapsible="icon" {...props} className="zyphex-glass-effect border-gray-800/50">
@@ -178,7 +206,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         <SidebarGroup>
           <SidebarGroupLabel className="zyphex-heading">Main Navigation</SidebarGroupLabel>
           <SidebarMenu>
-            {data.navMain.map((item) => (
+            {filteredNavItems.map((item) => (
               <Collapsible key={item.title} asChild defaultOpen={item.isActive} className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
@@ -234,22 +262,26 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         <SidebarGroup className="mt-auto">
           <SidebarGroupLabel className="zyphex-heading">System</SidebarGroupLabel>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Settings" className="zyphex-button-secondary hover-zyphex-glow">
-                <Link href="/admin/settings">
-                  <Settings className="animate-pulse-3d" />
-                  <span className="zyphex-heading">Settings</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Security" className="zyphex-button-secondary hover-zyphex-glow">
-                <Link href="/admin/security">
-                  <Shield className="animate-pulse-3d" />
-                  <span className="zyphex-heading">Security</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {hasManageSettings && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Settings" className="zyphex-button-secondary hover-zyphex-glow">
+                  <Link href="/admin/settings">
+                    <Settings className="animate-pulse-3d" />
+                    <span className="zyphex-heading">Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+            {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Security" className="zyphex-button-secondary hover-zyphex-glow">
+                  <Link href="/admin/security">
+                    <Shield className="animate-pulse-3d" />
+                    <span className="zyphex-heading">Security</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>

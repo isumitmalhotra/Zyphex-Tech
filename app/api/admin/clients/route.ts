@@ -1,15 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { withPermissions } from '@/lib/auth/middleware';
+import { Permission } from '@/lib/auth/permissions';
 
-export async function GET() {
+export const GET = withPermissions([Permission.VIEW_CLIENTS])(async (_request) => {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const clients = await prisma.client.findMany({
       include: {
@@ -28,15 +23,10 @@ export async function GET() {
     console.error('Error fetching clients:', error);
     return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 });
   }
-}
+})
 
-export async function POST(request: NextRequest) {
+export const POST = withPermissions([Permission.CREATE_CLIENT])(async (request) => {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { name, email, phone, address, website, timezone } = await request.json();
 
@@ -72,10 +62,10 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Log activity
+    // Log activity  
     await prisma.activityLog.create({
       data: {
-        userId: session.user.id,
+        userId: request.user.id,
         action: 'CREATE',
         entityType: 'CLIENT',
         entityId: client.id,
@@ -88,4 +78,4 @@ export async function POST(request: NextRequest) {
     console.error('Error creating client:', error);
     return NextResponse.json({ error: 'Failed to create client' }, { status: 500 });
   }
-}
+})

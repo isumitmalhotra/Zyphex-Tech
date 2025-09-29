@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
+import { withPermissions } from '@/lib/auth/middleware';
+import { Permission } from '@/lib/auth/permissions';
 
-export async function GET() {
+export const GET = withPermissions([Permission.VIEW_DASHBOARD])(async (_request) => {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Simple counts
     const totalProjects = await prisma.project.count();
@@ -30,7 +25,7 @@ export async function GET() {
 
     // Team stats using available Role enum values
     const totalTeamMembers = await prisma.user.count({
-      where: { role: { in: [Role.MANAGER] } }
+      where: { role: { in: [Role.TEAM_MEMBER, Role.PROJECT_MANAGER] } }
     });
 
     // Recent projects with available fields only
@@ -102,4 +97,4 @@ export async function GET() {
     console.error('Dashboard API Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
+})

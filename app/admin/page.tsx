@@ -7,6 +7,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { PermissionGuard } from "@/components/auth/permission-guard"
+import { Permission } from "@/lib/auth/permissions"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -34,6 +36,28 @@ import { Icon3D } from "@/components/3d-icons"
 import { useAdminDashboard } from "@/hooks/use-admin-dashboard"
 
 export default function AdminDashboard() {
+  return (
+    <PermissionGuard 
+      permission={Permission.VIEW_DASHBOARD}
+      fallback={
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+          <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You don&apos;t have permission to view the admin dashboard.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      }
+    >
+      <AdminDashboardContent />
+    </PermissionGuard>
+  )
+}
+
+function AdminDashboardContent() {
   const { data, error, isLoading, mutate } = useAdminDashboard()
 
   // Handle loading state

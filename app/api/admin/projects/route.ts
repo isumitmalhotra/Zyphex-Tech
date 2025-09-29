@@ -1,15 +1,10 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { withPermissions } from '@/lib/auth/middleware';
+import { Permission } from '@/lib/auth/permissions';
 
-export async function GET() {
+export const GET = withPermissions([Permission.VIEW_PROJECTS])(async (_request) => {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session || (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const projects = await prisma.project.findMany({
       where: { deletedAt: null },
@@ -25,4 +20,4 @@ export async function GET() {
     console.error('Error fetching admin projects:', error);
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
   }
-}
+})
