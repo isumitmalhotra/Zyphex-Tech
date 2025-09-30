@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { WorkflowEngine } from '@/lib/psa/automation';
-import { hasPermission, Permission } from '@/lib/auth/permissions';
+import { hasPermission, Permission, ExtendedUser } from '@/lib/auth/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canViewWorkflows = await hasPermission(session.user.id, Permission.VIEW_WORKFLOWS);
+    const canViewWorkflows = await hasPermission(session.user as ExtendedUser, Permission.VIEW_WORKFLOWS);
     if (!canViewWorkflows) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       case 'executions':
         const executions = await workflowEngine.getWorkflowExecutions(
           workflowId || undefined,
-          status as any
+          status || undefined
         );
         return NextResponse.json({
           success: true,
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canManageWorkflows = await hasPermission(session.user.id, Permission.MANAGE_WORKFLOWS);
+    const canManageWorkflows = await hasPermission(session.user as ExtendedUser, Permission.MANAGE_WORKFLOWS);
     if (!canManageWorkflows) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -147,7 +147,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canManageWorkflows = await hasPermission(session.user.id, Permission.MANAGE_WORKFLOWS);
+    const canManageWorkflows = await hasPermission(session.user as ExtendedUser, Permission.MANAGE_WORKFLOWS);
     if (!canManageWorkflows) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -184,7 +184,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canManageWorkflows = await hasPermission(session.user.id, Permission.MANAGE_WORKFLOWS);
+    const canManageWorkflows = await hasPermission(session.user as ExtendedUser, Permission.MANAGE_WORKFLOWS);
     if (!canManageWorkflows) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }

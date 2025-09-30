@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { BusinessIntelligence } from '@/lib/psa/business-intelligence';
-import { hasPermission, Permission } from '@/lib/auth/permissions';
+import { hasPermission, Permission, ExtendedUser } from '@/lib/auth/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canViewReports = await hasPermission(session.user.id, Permission.VIEW_REPORTS);
+    const canViewReports = await hasPermission(session.user as ExtendedUser, Permission.VIEW_REPORTS);
     if (!canViewReports) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canCreateReports = await hasPermission(session.user.id, Permission.CREATE_REPORTS);
+    const canCreateReports = await hasPermission(session.user as ExtendedUser, Permission.CREATE_REPORTS);
     if (!canCreateReports) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }

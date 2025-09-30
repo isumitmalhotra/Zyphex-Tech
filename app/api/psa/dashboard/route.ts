@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { PSADashboard } from '@/lib/psa/dashboard';
-import { hasPermission, Permission } from '@/lib/auth/permissions';
+import { hasPermission, Permission, ExtendedUser } from '@/lib/auth/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,15 +13,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Check permissions
-    const canViewDashboard = await hasPermission(session.user.id, Permission.VIEW_DASHBOARD);
+    const canViewDashboard = await hasPermission(session.user as ExtendedUser, Permission.VIEW_DASHBOARD);
     if (!canViewDashboard) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
     const metric = searchParams.get('metric');
-    const projectId = searchParams.get('projectId');
-    const timeframe = searchParams.get('timeframe') || '30';
+    const _projectId = searchParams.get('projectId');
+    const _timeframe = searchParams.get('timeframe') || '30';
 
     const dashboard = new PSADashboard();
 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canManageSystem = await hasPermission(session.user.id, Permission.MANAGE_SYSTEM);
+    const canManageSystem = await hasPermission(session.user as ExtendedUser, Permission.MANAGE_SYSTEM);
     if (!canManageSystem) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         });
 
       case 'refresh-metrics':
-        const refreshed = await dashboard.refreshAllMetrics(session.user.id);
+        const refreshed = await dashboard.refreshAllMetrics();
         return NextResponse.json({
           success: true,
           data: refreshed,

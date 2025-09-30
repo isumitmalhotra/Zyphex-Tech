@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { IntegrationHub } from '@/lib/psa/integration';
-import { hasPermission, Permission } from '@/lib/auth/permissions';
+import { hasPermission, Permission, ExtendedUser } from '@/lib/auth/permissions';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canViewIntegrations = await hasPermission(session.user.id, Permission.VIEW_DASHBOARD);
+    const canViewIntegrations = await hasPermission(session.user as ExtendedUser, Permission.VIEW_DASHBOARD);
     if (!canViewIntegrations) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canManageIntegrations = await hasPermission(session.user.id, Permission.MANAGE_INTEGRATIONS);
+    const canManageIntegrations = await hasPermission(session.user as ExtendedUser, Permission.MANAGE_INTEGRATIONS);
     if (!canManageIntegrations) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
@@ -172,7 +172,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const canManageIntegrations = await hasPermission(session.user.id, Permission.MANAGE_INTEGRATIONS);
+    const canManageIntegrations = await hasPermission(session.user as ExtendedUser, Permission.MANAGE_INTEGRATIONS);
     if (!canManageIntegrations) {
       return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
     }
