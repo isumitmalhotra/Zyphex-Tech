@@ -15,8 +15,34 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login")
+      return
     }
-  }, [status, router])
+
+    if (status === "authenticated" && session?.user) {
+      // Automatically redirect to role-specific dashboard
+      switch (session.user.role) {
+        case "SUPER_ADMIN":
+          router.push("/super-admin")
+          break
+        case "ADMIN":
+          router.push("/admin")
+          break
+        case "PROJECT_MANAGER":
+          router.push("/project-manager")
+          break
+        case "TEAM_MEMBER":
+          router.push("/team-member")
+          break
+        case "CLIENT":
+          router.push("/client")
+          break
+        case "USER":
+        default:
+          router.push("/user")
+          break
+      }
+    }
+  }, [status, router, session])
 
   if (status === "loading") {
     return <div>Loading...</div>

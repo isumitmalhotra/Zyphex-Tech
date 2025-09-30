@@ -5,28 +5,60 @@ import { NextRequestWithAuth } from 'next-auth/middleware';
 // Define protected routes and their required roles
 const protectedRoutes = [
   {
+    path: '/super-admin',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
     path: '/admin',
-    roles: ['ADMIN'],
+    roles: ['SUPER_ADMIN', 'ADMIN'],
+  },
+  {
+    path: '/project-manager',
+    roles: ['SUPER_ADMIN', 'ADMIN', 'PROJECT_MANAGER'],
+  },
+  {
+    path: '/team-member',
+    roles: ['SUPER_ADMIN', 'ADMIN', 'PROJECT_MANAGER', 'TEAM_MEMBER'],
+  },
+  {
+    path: '/client',
+    roles: ['SUPER_ADMIN', 'ADMIN', 'CLIENT'],
   },
   {
     path: '/user',
-    roles: ['ADMIN', 'MANAGER', 'USER'],
+    roles: ['SUPER_ADMIN', 'ADMIN', 'PROJECT_MANAGER', 'TEAM_MEMBER', 'CLIENT', 'USER'],
+  },
+  {
+    path: '/api/super-admin',
+    roles: ['SUPER_ADMIN'],
+  },
+  {
+    path: '/api/project-manager',
+    roles: ['SUPER_ADMIN', 'ADMIN', 'PROJECT_MANAGER'],
+  },
+  {
+    path: '/api/team-member',
+    roles: ['SUPER_ADMIN', 'ADMIN', 'PROJECT_MANAGER', 'TEAM_MEMBER'],
+  },
+  {
+    path: '/api/client',
+    roles: ['SUPER_ADMIN', 'ADMIN', 'CLIENT'],
   },
   {
     path: '/api/projects',
-    roles: ['ADMIN', 'MANAGER', 'USER'],
+    roles: ['SUPER_ADMIN', 'ADMIN', 'PROJECT_MANAGER', 'TEAM_MEMBER', 'CLIENT'],
   },
   {
     path: '/api/clients',
-    roles: ['ADMIN', 'MANAGER'],
+    roles: ['SUPER_ADMIN', 'ADMIN', 'PROJECT_MANAGER'],
   },
   {
     path: '/api/teams',
-    roles: ['ADMIN', 'MANAGER'],
+    roles: ['SUPER_ADMIN', 'ADMIN', 'PROJECT_MANAGER'],
   },
   {
     path: '/api/admin',
-    roles: ['ADMIN'],
+    roles: ['SUPER_ADMIN', 'ADMIN'],
   },
 ];
 
@@ -70,8 +102,16 @@ export default async function middleware(req: NextRequestWithAuth) {
 
 export const config = {
   matcher: [
+    '/super-admin/:path*',
     '/admin/:path*',
+    '/project-manager/:path*',
+    '/team-member/:path*',
+    '/client/:path*',
     '/user/:path*',
+    '/api/super-admin/:path*',
+    '/api/project-manager/:path*',
+    '/api/team-member/:path*',
+    '/api/client/:path*',
     '/api/projects/:path*',
     '/api/clients/:path*',
     '/api/teams/:path*',
