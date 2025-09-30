@@ -25,22 +25,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Plus, Search, Filter, MoreHorizontal, Calendar, Users, Eye, Edit, Trash2, RefreshCw, AlertCircle } from "lucide-react"
+import { Search, Filter, MoreHorizontal, Calendar, Users, Eye, Edit, Trash2, RefreshCw, AlertCircle } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 import { useAdminProjects } from "@/hooks/use-admin-data"
 import { CreateProjectDialog } from "@/components/admin/create-project-dialog"
+import { AdminTableContainer } from "@/components/admin/admin-table-container"
 import { useState } from "react"
 
 export default function ProjectsPage() {
   const { projects, isLoading, error, mutate } = useAdminProjects()
   const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
+  const [_statusFilter, _setStatusFilter] = useState("all")
 
   // Filter projects based on search and status
   const filteredProjects = projects.filter(project => {
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.client.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || project.status === statusFilter
+    const matchesStatus = _statusFilter === "all" || project.status === _statusFilter
     return matchesSearch && matchesStatus
   })
 
@@ -118,7 +119,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+    <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen overflow-hidden">
       <SubtleBackground />
 
       <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 relative z-10">
@@ -141,7 +142,7 @@ export default function ProjectsPage() {
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+      <div className="flex flex-1 flex-col gap-4 p-4 relative z-10 admin-content-container">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <h1 className="text-3xl font-bold zyphex-heading">Project Management</h1>
@@ -172,15 +173,16 @@ export default function ProjectsPage() {
         </Card>
 
         {/* Projects Table */}
-        <Card className="zyphex-card hover-zyphex-lift">
+        <Card className="zyphex-card hover-zyphex-lift relative z-0 overflow-hidden">
           <CardHeader>
             <CardTitle className="zyphex-heading">All Projects</CardTitle>
             <CardDescription className="zyphex-subheading">
               A comprehensive view of all projects and their current status
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
+          <CardContent className="p-0">
+            <AdminTableContainer>
+              <Table>
               <TableHeader>
                 <TableRow className="border-gray-700">
                   <TableHead className="zyphex-heading">Project</TableHead>
@@ -274,6 +276,7 @@ export default function ProjectsPage() {
                 ))}
               </TableBody>
             </Table>
+            </AdminTableContainer>
           </CardContent>
         </Card>
       </div>

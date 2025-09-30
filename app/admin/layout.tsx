@@ -14,9 +14,9 @@ export default function AdminLayout({
   return (
     <SidebarProvider>
       <AdminSidebar />
-      <SidebarInset>
-        <div className="flex flex-col min-h-screen">
-          <div className="flex-1">{children}</div>
+      <SidebarInset className="overflow-hidden">
+        <div className="flex flex-col min-h-screen overflow-hidden">
+          <div className="flex-1 overflow-hidden">{children}</div>
           {/* Footer positioned within the admin content area, to the right of sidebar */}
           <Footer />
         </div>

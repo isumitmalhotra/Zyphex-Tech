@@ -711,3 +711,38 @@
     padding-right: 2rem;
   }
 }
+
+/* Admin table container - prevent sidebar overlap */
+.admin-table-container {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Ensure sidebar stays above content */
+.admin-table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.admin-table-container::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.5);
+  border-radius: 4px;
+}
+
+.admin-table-container::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.8);
+  border-radius: 4px;
+}
+
+.admin-table-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 1);
+}
+
+/* Prevent horizontal overflow from escaping container */
+.admin-content-container {
+  max-width: 100%;
+  overflow: hidden;
+  position: relative;
+}
