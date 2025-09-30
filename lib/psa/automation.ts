@@ -18,6 +18,171 @@ export class WorkflowEngine {
   }
 
   /**
+   * Get all workflow templates
+   */
+  async getWorkflowTemplates(): Promise<WorkflowTemplate[]> {
+    try {
+      // In real implementation, would fetch from database
+      // For now, return mock templates
+      return [
+        {
+          id: 'client-onboarding',
+          name: 'Client Onboarding',
+          description: 'Automated client onboarding process',
+          category: 'CLIENT_ONBOARDING',
+          steps: [
+            {
+              id: 'step1',
+              name: 'Create Client Record',
+              type: 'ACTION',
+              action: 'create_client',
+              parameters: { source: 'automation' }
+            },
+            {
+              id: 'step2',
+              name: 'Send Welcome Email',
+              type: 'NOTIFICATION',
+              action: 'send_email',
+              parameters: { template: 'welcome_email' }
+            }
+          ],
+          triggers: [
+            {
+              id: 'trigger1',
+              type: 'MANUAL'
+            }
+          ],
+          variables: [],
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching workflow templates:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get workflow executions
+   */
+  async getWorkflowExecutions(workflowId?: string, status?: string): Promise<WorkflowExecution[]> {
+    try {
+      // In real implementation, would fetch from database
+      // For now, return mock executions
+      return [
+        {
+          id: 'exec_001',
+          workflowId: workflowId || 'client-onboarding',
+          status: (status as any) || 'COMPLETED',
+          startedAt: new Date(),
+          completedAt: new Date(),
+          context: { clientId: 'client_123' },
+          logs: []
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching workflow executions:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get scheduled workflows
+   */
+  async getScheduledWorkflows(): Promise<any[]> {
+    try {
+      // In real implementation, would fetch from database
+      return [
+        {
+          id: 'schedule_001',
+          workflowId: 'invoice-generation',
+          schedule: '0 0 1 * *', // Monthly on 1st
+          nextRun: new Date(),
+          isActive: true
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching scheduled workflows:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update workflow template
+   */
+  async updateWorkflowTemplate(workflowId: string, updates: Partial<WorkflowTemplate>): Promise<WorkflowTemplate> {
+    try {
+      // In real implementation, would update in database
+      const template = await this.getWorkflowTemplate(workflowId);
+      if (!template) {
+        throw new Error(`Workflow template ${workflowId} not found`);
+      }
+
+      return {
+        ...template,
+        ...updates,
+        updatedAt: new Date()
+      };
+    } catch (error) {
+      console.error('Error updating workflow template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete workflow template
+   */
+  async deleteWorkflowTemplate(workflowId: string): Promise<void> {
+    try {
+      // In real implementation, would delete from database
+      console.log(`Workflow template ${workflowId} deleted`);
+    } catch (error) {
+      console.error('Error deleting workflow template:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create invoice automation
+   */
+  async createInvoiceAutomation(data: any): Promise<WorkflowExecution> {
+    try {
+      const workflowId = 'invoice-automation';
+      const context = {
+        projectId: data.projectId,
+        timeEntries: data.timeEntries,
+        clientId: data.clientId
+      };
+
+      return await this.executeWorkflow(workflowId, context);
+    } catch (error) {
+      console.error('Error creating invoice automation:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Execute client onboarding workflow
+   */
+  async executeClientOnboarding(data: any): Promise<WorkflowExecution> {
+    try {
+      const workflowId = 'client-onboarding';
+      const context = {
+        clientData: data.clientData,
+        assignedManager: data.assignedManager,
+        services: data.services
+      };
+
+      return await this.executeWorkflow(workflowId, context);
+    } catch (error) {
+      console.error('Error executing client onboarding:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Execute a workflow with given context
    */
   async executeWorkflow(workflowId: string, context: Record<string, unknown>): Promise<WorkflowExecution> {

@@ -40,8 +40,8 @@ export class PSADashboard {
 
       for (const project of projects) {
         const totalTasks = project.tasks.length;
-        const completedTasks = project.tasks.filter(t => t.status === 'DONE').length;
-        const overdueTasks = project.tasks.filter(t => 
+        const completedTasks = project.tasks.filter((t: any) => t.status === 'DONE').length;
+        const overdueTasks = project.tasks.filter((t: any) => 
           t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'DONE'
         ).length;
 
@@ -567,5 +567,92 @@ export class PSADashboard {
     score -= riskCount * 5;
 
     return Math.max(0, Math.min(100, Math.round(score)));
+  }
+
+  /**
+   * Get active alerts for the system
+   */
+  async getActiveAlerts(): Promise<any[]> {
+    try {
+      // Mock alerts - in real implementation, would fetch from database
+      return [
+        {
+          id: 'alert_001',
+          type: 'BUDGET_WARNING',
+          severity: 'HIGH',
+          message: 'Project XYZ is 95% over budget',
+          projectId: 'project_xyz',
+          createdAt: new Date()
+        },
+        {
+          id: 'alert_002', 
+          type: 'DEADLINE_WARNING',
+          severity: 'MEDIUM',
+          message: 'Task ABC deadline approaching in 2 days',
+          projectId: 'project_abc',
+          createdAt: new Date()
+        }
+      ];
+    } catch (error) {
+      console.error('Error getting active alerts:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Create a new alert
+   */
+  async createAlert(alertData: any): Promise<any> {
+    try {
+      const newAlert = {
+        id: `alert_${Date.now()}`,
+        ...alertData,
+        createdAt: new Date()
+      };
+      
+      // In real implementation, would save to database
+      console.log('Alert created:', newAlert);
+      return newAlert;
+    } catch (error) {
+      console.error('Error creating alert:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing alert
+   */
+  async updateAlert(alertId: string, updates: any): Promise<any> {
+    try {
+      const updatedAlert = {
+        id: alertId,
+        ...updates,
+        updatedAt: new Date()
+      };
+      
+      // In real implementation, would update in database
+      console.log('Alert updated:', updatedAlert);
+      return updatedAlert;
+    } catch (error) {
+      console.error('Error updating alert:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Refresh all metrics
+   */
+  async refreshAllMetrics(): Promise<any> {
+    try {
+      // In real implementation, would refresh cached metrics
+      console.log('All metrics refreshed');
+      return {
+        refreshed: true,
+        timestamp: new Date()
+      };
+    } catch (error) {
+      console.error('Error refreshing metrics:', error);
+      throw error;
+    }
   }
 }

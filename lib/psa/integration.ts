@@ -1,5 +1,4 @@
-﻿import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
+﻿import { prisma } from '@/lib/prisma';
 import {
   IntegrationEndpoint,
   IntegrationAuth,
@@ -17,8 +16,154 @@ export class IntegrationHub {
   }
 
   /**
-   * Register a new webhook endpoint
+   * Get active integration endpoints
    */
+  async getActiveEndpoints(): Promise<IntegrationEndpoint[]> {
+    try {
+      // In real implementation, would fetch from database
+      return [
+        {
+          id: 'github-integration',
+          name: 'GitHub Integration',
+          type: 'WEBHOOK',
+          endpoint: 'https://api.github.com',
+          isActive: true,
+          errorCount: 0
+        },
+        {
+          id: 'slack-integration',
+          name: 'Slack Integration',
+          type: 'WEBHOOK',
+          endpoint: 'https://hooks.slack.com/services',
+          isActive: true,
+          errorCount: 0
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching active endpoints:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get integration status overview
+   */
+  async getIntegrationStatus(): Promise<any> {
+    try {
+      return {
+        totalIntegrations: 5,
+        activeIntegrations: 4,
+        failedIntegrations: 1,
+        lastSync: new Date(),
+        webhooksReceived: 150,
+        syncErrors: 2
+      };
+    } catch (error) {
+      console.error('Error getting integration status:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get webhook history
+   */
+  async getWebhookHistory(source?: string): Promise<WebhookEvent[]> {
+    try {
+      // In real implementation, would fetch from database
+      return [
+        {
+          id: 'event_001',
+          source: source || 'github',
+          event: 'push',
+          payload: { repository: 'test-repo' },
+          timestamp: new Date(),
+          processed: true,
+          processingLogs: ['Webhook received', 'Processing completed']
+        }
+      ];
+    } catch (error) {
+      console.error('Error fetching webhook history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get integration overview
+   */
+  async getIntegrationOverview(): Promise<any> {
+    try {
+      return {
+        activeConnections: await this.getActiveEndpoints(),
+        recentActivity: await this.getWebhookHistory(),
+        status: await this.getIntegrationStatus(),
+        availableIntegrations: [
+          { name: 'GitHub', type: 'git', available: true },
+          { name: 'Slack', type: 'communication', available: true },
+          { name: 'QuickBooks', type: 'accounting', available: true },
+          { name: 'Jira', type: 'project-management', available: true }
+        ]
+      };
+    } catch (error) {
+      console.error('Error getting integration overview:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Test integration connection
+   */
+  async testIntegration(endpointId: string): Promise<any> {
+    try {
+      // In real implementation, would test actual connection
+      return {
+        success: true,
+        responseTime: 150,
+        status: 'connected',
+        lastTested: new Date()
+      };
+    } catch (error) {
+      console.error('Error testing integration:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Configure integration
+   */
+  async configureIntegration(config: any): Promise<IntegrationEndpoint> {
+    try {
+      const newEndpoint: IntegrationEndpoint = {
+        id: `integration_${Date.now()}`,
+        name: config.name,
+        type: config.type || 'API',
+        endpoint: config.endpoint,
+        method: config.method,
+        isActive: true,
+        errorCount: 0,
+        authentication: config.authentication
+      };
+
+      // In real implementation, would save to database
+      console.log('Integration configured:', newEndpoint);
+      return newEndpoint;
+    } catch (error) {
+      console.error('Error configuring integration:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove integration endpoint
+   */
+  async removeEndpoint(endpointId: string): Promise<void> {
+    try {
+      // In real implementation, would remove from database
+      console.log(`Integration endpoint ${endpointId} removed`);
+    } catch (error) {
+      console.error('Error removing endpoint:', error);
+      throw error;
+    }
+  }
   async registerWebhook(endpoint: Omit<IntegrationEndpoint, 'id' | 'lastSync' | 'errorCount'>): Promise<IntegrationEndpoint> {
     const newEndpoint: IntegrationEndpoint = {
       id: `webhook_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -248,7 +393,7 @@ export class IntegrationHub {
         endpoint: `/webhooks/${integrationId}`,
         authentication: {
           type: 'API_KEY',
-          credentials: config
+          credentials: config as Record<string, string>
         },
         isActive: true
       });
@@ -558,6 +703,6 @@ export async function syncIntegration(_integrationId: string): Promise<{ success
   return { success: true };
 }
 
-export async function handleWebhook(_request: NextRequest, _webhookId: string): Promise<{ success: boolean }> {
+export async function handleWebhook(_webhookId: string): Promise<{ success: boolean }> {
   return { success: true };
 }

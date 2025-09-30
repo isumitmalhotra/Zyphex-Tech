@@ -2,7 +2,6 @@
  * Comprehensive Permission System for ZyphexTech Platform
  * Defines all granular permissions for role-based access control
  */
-import { Session } from 'next-auth'
 
 export enum Permission {
   // System Administration
@@ -89,6 +88,12 @@ export enum Permission {
   MANAGE_SETTINGS = 'manage_settings',
   UPDATE_COMPANY_INFO = 'update_company_info',
   MANAGE_INTEGRATIONS = 'manage_integrations',
+
+  // Workflow & Automation
+  VIEW_WORKFLOWS = 'view_workflows',
+  MANAGE_WORKFLOWS = 'manage_workflows',
+  EXECUTE_WORKFLOWS = 'execute_workflows',
+  CREATE_WORKFLOW_TEMPLATE = 'create_workflow_template',
 }
 
 export type Role = 'SUPER_ADMIN' | 'ADMIN' | 'PROJECT_MANAGER' | 'TEAM_MEMBER' | 'CLIENT' | 'USER'
@@ -101,8 +106,9 @@ export interface ExtendedUser {
   permissions?: Permission[]
 }
 
-export interface ExtendedSession extends Session {
+export interface ExtendedSession {
   user: ExtendedUser
+  expires: string
 }
 
 /**
@@ -181,6 +187,12 @@ export const DefaultRolePermissions: Record<Role, Permission[]> = {
     Permission.MANAGE_SETTINGS,
     Permission.UPDATE_COMPANY_INFO,
     Permission.MANAGE_INTEGRATIONS,
+    
+    // Workflow & Automation
+    Permission.VIEW_WORKFLOWS,
+    Permission.MANAGE_WORKFLOWS,
+    Permission.EXECUTE_WORKFLOWS,
+    Permission.CREATE_WORKFLOW_TEMPLATE,
   ],
 
   PROJECT_MANAGER: [
@@ -220,6 +232,10 @@ export const DefaultRolePermissions: Record<Role, Permission[]> = {
     // Reporting
     Permission.VIEW_REPORTS,
     Permission.VIEW_DASHBOARD,
+    
+    // Workflow & Automation (Limited)
+    Permission.VIEW_WORKFLOWS,
+    Permission.EXECUTE_WORKFLOWS,
   ],
 
   TEAM_MEMBER: [
@@ -413,4 +429,9 @@ export const PermissionDescriptions: Record<Permission, string> = {
   [Permission.MANAGE_SETTINGS]: 'Access and modify system settings',
   [Permission.UPDATE_COMPANY_INFO]: 'Edit company information',
   [Permission.MANAGE_INTEGRATIONS]: 'Manage third-party integrations',
+  
+  [Permission.VIEW_WORKFLOWS]: 'View workflow templates and executions',
+  [Permission.MANAGE_WORKFLOWS]: 'Create, edit, and delete workflow templates',
+  [Permission.EXECUTE_WORKFLOWS]: 'Execute workflow instances',
+  [Permission.CREATE_WORKFLOW_TEMPLATE]: 'Create new workflow templates',
 };
