@@ -3,6 +3,64 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { WorkflowEngine } from '@/lib/psa/automation';
 
+// Webhook payload types
+interface GitHubWebhookPayload {
+  repository?: { name: string };
+  ref?: string;
+  commits?: unknown[];
+  pusher?: unknown;
+  pull_request?: { 
+    user?: { login?: string };
+    [key: string]: unknown;
+  };
+  issue?: { 
+    user?: { login?: string };
+    [key: string]: unknown;
+  };
+  action?: string;
+  [key: string]: unknown;
+}
+
+interface SlackWebhookPayload {
+  text?: string;
+  channel?: string;
+  user?: string;
+  event?: {
+    channel?: string;
+    user?: string;
+    text?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface FormSubmissionPayload {
+  name?: string;
+  email?: string;
+  company?: string;
+  phone?: string;
+  requirements?: string;
+  project?: unknown;
+  urgency?: string;
+  title?: string;
+  description?: string;
+  budget?: string;
+  timeline?: string;
+  clientId?: string;
+  requestedBy?: string;
+  subject?: string;
+  priority?: string;
+  category?: string;
+  [key: string]: unknown;
+}
+
+interface ScheduledTaskPayload {
+  recipients?: string[];
+  weekStartDate?: string;
+  monthStartDate?: string;
+  [key: string]: unknown;
+}
+
 /**
  * Webhook endpoint for external integrations
  * Handles incoming webhooks and triggers appropriate workflows
@@ -64,7 +122,7 @@ export async function POST(request: NextRequest) {
 /**
  * Handle GitHub webhooks
  */
-async function handleGitHubWebhook(event: string, payload: any, workflowEngine: WorkflowEngine) {
+async function handleGitHubWebhook(event: string, payload: GitHubWebhookPayload, workflowEngine: WorkflowEngine) {
   switch (event) {
     case 'push':
       // Trigger deployment workflow
@@ -103,7 +161,7 @@ async function handleGitHubWebhook(event: string, payload: any, workflowEngine: 
 /**
  * Handle Slack webhooks
  */
-async function handleSlackWebhook(event: string, payload: any, workflowEngine: WorkflowEngine) {
+async function handleSlackWebhook(event: string, payload: SlackWebhookPayload, workflowEngine: WorkflowEngine) {
   switch (event) {
     case 'message':
       // Process slash commands or mentions
@@ -130,7 +188,7 @@ async function handleSlackWebhook(event: string, payload: any, workflowEngine: W
 /**
  * Handle form submissions (client requests, project inquiries, etc.)
  */
-async function handleFormSubmission(event: string, payload: any, workflowEngine: WorkflowEngine) {
+async function handleFormSubmission(event: string, payload: FormSubmissionPayload, workflowEngine: WorkflowEngine) {
   switch (event) {
     case 'client-inquiry':
       // Trigger client onboarding workflow
@@ -179,7 +237,7 @@ async function handleFormSubmission(event: string, payload: any, workflowEngine:
 /**
  * Handle scheduled tasks (cron jobs)
  */
-async function handleScheduledTask(event: string, payload: any, workflowEngine: WorkflowEngine) {
+async function handleScheduledTask(event: string, payload: ScheduledTaskPayload, workflowEngine: WorkflowEngine) {
   switch (event) {
     case 'daily-reports':
       // Generate and send daily reports
