@@ -1,5 +1,6 @@
 ﻿import { prisma } from '@/lib/prisma';
 
+// Business Intelligence interfaces
 export interface ReportData {
   id: string
   name: string
@@ -12,6 +13,121 @@ export interface BusinessIntelligenceOptions {
   timeframe?: number;
   projectId?: string;
   clientId?: string;
+}
+
+// Project types for business intelligence (Updated to match Prisma types)
+interface ProjectWithDetails {
+  id: string;
+  name: string;
+  budget: number | null; // Changed from Decimal to number since we'll convert
+  status: string;
+  invoices: {
+    id: string;
+    amount: number; // Will be converted from Decimal
+    total?: number; // Optional for backward compatibility
+    status: string;
+    createdAt: Date;
+  }[];
+  timeEntries: {
+    id: string;
+    hours: number; // Will be converted from Decimal
+    rate?: number; // Will be converted from Decimal
+    billable: boolean;
+    date: Date;
+    userId: string;
+    projectId: string | null;
+  }[];
+  client: {
+    id: string;
+    name: string;
+    email: string;
+    createdAt: Date;
+  };
+}
+
+// Simplified interfaces for report results
+interface ProjectProfitabilityReport {
+  projectId: string;
+  projectName: string;
+  clientName: string; // Added this field
+  revenue: number;
+  costs: number;
+  profit: number;
+  margin: number;
+}
+
+interface ResourceUtilizationReport {
+  resourceId: string;
+  resourceName: string;
+  totalHours: number;
+  billableHours: number;
+  utilizationRate: number;
+  projectCount: number; // Added this field
+}
+
+interface ClientPerformanceReport {
+  clientId: string;
+  clientName: string;
+  totalRevenue: number;
+  projectCount: number;
+  avgProjectValue: number;
+  totalValue: number; // Added this field
+  acquisitionDate: Date; // Added this field
+}
+
+interface ExportOptions {
+  format: 'csv' | 'pdf' | 'excel';
+  includeHeaders?: boolean;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+// User efficiency tracking interface
+interface UserEfficiencyData {
+  userId: string;
+  userName: string;
+  totalHours: number;
+  billableHours: number;
+  projects: Set<string>;
+  efficiency: number;
+}
+
+// Client with related data (Updated to match Prisma)
+interface _ClientWithDetails {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+  invoices: {
+    id: string;
+    amount: number; // Will be converted from Decimal
+    total?: number; // Optional for backward compatibility
+    status: string;
+    createdAt: Date;
+  }[];
+  projects: ProjectWithDetails[];
+}
+
+// Custom report configuration
+interface CustomReportConfig {
+  name: string;
+  type: string;
+  query: string;
+  filters: Record<string, unknown>;
+  columns: string[];
+  parameters?: Record<string, unknown>;
+}
+
+// Schedule configuration
+interface ScheduleConfig {
+  reportType: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly';
+  recipients: string[];
+  format: 'csv' | 'pdf' | 'excel';
+  schedule?: string; // Cron expression or schedule string
+  parameters?: Record<string, unknown>;
 }
 
 export async function generateReport(reportType: string, _params?: Record<string, unknown>): Promise<ReportData> {
@@ -67,9 +183,10 @@ export class BusinessIntelligence {
         }
       });
 
-      return projects.map((project: any) => {
-        const totalRevenue = project.invoices.reduce((sum: number, invoice: any) => sum + Number(invoice.total), 0);
-        const totalCosts = project.timeEntries.reduce((sum: number, entry: any) => {
+      return projects.map((project): ProjectProfitabilityReport => {
+        const totalRevenue = project.invoices.reduce((sum: number, invoice) => 
+          sum + Number(invoice.amount || invoice.total || 0), 0);
+        const totalCosts = project.timeEntries.reduce((sum: number, entry) => {
           const rate = Number(entry.rate) || 0;
           const hours = Number(entry.hours) || 0;
           return sum + (rate * hours);
@@ -85,8 +202,7 @@ export class BusinessIntelligence {
           revenue: totalRevenue,
           costs: totalCosts,
           profit,
-          margin,
-          status: project.status
+          margin
         };
       });
     } catch (error) {
@@ -114,7 +230,7 @@ export class BusinessIntelligence {
         }
       });
 
-      const userEfficiency = timeEntries.reduce((acc: Record<string, any>, entry: any) => {
+      const userEfficiency = timeEntries.reduce((acc: Record<string, UserEfficiencyData>, entry) => {
         const userId = entry.userId;
         if (!acc[userId]) {
           acc[userId] = {
@@ -132,15 +248,18 @@ export class BusinessIntelligence {
         if (entry.billable) {
           acc[userId].billableHours += hours;
         }
-        acc[userId].projects.add(entry.projectId);
+        acc[userId].projects.add(entry.projectId || '');
 
         return acc;
       }, {});
 
-      return Object.values(userEfficiency).map((user: any) => ({
-        ...user,
-        projects: user.projects.size,
-        efficiency: user.totalHours > 0 ? (user.billableHours / user.totalHours) * 100 : 0
+      return Object.values(userEfficiency).map((user): ResourceUtilizationReport => ({
+        resourceId: user.userId,
+        resourceName: user.userName,
+        totalHours: user.totalHours,
+        billableHours: user.billableHours,
+        utilizationRate: user.totalHours > 0 ? (user.billableHours / user.totalHours) * 100 : 0,
+        projectCount: user.projects.size
       }));
     } catch (error) {
       console.error('Error getting resource efficiency report:', error);
@@ -175,10 +294,12 @@ export class BusinessIntelligence {
         }
       });
 
-      return clients.map((client: any) => {
-        const totalRevenue = client.invoices.reduce((sum: number, invoice: any) => sum + Number(invoice.total), 0);
-        const projectRevenue = client.projects.reduce((sum: number, project: any) => {
-          return sum + project.invoices.reduce((pSum: number, invoice: any) => pSum + Number(invoice.total), 0);
+      return clients.map((client): ClientPerformanceReport => {
+        const totalRevenue = client.invoices.reduce((sum: number, invoice) => 
+          sum + Number(invoice.amount || invoice.total || 0), 0);
+        const projectRevenue = client.projects.reduce((sum: number, project) => {
+          return sum + project.invoices.reduce((pSum: number, invoice) => 
+            pSum + Number(invoice.amount || invoice.total || 0), 0);
         }, 0);
 
         const totalValue = totalRevenue + projectRevenue;
@@ -188,11 +309,11 @@ export class BusinessIntelligence {
         return {
           clientId: client.id,
           clientName: client.name,
-          totalValue,
+          totalRevenue: totalValue,
           projectCount,
-          averageProjectValue,
-          acquisitionDate: client.createdAt,
-          lastActivity: new Date()
+          avgProjectValue: averageProjectValue,
+          totalValue,
+          acquisitionDate: client.createdAt
         };
       });
     } catch (error) {
@@ -206,7 +327,7 @@ export class BusinessIntelligence {
    */
   async getPredictiveAnalytics(options: BusinessIntelligenceOptions = {}) {
     try {
-      const { timeframe = 90, projectId } = options;
+      const { timeframe: _timeframe = 90, projectId } = options;
       
       // Mock predictive analytics - in real implementation, would use ML algorithms
       return {
@@ -322,7 +443,7 @@ export class BusinessIntelligence {
   /**
    * Generate custom report
    */
-  async generateCustomReport(reportConfig: any): Promise<ReportData> {
+  async generateCustomReport(reportConfig: CustomReportConfig): Promise<ReportData> {
     try {
       return {
         id: `report_${Date.now()}`,
@@ -340,7 +461,7 @@ export class BusinessIntelligence {
   /**
    * Export data in various formats
    */
-  async exportData(reportType: string, format: string, options: any) {
+  async exportData(reportType: string, format: string, _options: ExportOptions) {
     try {
       // Mock export functionality
       return {
@@ -358,7 +479,7 @@ export class BusinessIntelligence {
   /**
    * Schedule automated report
    */
-  async scheduleReport(scheduleConfig: any) {
+  async scheduleReport(scheduleConfig: ScheduleConfig) {
     try {
       return {
         id: `schedule_${Date.now()}`,
