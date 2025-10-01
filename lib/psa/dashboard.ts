@@ -10,6 +10,44 @@ import {
   Alert
 } from './types';
 
+// Task interface for proper typing
+interface Task {
+  id: string;
+  status: string;
+  title: string;
+  dueDate?: Date | string | null;
+}
+
+// Alert creation interface
+interface CreateAlertData {
+  type: 'PROJECT_RISK' | 'DEADLINE_WARNING' | 'BUDGET_OVERRUN' | 'RESOURCE_CONFLICT' | 'CLIENT_ISSUE';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  title: string;
+  description: string;
+  projectId?: string;
+  clientId?: string;
+  resourceId?: string;
+}
+
+// Alert update interface
+interface UpdateAlertData {
+  title?: string;
+  description?: string;
+  severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  resolvedAt?: Date;
+  assignedTo?: string;
+}
+
+// Metrics refresh result interface
+interface MetricsRefreshResult {
+  projectHealth: ProjectHealthMetrics[];
+  resourceMetrics: ResourceMetrics;
+  financialSummary: FinancialMetrics;
+  clientSatisfaction: ClientMetrics;
+  alerts: Alert[];
+  refreshedAt: Date;
+}
+
 export class PSADashboard {
   /**
    * Get comprehensive project health metrics
@@ -40,8 +78,8 @@ export class PSADashboard {
 
       for (const project of projects) {
         const totalTasks = project.tasks.length;
-        const completedTasks = project.tasks.filter((t: any) => t.status === 'DONE').length;
-        const overdueTasks = project.tasks.filter((t: any) => 
+        const completedTasks = project.tasks.filter((t: Task) => t.status === 'DONE').length;
+        const overdueTasks = project.tasks.filter((t: Task) => 
           t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'DONE'
         ).length;
 
@@ -145,12 +183,12 @@ export class PSADashboard {
 
       for (const user of users) {
         const userHours = user.timeEntries.reduce((total, entry) => {
-          return total + parseFloat(entry.hours || '0');
+          return total + (entry.hours ? Number(entry.hours) : 0);
         }, 0);
 
         const userBillableHours = user.timeEntries
           .filter(entry => entry.billable)
-          .reduce((total, entry) => total + parseFloat(entry.hours || '0'), 0);
+          .reduce((total, entry) => total + (entry.hours ? Number(entry.hours) : 0), 0);
 
         utilizedCapacity += userHours;
         billableHours += userBillableHours;
@@ -218,7 +256,7 @@ export class PSADashboard {
 
       const totalRevenue = invoices
         .filter(inv => inv.status === 'PAID')
-        .reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+        .reduce((sum, inv) => sum + Number(inv.amount), 0);
 
       // Mock costs calculation (would be more sophisticated in real implementation)
       const totalCosts = totalRevenue * 0.6; // Assume 60% cost ratio
@@ -234,7 +272,7 @@ export class PSADashboard {
                  invoiceDate.getFullYear() === currentMonth.getFullYear() &&
                  inv.status === 'PAID';
         })
-        .reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+        .reduce((sum, inv) => sum + Number(inv.amount), 0);
 
       const monthlyRecurringRevenue = monthlyRevenue; // Simplified
       const annualRecurringRevenue = monthlyRecurringRevenue * 12;
@@ -251,7 +289,7 @@ export class PSADashboard {
       for (const project of projects) {
         const projectRevenue = project.invoices
           .filter(inv => inv.status === 'PAID')
-          .reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
+          .reduce((sum, inv) => sum + Number(inv.amount), 0);
 
         const projectCosts = project.timeEntries
           .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
@@ -283,7 +321,7 @@ export class PSADashboard {
             invoiceId: inv.id,
             clientId: inv.clientId,
             clientName: inv.client.name,
-            amount: Number(inv.totalAmount),
+            amount: Number(inv.amount),
             dueDate: new Date(inv.dueDate || inv.createdAt),
             daysOverdue,
             status: (daysOverdue > 0 ? 'OVERDUE' : 'PENDING') as 'PENDING' | 'OVERDUE' | 'DISPUTED'
@@ -338,7 +376,7 @@ export class PSADashboard {
         const totalRevenue = client.projects.reduce((sum, project) => {
           return sum + project.invoices
             .filter(inv => inv.status === 'PAID')
-            .reduce((invSum, inv) => invSum + Number(inv.totalAmount), 0);
+            .reduce((invSum, inv) => invSum + Number(inv.amount), 0);
         }, 0);
 
         return {
@@ -467,10 +505,10 @@ export class PSADashboard {
 
     if (timeEntries.length === 0) return 0;
 
-    const totalHours = timeEntries.reduce((sum, entry) => sum + parseFloat(entry.hours || '0'), 0);
+    const totalHours = timeEntries.reduce((sum, entry) => sum + (entry.hours ? Number(entry.hours) : 0), 0);
     const billableHours = timeEntries
       .filter(entry => entry.billable)
-      .reduce((sum, entry) => sum + parseFloat(entry.hours || '0'), 0);
+      .reduce((sum, entry) => sum + (entry.hours ? Number(entry.hours) : 0), 0);
 
     return totalHours > 0 ? (billableHours / totalHours) * 100 : 0;
   }
@@ -570,44 +608,27 @@ export class PSADashboard {
   }
 
   /**
-   * Get active alerts for the system
-   */
-  async getActiveAlerts(): Promise<any[]> {
-    try {
-      // Mock alerts - in real implementation, would fetch from database
-      return [
-        {
-          id: 'alert_001',
-          type: 'BUDGET_WARNING',
-          severity: 'HIGH',
-          message: 'Project XYZ is 95% over budget',
-          projectId: 'project_xyz',
-          createdAt: new Date()
-        },
-        {
-          id: 'alert_002', 
-          type: 'DEADLINE_WARNING',
-          severity: 'MEDIUM',
-          message: 'Task ABC deadline approaching in 2 days',
-          projectId: 'project_abc',
-          createdAt: new Date()
-        }
-      ];
-    } catch (error) {
-      console.error('Error getting active alerts:', error);
-      return [];
-    }
-  }
-
-  /**
    * Create a new alert
    */
-  async createAlert(alertData: any): Promise<any> {
+  async createAlert(alertData: CreateAlertData): Promise<Alert> {
     try {
-      const newAlert = {
+      const newAlert: Alert = {
         id: `alert_${Date.now()}`,
-        ...alertData,
-        createdAt: new Date()
+        type: alertData.type,
+        severity: alertData.severity,
+        title: alertData.title,
+        description: alertData.description,
+        projectId: alertData.projectId,
+        clientId: alertData.clientId,
+        resourceId: alertData.resourceId,
+        createdAt: new Date(),
+        actions: [
+          {
+            id: 'view_details',
+            label: 'View Details',
+            action: 'navigate'
+          }
+        ]
       };
       
       // In real implementation, would save to database
@@ -622,12 +643,25 @@ export class PSADashboard {
   /**
    * Update an existing alert
    */
-  async updateAlert(alertId: string, updates: any): Promise<any> {
+  async updateAlert(alertId: string, updates: UpdateAlertData): Promise<Alert | null> {
     try {
-      const updatedAlert = {
+      // In real implementation, would fetch existing alert and update it
+      const updatedAlert: Alert = {
         id: alertId,
-        ...updates,
-        updatedAt: new Date()
+        type: 'PROJECT_RISK', // Would come from existing alert
+        severity: updates.severity || 'MEDIUM',
+        title: updates.title || 'Updated Alert',
+        description: updates.description || 'Alert has been updated',
+        createdAt: new Date(), // Would come from existing alert
+        resolvedAt: updates.resolvedAt,
+        assignedTo: updates.assignedTo,
+        actions: [
+          {
+            id: 'view_details',
+            label: 'View Details',
+            action: 'navigate'
+          }
+        ]
       };
       
       // In real implementation, would update in database
@@ -642,13 +676,23 @@ export class PSADashboard {
   /**
    * Refresh all metrics
    */
-  async refreshAllMetrics(): Promise<any> {
+  async refreshAllMetrics(): Promise<MetricsRefreshResult> {
     try {
       // In real implementation, would refresh cached metrics
+      const projectHealth = await this.getProjectHealth();
+      const resourceMetrics = await this.getResourceUtilization();
+      const financialSummary = await this.getFinancialSummary();
+      const clientSatisfaction = await this.getClientSatisfaction();
+      const alerts = await this.getActiveAlerts();
+      
       console.log('All metrics refreshed');
       return {
-        refreshed: true,
-        timestamp: new Date()
+        projectHealth,
+        resourceMetrics,
+        financialSummary,
+        clientSatisfaction,
+        alerts,
+        refreshedAt: new Date()
       };
     } catch (error) {
       console.error('Error refreshing metrics:', error);
