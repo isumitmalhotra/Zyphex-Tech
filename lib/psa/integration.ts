@@ -1,9 +1,46 @@
-﻿import { prisma } from '@/lib/prisma';
-import {
+﻿import {
   IntegrationEndpoint,
   IntegrationAuth,
   WebhookEvent
 } from './types';
+
+// Integration-specific interfaces
+export interface IntegrationStatus {
+  totalIntegrations: number;
+  activeIntegrations: number;
+  failedIntegrations: number;
+  lastSync: Date;
+  webhooksReceived: number;
+  syncErrors: number;
+}
+
+export interface IntegrationOverview {
+  activeConnections: IntegrationEndpoint[];
+  recentActivity: WebhookEvent[];
+  status: IntegrationStatus;
+  availableIntegrations: AvailableIntegration[];
+}
+
+export interface AvailableIntegration {
+  name: string;
+  type: string;
+  available: boolean;
+}
+
+export interface IntegrationTestResult {
+  success: boolean;
+  responseTime: number;
+  status: string;
+  lastTested: Date;
+}
+
+export interface IntegrationConfiguration {
+  name: string;
+  type?: 'WEBHOOK' | 'API' | 'SCHEDULED';
+  endpoint: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  authentication?: IntegrationAuth;
+}
 
 export class IntegrationHub {
   private static instance: IntegrationHub;
@@ -48,7 +85,7 @@ export class IntegrationHub {
   /**
    * Get integration status overview
    */
-  async getIntegrationStatus(): Promise<any> {
+  async getIntegrationStatus(): Promise<IntegrationStatus> {
     try {
       return {
         totalIntegrations: 5,
@@ -90,7 +127,7 @@ export class IntegrationHub {
   /**
    * Get integration overview
    */
-  async getIntegrationOverview(): Promise<any> {
+  async getIntegrationOverview(): Promise<IntegrationOverview> {
     try {
       return {
         activeConnections: await this.getActiveEndpoints(),
@@ -112,7 +149,7 @@ export class IntegrationHub {
   /**
    * Test integration connection
    */
-  async testIntegration(endpointId: string): Promise<any> {
+  async testIntegration(_endpointId: string): Promise<IntegrationTestResult> {
     try {
       // In real implementation, would test actual connection
       return {
@@ -130,7 +167,7 @@ export class IntegrationHub {
   /**
    * Configure integration
    */
-  async configureIntegration(config: any): Promise<IntegrationEndpoint> {
+  async configureIntegration(config: IntegrationConfiguration): Promise<IntegrationEndpoint> {
     try {
       const newEndpoint: IntegrationEndpoint = {
         id: `integration_${Date.now()}`,
@@ -387,7 +424,7 @@ export class IntegrationHub {
       console.log(`Installing integration: ${integration.name}`);
 
       // Create integration endpoint
-      const endpoint = await this.registerWebhook({
+      const _endpoint = await this.registerWebhook({
         name: integration.name,
         type: 'WEBHOOK',
         endpoint: `/webhooks/${integrationId}`,

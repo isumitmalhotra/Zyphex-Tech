@@ -7,6 +7,34 @@ import {
   WorkflowLog
 } from './types';
 
+// Automation-specific interfaces
+export interface ScheduledWorkflow {
+  id: string;
+  workflowId: string;
+  schedule: string;
+  nextRun: Date;
+  isActive: boolean;
+}
+
+export interface InvoiceAutomationData {
+  projectId: string;
+  timeEntries: TimeEntry[];
+  clientId: string;
+}
+
+export interface ClientOnboardingData {
+  clientData: Record<string, unknown>;
+  assignedManager: string;
+  services: string[];
+}
+
+export interface TimeEntry {
+  description?: string;
+  hours?: string;
+  rate?: number;
+  amount?: number;
+}
+
 export class WorkflowEngine {
   private static instance: WorkflowEngine;
 
@@ -75,7 +103,7 @@ export class WorkflowEngine {
         {
           id: 'exec_001',
           workflowId: workflowId || 'client-onboarding',
-          status: (status as any) || 'COMPLETED',
+          status: (status as 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED') || 'COMPLETED',
           startedAt: new Date(),
           completedAt: new Date(),
           context: { clientId: 'client_123' },
@@ -91,7 +119,7 @@ export class WorkflowEngine {
   /**
    * Get scheduled workflows
    */
-  async getScheduledWorkflows(): Promise<any[]> {
+  async getScheduledWorkflows(): Promise<ScheduledWorkflow[]> {
     try {
       // In real implementation, would fetch from database
       return [
@@ -147,7 +175,7 @@ export class WorkflowEngine {
   /**
    * Create invoice automation
    */
-  async createInvoiceAutomation(data: any): Promise<WorkflowExecution> {
+  async createInvoiceAutomation(data: InvoiceAutomationData): Promise<WorkflowExecution> {
     try {
       const workflowId = 'invoice-automation';
       const context = {
@@ -166,7 +194,7 @@ export class WorkflowEngine {
   /**
    * Execute client onboarding workflow
    */
-  async executeClientOnboarding(data: any): Promise<WorkflowExecution> {
+  async executeClientOnboarding(data: ClientOnboardingData): Promise<WorkflowExecution> {
     try {
       const workflowId = 'client-onboarding';
       const context = {
@@ -345,18 +373,16 @@ export class WorkflowEngine {
             invoiceNumber: `INV-${Date.now()}`,
             clientId: project.clientId,
             projectId: project.id,
-            description: `Time entries for ${project.name}`,
-            subtotal: totalAmount,
-            taxAmount: totalAmount * 0.1, // 10% tax
-            totalAmount: totalAmount * 1.1,
+            amount: totalAmount,
+            total: totalAmount * 1.1,
             status: 'DRAFT',
             dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-            items: project.timeEntries.map(entry => ({
+            lineItems: JSON.stringify(project.timeEntries.map(entry => ({
               description: entry.description || 'Time entry',
-              quantity: parseFloat(entry.hours || '0'),
+              quantity: parseFloat(entry.hours?.toString() || '0'),
               rate: Number(entry.rate || 0),
               amount: Number(entry.amount || 0)
-            }))
+            })))
           }
         });
 

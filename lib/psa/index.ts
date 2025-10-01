@@ -13,10 +13,6 @@ import { BusinessIntelligence } from './business-intelligence';
 import {
   PSAConfig,
   DashboardMetrics,
-  WorkflowTemplate,
-  IntegrationEndpoint,
-  BIReport,
-  AlertRule,
   SystemHealth
 } from './types';
 
@@ -184,7 +180,7 @@ export class PSACore {
   /**
    * Process integration webhook with full context
    */
-  async processWebhook(endpoint: string, payload: unknown, headers: Record<string, string>): Promise<{
+  async processWebhook(endpoint: string, payload: unknown, _headers: Record<string, string>): Promise<{
     success: boolean;
     processed: boolean;
     actions: string[];
