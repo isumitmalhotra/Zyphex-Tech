@@ -4,13 +4,76 @@
  */
 
 import { useState, useEffect } from 'react';
+import {
+  ProjectHealthMetrics,
+  ResourceMetrics,
+  FinancialMetrics,
+  ClientSatisfactionMetrics,
+  Alert
+} from '@/lib/psa/types';
+
+// Additional interfaces for hook functionality
+interface CreateAlertData {
+  type: 'PROJECT_RISK' | 'DEADLINE_WARNING' | 'BUDGET_OVERRUN' | 'RESOURCE_CONFLICT' | 'CLIENT_ISSUE';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  title: string;
+  description: string;
+  projectId?: string;
+  clientId?: string;
+  resourceId?: string;
+}
+
+interface WorkflowExecutionContext {
+  projectId?: string;
+  clientId?: string;
+  userId?: string;
+  data?: Record<string, unknown>;
+}
+
+interface WorkflowTemplateData {
+  name: string;
+  description: string;
+  category: string;
+  steps: Array<{
+    name: string;
+    type: 'ACTION' | 'CONDITION' | 'DELAY' | 'APPROVAL' | 'NOTIFICATION';
+    action: string;
+    parameters: Record<string, unknown>;
+  }>;
+}
+
+interface ReportOptions {
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+  projectIds?: string[];
+  clientIds?: string[];
+  filters?: Record<string, unknown>;
+}
+
+interface ReportsState {
+  [reportType: string]: {
+    data: unknown;
+    generated: Date;
+    status: 'generating' | 'completed' | 'error';
+  };
+}
+
+interface WebhookData {
+  name: string;
+  url: string;
+  events: string[];
+  active: boolean;
+  secret?: string;
+}
 
 export interface PSADashboardData {
-  projectHealth: any[];
-  resourceUtilization: any;
-  financialMetrics: any;
-  clientSatisfaction: any;
-  alerts: any[];
+  projectHealth: ProjectHealthMetrics[];
+  resourceUtilization: ResourceMetrics;
+  financialMetrics: FinancialMetrics;
+  clientSatisfaction: ClientSatisfactionMetrics;
+  alerts: Alert[];
   lastUpdated: string;
 }
 
@@ -64,7 +127,7 @@ export function usePSADashboard() {
     }
   };
 
-  const createAlert = async (alertData: any) => {
+  const createAlert = async (alertData: CreateAlertData) => {
     try {
       const response = await fetch('/api/psa/dashboard', {
         method: 'POST',
@@ -106,10 +169,10 @@ export function usePSADashboard() {
  */
 export function useWorkflowManagement() {
   const [workflows, setWorkflows] = useState([]);
-  const [executions, setExecutions] = useState([]);
+  const [executions, _setExecutions] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const executeWorkflow = async (workflowId: string, context: any) => {
+  const executeWorkflow = async (workflowId: string, context: WorkflowExecutionContext) => {
     try {
       setLoading(true);
       
@@ -136,7 +199,7 @@ export function useWorkflowManagement() {
     }
   };
 
-  const createWorkflowTemplate = async (template: any) => {
+  const createWorkflowTemplate = async (template: WorkflowTemplateData) => {
     try {
       setLoading(true);
       
@@ -193,17 +256,24 @@ export function useWorkflowManagement() {
  * Business Intelligence Hook
  */
 export function useBusinessIntelligence() {
-  const [reports, setReports] = useState<any>({});
+  const [reports, setReports] = useState<ReportsState>({});
   const [loading, setLoading] = useState(false);
 
-  const generateReport = async (reportType: string, options?: any) => {
+  const generateReport = async (reportType: string, options?: ReportOptions) => {
     try {
       setLoading(true);
       
-      const params = new URLSearchParams({
-        type: reportType,
-        ...options
-      });
+      const params = new URLSearchParams({ type: reportType });
+      if (options?.dateRange) {
+        params.set('startDate', options.dateRange.start.toISOString());
+        params.set('endDate', options.dateRange.end.toISOString());
+      }
+      if (options?.projectIds) {
+        params.set('projectIds', options.projectIds.join(','));
+      }
+      if (options?.clientIds) {
+        params.set('clientIds', options.clientIds.join(','));
+      }
 
       const response = await fetch(`/api/psa/business-intelligence?${params}`);
       
@@ -213,7 +283,7 @@ export function useBusinessIntelligence() {
 
       const result = await response.json();
       
-      setReports((prev: any) => ({
+      setReports((prev: ReportsState) => ({
         ...prev,
         [reportType]: result.data
       }));
@@ -227,7 +297,7 @@ export function useBusinessIntelligence() {
     }
   };
 
-  const exportData = async (reportType: string, format: string, options?: any) => {
+  const exportData = async (reportType: string, format: string, options?: ReportOptions) => {
     try {
       const response = await fetch('/api/psa/business-intelligence', {
         method: 'POST',
@@ -263,7 +333,7 @@ export function useBusinessIntelligence() {
  */
 export function useIntegrationManagement() {
   const [integrations, setIntegrations] = useState([]);
-  const [webhookLogs, setWebhookLogs] = useState([]);
+  const [webhookLogs, _setWebhookLogs] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchIntegrations = async () => {
@@ -278,7 +348,7 @@ export function useIntegrationManagement() {
     }
   };
 
-  const registerWebhook = async (webhookData: any) => {
+  const registerWebhook = async (webhookData: WebhookData) => {
     try {
       setLoading(true);
       
@@ -343,9 +413,11 @@ export function useIntegrationManagement() {
   };
 }
 
-export default {
+const PSAHooks = {
   usePSADashboard,
   useWorkflowManagement,
   useBusinessIntelligence,
   useIntegrationManagement
 };
+
+export default PSAHooks;
