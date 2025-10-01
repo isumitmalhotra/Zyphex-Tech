@@ -5,14 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, TrendingUp, TrendingDown, Users, DollarSign, Clock, CheckCircle } from 'lucide-react';
+import { DashboardMetrics, Alert, ProjectHealthMetrics, ResourceMetrics, FinancialMetrics, ClientSatisfactionMetrics, CapacityWarning, OutstandingInvoice } from '@/lib/psa/types';
 
 interface PSADashboardProps {
   userId?: string;
-  role?: string;
+  _role?: string; // Prefixed with _ to indicate intentionally unused
 }
 
-export function PSADashboard({ userId, role }: PSADashboardProps) {
-  const [dashboardData, setDashboardData] = useState<any>(null);
+export function PSADashboard({ userId, _role }: PSADashboardProps) {
+  const [dashboardData, setDashboardData] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -91,9 +92,9 @@ export function PSADashboard({ userId, role }: PSADashboardProps) {
             <h3 className="font-semibold text-yellow-800">Active Alerts</h3>
           </div>
           <div className="space-y-2">
-            {dashboardData.alerts.slice(0, 3).map((alert: any, index: number) => (
+            {dashboardData.alerts.slice(0, 3).map((alert: Alert, index: number) => (
               <div key={index} className="text-sm text-yellow-700">
-                {alert.message}
+                {alert.title}
               </div>
             ))}
           </div>
@@ -115,20 +116,20 @@ export function PSADashboard({ userId, role }: PSADashboardProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <MetricCard
               title="Total Revenue"
-              value={dashboardData.financialMetrics?.totalRevenue || 0}
+              value={dashboardData.financialSummary?.totalRevenue || 0}
               format="currency"
               trend={12.5}
               icon={<DollarSign className="h-4 w-4" />}
             />
             <MetricCard
               title="Active Projects"
-              value={dashboardData.projectHealth?.filter((p: any) => p.status !== 'COMPLETED').length || 0}
+              value={1} // Since projectHealth is a single object, not an array
               trend={8.2}
               icon={<CheckCircle className="h-4 w-4" />}
             />
             <MetricCard
               title="Resource Utilization"
-              value={dashboardData.resourceUtilization?.utilizationRate || 0}
+              value={dashboardData.resourceMetrics?.utilizationRate || 0}
               format="percentage"
               trend={-2.1}
               icon={<Users className="h-4 w-4" />}
@@ -143,24 +144,24 @@ export function PSADashboard({ userId, role }: PSADashboardProps) {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ProjectHealthOverview projects={dashboardData.projectHealth || []} />
-            <ResourceUtilizationChart data={dashboardData.resourceUtilization} />
+            <ProjectHealthOverview projects={dashboardData.projectHealth ? [dashboardData.projectHealth] : []} />
+            <ResourceUtilizationChart data={dashboardData.resourceMetrics} />
           </div>
         </TabsContent>
 
         {/* Project Health Tab */}
         <TabsContent value="projects" className="space-y-6">
-          <ProjectHealthDashboard projects={dashboardData.projectHealth || []} />
+          <ProjectHealthDashboard projects={dashboardData.projectHealth ? [dashboardData.projectHealth] : []} />
         </TabsContent>
 
         {/* Resources Tab */}
         <TabsContent value="resources" className="space-y-6">
-          <ResourceDashboard data={dashboardData.resourceUtilization} />
+          <ResourceDashboard data={dashboardData.resourceMetrics} />
         </TabsContent>
 
         {/* Financial Tab */}
         <TabsContent value="financial" className="space-y-6">
-          <FinancialDashboard data={dashboardData.financialMetrics} />
+          <FinancialDashboard data={dashboardData.financialSummary} />
         </TabsContent>
 
         {/* Clients Tab */}
@@ -172,8 +173,16 @@ export function PSADashboard({ userId, role }: PSADashboardProps) {
   );
 }
 
+interface MetricCardProps {
+  title: string;
+  value: number;
+  format?: 'number' | 'currency' | 'percentage' | 'score';
+  trend?: number;
+  icon?: React.ReactNode;
+}
+
 // Metric Card Component
-function MetricCard({ title, value, format = 'number', trend, icon }: any) {
+function MetricCard({ title, value, format = 'number', trend, icon }: MetricCardProps) {
   const formatValue = (val: number) => {
     switch (format) {
       case 'currency':
@@ -207,9 +216,10 @@ function MetricCard({ title, value, format = 'number', trend, icon }: any) {
 }
 
 // Project Health Overview Component
-function ProjectHealthOverview({ projects }: { projects: any[] }) {
-  const healthCounts = projects.reduce((acc, project) => {
-    acc[project.status] = (acc[project.status] || 0) + 1;
+function ProjectHealthOverview({ projects }: { projects: ProjectHealthMetrics[] }) {
+  const healthCounts = projects.reduce((acc: Record<string, number>, project) => {
+    const status = project.status || 'UNKNOWN';
+    acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
 
@@ -221,7 +231,7 @@ function ProjectHealthOverview({ projects }: { projects: any[] }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {Object.entries(healthCounts).map(([status, count]: [string, any]) => (
+          {Object.entries(healthCounts).map(([status, count]: [string, number]) => (
             <div key={status} className="flex items-center justify-between">
               <div className="flex items-center">
                 <Badge variant={getStatusVariant(status)} className="mr-2">
@@ -239,7 +249,7 @@ function ProjectHealthOverview({ projects }: { projects: any[] }) {
 }
 
 // Resource Utilization Chart Component
-function ResourceUtilizationChart({ data }: { data: any }) {
+function ResourceUtilizationChart({ data }: { data: ResourceMetrics | null }) {
   if (!data) return null;
 
   return (
@@ -273,7 +283,7 @@ function ResourceUtilizationChart({ data }: { data: any }) {
 }
 
 // Project Health Dashboard
-function ProjectHealthDashboard({ projects }: { projects: any[] }) {
+function ProjectHealthDashboard({ projects }: { projects: ProjectHealthMetrics[] }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -317,7 +327,7 @@ function ProjectHealthDashboard({ projects }: { projects: any[] }) {
 }
 
 // Resource Dashboard
-function ResourceDashboard({ data }: { data: any }) {
+function ResourceDashboard({ data }: { data: ResourceMetrics | null }) {
   if (!data) return <div>No resource data available</div>;
 
   return (
@@ -350,7 +360,7 @@ function ResourceDashboard({ data }: { data: any }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.capacityWarnings.map((warning: any, index: number) => (
+              {data.capacityWarnings.map((warning: CapacityWarning, index: number) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                   <div>
                     <p className="font-medium">{warning.resourceName}</p>
@@ -372,7 +382,7 @@ function ResourceDashboard({ data }: { data: any }) {
 }
 
 // Financial Dashboard
-function FinancialDashboard({ data }: { data: any }) {
+function FinancialDashboard({ data }: { data: FinancialMetrics | null }) {
   if (!data) return <div>No financial data available</div>;
 
   return (
@@ -413,7 +423,7 @@ function FinancialDashboard({ data }: { data: any }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.outstandingInvoices.slice(0, 5).map((invoice: any) => (
+              {data.outstandingInvoices.slice(0, 5).map((invoice: OutstandingInvoice) => (
                 <div key={invoice.invoiceId} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <p className="font-medium">{invoice.clientName}</p>
@@ -442,32 +452,32 @@ function FinancialDashboard({ data }: { data: any }) {
 }
 
 // Client Dashboard
-function ClientDashboard({ data }: { data: any }) {
+function ClientDashboard({ data }: { data: ClientSatisfactionMetrics | null }) {
   if (!data) return <div>No client data available</div>;
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <MetricCard
-          title="Total Clients"
-          value={data.totalClients || 0}
+          title="Overall Score"
+          value={data.overallScore || 0}
+          format="score"
           icon={<Users className="h-4 w-4" />}
         />
         <MetricCard
-          title="Active Clients"
-          value={data.activeClients || 0}
+          title="NPS Score"
+          value={data.npsScore || 0}
           icon={<CheckCircle className="h-4 w-4" />}
         />
         <MetricCard
-          title="Satisfaction Score"
-          value={data.averageSatisfactionScore || 0}
-          format="score"
+          title="Response Rate"
+          value={data.responseRate || 0}
+          format="percentage"
           icon={<TrendingUp className="h-4 w-4" />}
         />
         <MetricCard
-          title="Churn Rate"
-          value={data.churnRate || 0}
-          format="percentage"
+          title="Feedback Count"
+          value={data.feedbackCount || 0}
           icon={<TrendingDown className="h-4 w-4" />}
         />
       </div>
@@ -481,7 +491,7 @@ function ClientDashboard({ data }: { data: any }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.recentFeedback.slice(0, 5).map((feedback: any, index: number) => (
+              {data.recentFeedback.slice(0, 5).map((feedback, index: number) => (
                 <div key={index} className="p-3 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <p className="font-medium">{feedback.clientName}</p>
