@@ -98,7 +98,15 @@ function ProjectManagerDashboardContent() {
     )
   }
 
-  if (!dashboardData) return null
+  if (!dashboardData) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <div className="text-white">No dashboard data available</div>
+        </div>
+      </div>
+    )
+  }
 
   const { overview, recentProjects, upcomingDeadlines, teamPerformance, recentActivities } = dashboardData
 

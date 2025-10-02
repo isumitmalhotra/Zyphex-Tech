@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { Prisma, ProjectStatus } from '@prisma/client';
 
 // GET /api/projects - Get all projects
 export async function GET(request: NextRequest) {
@@ -13,12 +14,24 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
+    const statusParam = searchParams.get('status');
     const clientId = searchParams.get('clientId');
     
     // Build filter conditions
-    const where: any = {};
-    if (status) where.status = status;
+    const where: Prisma.ProjectWhereInput = {};
+    
+    // Handle multiple status values (comma-separated)
+    if (statusParam) {
+      if (statusParam.includes(',')) {
+        // Multiple statuses
+        const statusArray = statusParam.split(',').map(s => s.trim()) as ProjectStatus[];
+        where.status = { in: statusArray };
+      } else {
+        // Single status
+        where.status = statusParam as ProjectStatus;
+      }
+    }
+    
     if (clientId) where.clientId = clientId;
 
     // Get projects based on user role
@@ -61,7 +74,7 @@ export async function GET(request: NextRequest) {
         },
       });
       
-      return NextResponse.json(projects);
+      return NextResponse.json({ projects });
     }
     
     // For admin and manager, show all projects
@@ -92,7 +105,7 @@ export async function GET(request: NextRequest) {
       },
     });
     
-    return NextResponse.json(projects);
+    return NextResponse.json({ projects });
   } catch (error) {
     console.error('Error fetching projects:', error);
     return NextResponse.json(
@@ -145,7 +158,8 @@ export async function POST(request: NextRequest) {
         name,
         description,
         status: status || 'PLANNING',
-        budget: budget ? parseFloat(budget) : null,
+        budget: budget ? parseFloat(budget) : 0,
+        hourlyRate: 100, // Default hourly rate
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         client: {

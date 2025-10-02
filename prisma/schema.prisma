@@ -27,6 +27,7 @@ model User {
   
   // Existing relations
   projects      Project[]
+  managedProjects Project[] @relation("ProjectManager")
   teams         Team[]
   accounts      Account[]
   sessions      Session[]
@@ -190,7 +191,9 @@ model Project {
   
   // Relations
   clientId        String
+  managerId       String?   // Project manager ID
   client          Client    @relation(fields: [clientId], references: [id])
+  manager         User?     @relation("ProjectManager", fields: [managerId], references: [id])
   template        ProjectTemplate? @relation("ProjectFromTemplate", fields: [templateId], references: [id])
   users           User[]
   teams           Team[]
@@ -211,6 +214,7 @@ model Project {
   budgetItems     ProjectBudgetItem[]
   
   @@index([clientId])
+  @@index([managerId])
   @@index([status])
   @@index([priority])
   @@index([methodology])

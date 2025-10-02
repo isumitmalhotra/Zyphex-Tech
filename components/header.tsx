@@ -128,32 +128,92 @@ export default function Header() {
                     className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-[9999] hidden"
                     style={{ display: 'none' }}
                   >
-                    <Link 
-                      href="/user" 
-                      className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 first:rounded-t-md"
-                      onClick={() => {
-                        document.getElementById('user-dropdown')!.style.display = 'none'
-                        setDropdownOpen(false)
-                      }}
-                    >
-                      <LayoutDashboard className="mr-3 h-4 w-4" />
-                      User Dashboard
-                    </Link>
-                    
-                    {/* Show Admin Dashboard for admin users */}
-                    {session.user?.role === 'ADMIN' && (
+                    {/* Role-specific Dashboard Links */}
+                    {session.user?.role === 'SUPER_ADMIN' && (
                       <Link 
-                        href="/admin" 
-                        className="flex items-center px-4 py-3 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        href="/super-admin" 
+                        className="flex items-center px-4 py-3 text-sm text-purple-600 dark:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-800 first:rounded-t-md"
                         onClick={() => {
                           document.getElementById('user-dropdown')!.style.display = 'none'
                           setDropdownOpen(false)
                         }}
                       >
-                        <Settings className="mr-3 h-4 w-4" />
-                        Admin Panel
+                        <LayoutDashboard className="mr-3 h-4 w-4" />
+                        Super Admin Dashboard
                       </Link>
                     )}
+                    
+                    {session.user?.role === 'ADMIN' && (
+                      <Link 
+                        href="/admin" 
+                        className="flex items-center px-4 py-3 text-sm text-blue-600 dark:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800 first:rounded-t-md"
+                        onClick={() => {
+                          document.getElementById('user-dropdown')!.style.display = 'none'
+                          setDropdownOpen(false)
+                        }}
+                      >
+                        <LayoutDashboard className="mr-3 h-4 w-4" />
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    
+                    {session.user?.role === 'PROJECT_MANAGER' && (
+                      <Link 
+                        href="/project-manager" 
+                        className="flex items-center px-4 py-3 text-sm text-green-600 dark:text-green-400 hover:bg-gray-100 dark:hover:bg-gray-800 first:rounded-t-md"
+                        onClick={() => {
+                          document.getElementById('user-dropdown')!.style.display = 'none'
+                          setDropdownOpen(false)
+                        }}
+                      >
+                        <LayoutDashboard className="mr-3 h-4 w-4" />
+                        Project Manager Dashboard
+                      </Link>
+                    )}
+                    
+                    {session.user?.role === 'TEAM_MEMBER' && (
+                      <Link 
+                        href="/team-member" 
+                        className="flex items-center px-4 py-3 text-sm text-orange-600 dark:text-orange-400 hover:bg-gray-100 dark:hover:bg-gray-800 first:rounded-t-md"
+                        onClick={() => {
+                          document.getElementById('user-dropdown')!.style.display = 'none'
+                          setDropdownOpen(false)
+                        }}
+                      >
+                        <LayoutDashboard className="mr-3 h-4 w-4" />
+                        Team Member Dashboard
+                      </Link>
+                    )}
+                    
+                    {session.user?.role === 'CLIENT' && (
+                      <Link 
+                        href="/client" 
+                        className="flex items-center px-4 py-3 text-sm text-cyan-600 dark:text-cyan-400 hover:bg-gray-100 dark:hover:bg-gray-800 first:rounded-t-md"
+                        onClick={() => {
+                          document.getElementById('user-dropdown')!.style.display = 'none'
+                          setDropdownOpen(false)
+                        }}
+                      >
+                        <LayoutDashboard className="mr-3 h-4 w-4" />
+                        Client Dashboard
+                      </Link>
+                    )}
+                    
+                    {session.user?.role === 'USER' && (
+                      <Link 
+                        href="/user" 
+                        className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 first:rounded-t-md"
+                        onClick={() => {
+                          document.getElementById('user-dropdown')!.style.display = 'none'
+                          setDropdownOpen(false)
+                        }}
+                      >
+                        <LayoutDashboard className="mr-3 h-4 w-4" />
+                        User Dashboard
+                      </Link>
+                    )}
+                    
+                    <hr className="border-gray-200 dark:border-gray-700" />
                     
                     <Link 
                       href="/user/profile" 
