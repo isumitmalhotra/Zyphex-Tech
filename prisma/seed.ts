@@ -244,6 +244,7 @@ async function main() {
       description: "Complete redesign of Acme's e-commerce platform with modern UI/UX",
       status: "IN_PROGRESS" as const,
       budget: 50000,
+      hourlyRate: 85.0,
       startDate: new Date('2024-01-15'),
       endDate: new Date('2024-06-15'),
       clientId: createdClients[0].id
@@ -253,6 +254,7 @@ async function main() {
       description: "Native iOS and Android app for TechCorp's business platform",
       status: "PLANNING" as const,
       budget: 75000,
+      hourlyRate: 95.0,
       startDate: new Date('2024-02-01'),
       endDate: new Date('2024-08-01'),
       clientId: createdClients[1].id
@@ -262,6 +264,7 @@ async function main() {
       description: "Real-time analytics dashboard for StartupXYZ's financial platform",
       status: "IN_PROGRESS" as const,
       budget: 35000,
+      hourlyRate: 75.0,
       startDate: new Date('2024-01-01'),
       endDate: new Date('2024-05-01'),
       clientId: createdClients[2].id
@@ -271,6 +274,7 @@ async function main() {
       description: "Performance optimization and SEO improvements for Acme website",
       status: "COMPLETED" as const,
       budget: 15000,
+      hourlyRate: 65.0,
       startDate: new Date('2023-10-01'),
       endDate: new Date('2023-12-15'),
       clientId: createdClients[0].id

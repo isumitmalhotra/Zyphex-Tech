@@ -25,6 +25,17 @@ export const authOptions: NextAuthOptions = {
           response_type: "code",
           scope: "openid email profile"
         }
+      },
+      profile(profile) {
+        console.log('Google profile data:', profile); // Debug log
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          emailVerified: profile.email_verified ? new Date() : null,
+          role: 'USER' // Default role for OAuth users
+        }
       }
     }),
     GitHubProvider({
@@ -33,6 +44,15 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         params: {
           scope: "read:user user:email"
+        }
+      },
+      profile(profile) {
+        return {
+          id: profile.id.toString(),
+          name: profile.name || profile.login,
+          email: profile.email,
+          image: profile.avatar_url,
+          role: 'USER' // Default role for OAuth users
         }
       }
     }),
@@ -111,6 +131,9 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
+      console.log('SignIn callback - User:', { name: user.name, email: user.email, image: user.image });
+      console.log('SignIn callback - Account provider:', account?.provider);
+      
       if (account?.provider === "email") {
         return true;
       }
@@ -155,7 +178,7 @@ export const authOptions: NextAuthOptions = {
               });
             }
 
-            // Update user info with OAuth data
+            // Update user info with OAuth data including image
             await prisma.user.update({
               where: { id: existingUser.id },
               data: {
@@ -204,14 +227,22 @@ export const authOptions: NextAuthOptions = {
 
       return true;
     },
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, profile }) {
+      // On initial sign-in, user object will be available
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.emailVerified = user.emailVerified;
+        token.picture = user.image || undefined;
       }
       
-      // For OAuth signin, ensure we get the user data from database
+      // For OAuth sign-in, profile contains the OAuth provider data
+      if (account && profile) {
+        const profileData = profile as Record<string, unknown>
+        token.picture = (profileData.picture as string) || (profileData.avatar_url as string) || user?.image || undefined;
+      }
+      
+      // For subsequent requests, get user data from database
       if (account && token.email) {
         try {
           const dbUser = await prisma.user.findUnique({
@@ -221,6 +252,7 @@ export const authOptions: NextAuthOptions = {
             token.id = dbUser.id;
             token.role = dbUser.role;
             token.emailVerified = dbUser.emailVerified;
+            token.picture = dbUser.image || undefined;
           }
         } catch (error) {
           console.error('Error fetching user in JWT callback:', error);
@@ -240,6 +272,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string;
         session.user.emailVerified = token.emailVerified as Date;
         session.user.provider = token.provider as string;
+        session.user.image = token.picture as string; // Add image to session
       }
       return session;
     }

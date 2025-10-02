@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -58,6 +59,18 @@ export function UserSidebar() {
   
   // Get dynamic counts - hooks must be called at top level
   const { counts } = useSidebarCounts()
+  
+  // Debug: Log session data to check if image is present
+  React.useEffect(() => {
+    if (session?.user) {
+      console.log('Session user data:', {
+        name: session.user.name,
+        email: session.user.email,
+        image: session.user.image,
+        hasImage: !!session.user.image
+      });
+    }
+  }, [session])
   
   // Use fallback counts if loading or error
   const safeCounts = {
@@ -135,13 +148,30 @@ export function UserSidebar() {
       <SidebarFooter className="border-t border-gray-800/50 p-4">
         <div className="flex items-center gap-3 mb-4 p-3 rounded-lg zyphex-card-bg">
           {session?.user?.image ? (
-            <Image
-              src={session.user.image}
-              alt={session.user.name || 'User'}
-              width={40}
-              height={40}
-              className="w-10 h-10 rounded-full"
-            />
+            <div className="relative">
+              <Image
+                src={session.user.image}
+                alt={session.user.name || 'User'}
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-full object-cover"
+                unoptimized={true}
+                onError={(e) => {
+                  console.error('Failed to load image:', session.user.image);
+                  // Hide the image element if it fails to load and show fallback
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const fallback = target.nextElementSibling as HTMLElement;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div 
+                className="w-10 h-10 rounded-full zyphex-gradient-primary flex items-center justify-center" 
+                style={{ display: 'none' }}
+              >
+                <Icon3D icon="User" size={20} color="white" />
+              </div>
+            </div>
           ) : (
             <div className="w-10 h-10 rounded-full zyphex-gradient-primary flex items-center justify-center">
               <Icon3D icon="User" size={20} color="white" />
@@ -154,6 +184,12 @@ export function UserSidebar() {
             <p className="text-xs zyphex-subheading truncate">
               {session?.user?.email || 'No email'}
             </p>
+            {/* Debug info */}
+            {process.env.NODE_ENV === 'development' && (
+              <p className="text-xs text-green-400 truncate">
+                Image: {session?.user?.image ? '✓' : '✗'} | Provider: {session?.user?.provider || 'unknown'}
+              </p>
+            )}
           </div>
         </div>
         <Button 

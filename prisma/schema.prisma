@@ -17,6 +17,10 @@ model User {
   name          String?
   password      String?
   role          Role      @default(USER)
+  skills        Json?     // Array of user skills
+  hourlyRate    Float?    // Default hourly rate
+  availability  Json?     // Availability schedule
+  timezone      String?   // User timezone
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime? // Soft delete capability
@@ -43,6 +47,15 @@ model User {
   userPermissions   UserPermission[]
   auditLogs         AuditLog[]
   refreshTokens     RefreshToken[]
+  
+  // Advanced Project Management Relations
+  ownedRisks        ProjectRisk[] @relation("RiskOwner")
+  identifiedRisks   ProjectRisk[] @relation("RiskIdentifier")
+  changeRequests    ChangeRequest[] @relation("ChangeRequester")
+  approvedChanges   ChangeRequest[] @relation("ChangeApprover")
+  resourceAllocations ResourceAllocation[] @relation("ResourceAllocations")
+  sentCommunications ProjectCommunication[] @relation("CommunicationSender")
+  uploadedDocuments ProjectDocument[] @relation("DocumentUploader")
   
   @@index([email])
   @@index([role])
@@ -159,14 +172,18 @@ model Project {
   description     String?
   status          ProjectStatus @default(PLANNING)
   priority        Priority  @default(MEDIUM)
-  budget          Decimal?  @db.Decimal(12, 2)
-  budgetUsed      Decimal?  @db.Decimal(12, 2) @default(0)
-  hourlyRate      Decimal?  @db.Decimal(8, 2)
+  methodology     ProjectMethodology @default(AGILE)
+  templateId      String?   // Reference to template used
+  budget          Float
+  budgetUsed      Float @default(0)
+  hourlyRate      Float
   startDate       DateTime?
   endDate         DateTime?
   estimatedHours  Int?
   actualHours     Int?
   completionRate  Int       @default(0) // Percentage
+  isClientVisible Boolean   @default(true)
+  riskTolerance   String?   // Low, Medium, High
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime? // Soft delete capability
@@ -174,6 +191,7 @@ model Project {
   // Relations
   clientId        String
   client          Client    @relation(fields: [clientId], references: [id])
+  template        ProjectTemplate? @relation("ProjectFromTemplate", fields: [templateId], references: [id])
   users           User[]
   teams           Team[]
   tasks           Task[]
@@ -183,9 +201,20 @@ model Project {
   documents       Document[]
   teamMembers     TeamMember[]
   
+  // Advanced Project Management Relations
+  risks           ProjectRisk[]
+  milestones      ProjectMilestone[]
+  changeRequests  ChangeRequest[]
+  resourceAllocations ResourceAllocation[]
+  communications  ProjectCommunication[]
+  projectDocuments ProjectDocument[]
+  budgetItems     ProjectBudgetItem[]
+  
   @@index([clientId])
   @@index([status])
   @@index([priority])
+  @@index([methodology])
+  @@index([templateId])
   @@index([startDate, endDate])
   @@index([deletedAt])
 }
@@ -211,12 +240,12 @@ model TimeEntry {
   userId      String
   taskId      String?
   projectId   String?
-  hours       Decimal   @db.Decimal(5, 2)
+  hours       Float
   billable    Boolean   @default(true)
   date        DateTime
   description String?
-  rate        Decimal?  @db.Decimal(8, 2)
-  amount      Decimal?  @db.Decimal(10, 2)
+  rate        Float
+  amount      Float
   status      TimeEntryStatus @default(DRAFT)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -238,9 +267,9 @@ model Invoice {
   clientId    String
   projectId   String?
   invoiceNumber String  @unique
-  amount      Decimal   @db.Decimal(12, 2)
-  tax         Decimal?  @db.Decimal(12, 2) @default(0)
-  total       Decimal   @db.Decimal(12, 2)
+  amount      Float
+  tax         Float @default(0)
+  total       Float
   status      InvoiceStatus @default(DRAFT)
   dueDate     DateTime
   paidAt      DateTime?
@@ -275,9 +304,12 @@ model Task {
   completedAt   DateTime?
   estimatedHours Int?
   actualHours   Int?
-  dependencies  String?   // JSON array of task IDs
+  progress      Int       @default(0)    // Percentage 0-100
   tags          String?   // JSON array of tags
   order         Int       @default(0)
+  isBlocking    Boolean   @default(false) // Critical path task
+  isMilestone   Boolean   @default(false)
+  skillsRequired Json?    // Array of required skills
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
@@ -287,12 +319,17 @@ model Task {
   creator       User      @relation("TaskCreator", fields: [createdBy], references: [id])
   timeEntries   TimeEntry[]
   
+  // Task Dependency Relations
+  dependencies  TaskDependency[] @relation("TaskDependencies")
+  dependents    TaskDependency[] @relation("TaskDependents")
+  
   @@index([projectId])
   @@index([assigneeId])
   @@index([createdBy])
   @@index([status])
   @@index([priority])
   @@index([dueDate])
+  @@index([isBlocking])
 }
 
 model ActivityLog {
@@ -379,7 +416,7 @@ model TeamMember {
   projectId     String?
   teamId        String?
   role          TeamRole  @default(MEMBER)
-  hourlyRate    Decimal?  @db.Decimal(8, 2)
+  hourlyRate    Float
   allocatedHours Int?
   capacity      Int?      // Percentage of time allocated
   startDate     DateTime?
@@ -410,7 +447,7 @@ model Lead {
   website     String?
   source      LeadSource @default(WEBSITE)
   status      LeadStatus @default(NEW)
-  value       Decimal?  @db.Decimal(12, 2)
+  value       Float
   notes       String?
   assignedTo  String?
   lastContact DateTime?
@@ -432,7 +469,7 @@ model Deal {
   id          String    @id @default(uuid())
   leadId      String
   title       String
-  value       Decimal   @db.Decimal(12, 2)
+  value       Float
   stage       DealStage @default(PROSPECT)
   probability Int       @default(0) // Percentage
   closeDate   DateTime?
@@ -481,7 +518,7 @@ model ResourceProfile {
   id            String    @id @default(uuid())
   userId        String    @unique
   skills        String    // JSON array of skills
-  hourlyRate    Decimal?  @db.Decimal(8, 2)
+  hourlyRate    Float
   currency      String    @default("USD")
   capacity      Int       @default(40) // Hours per week
   availability  String    // JSON object with availability schedule
@@ -821,4 +858,320 @@ model Page {
   
   @@index([slug, isActive])
   @@index([isActive, order])
+}
+
+// Advanced Project Management Models
+
+// Project Templates for different methodologies
+model ProjectTemplate {
+  id              String    @id @default(uuid())
+  name            String
+  description     String?
+  methodology     ProjectMethodology
+  industry        String?
+  estimatedDuration Int?    // in days
+  tasksTemplate   Json?     // Template for default tasks
+  milestonesTemplate Json?  // Template for milestones
+  riskTemplate    Json?     // Common risks for this template
+  resourceTemplate Json?    // Resource requirements template
+  budgetTemplate  Json?     // Budget breakdown template
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  projects        Project[] @relation("ProjectFromTemplate")
+  
+  @@index([methodology])
+  @@index([isActive])
+}
+
+// Task Dependencies for Gantt chart functionality
+model TaskDependency {
+  id               String            @id @default(uuid())
+  taskId           String
+  dependsOnTaskId  String
+  dependencyType   DependencyType    @default(FINISH_TO_START)
+  lagDays          Int               @default(0)    // Lag time in days
+  createdAt        DateTime          @default(now())
+  
+  // Relations
+  task             Task              @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOnTask    Task              @relation("TaskDependents", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+  
+  @@unique([taskId, dependsOnTaskId])
+  @@index([taskId])
+  @@index([dependsOnTaskId])
+}
+
+// Project Risk Management
+model ProjectRisk {
+  id               String            @id @default(uuid())
+  projectId        String
+  title            String
+  description      String?
+  category         RiskCategory      @default(TECHNICAL)
+  impactScore      Int               // 1-5 scale (constraints enforced in application layer)
+  probabilityScore Int               // 1-5 scale (constraints enforced in application layer)
+  riskScore        Int               // Auto-calculated: impact * probability
+  status           RiskStatus        @default(OPEN)
+  mitigationPlan   String?
+  contingencyPlan  String?
+  ownerId          String?           // Risk owner
+  identifiedBy     String
+  identifiedAt     DateTime          @default(now())
+  reviewDate       DateTime?
+  closedAt         DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  
+  // Relations
+  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  owner            User?             @relation("RiskOwner", fields: [ownerId], references: [id])
+  identifier       User              @relation("RiskIdentifier", fields: [identifiedBy], references: [id])
+  
+  @@index([projectId])
+  @@index([status])
+  @@index([riskScore])
+}
+
+// Project Milestones
+model ProjectMilestone {
+  id           String              @id @default(uuid())
+  projectId    String
+  title        String
+  description  String?
+  targetDate   DateTime
+  actualDate   DateTime?
+  status       MilestoneStatus     @default(PENDING)
+  order        Int                 @default(0)
+  isKey        Boolean             @default(false)  // Key milestone for client reporting
+  deliverables Json?               // Array of deliverable descriptions
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  
+  // Relations
+  project      Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@index([projectId])
+  @@index([targetDate])
+  @@index([status])
+}
+
+// Change Requests
+model ChangeRequest {
+  id              String               @id @default(uuid())
+  projectId       String
+  requestedBy     String
+  title           String
+  description     String
+  reason          String
+  impact          String?              // Impact analysis
+  estimatedCost   Float?
+  estimatedHours  Int?
+  estimatedDays   Int?
+  priority        Priority             @default(MEDIUM)
+  status          ChangeRequestStatus  @default(PENDING)
+  approvedBy      String?
+  approvedAt      DateTime?
+  implementedAt   DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  
+  // Relations
+  project         Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  requester       User                 @relation("ChangeRequester", fields: [requestedBy], references: [id])
+  approver        User?                @relation("ChangeApprover", fields: [approvedBy], references: [id])
+  
+  @@index([projectId])
+  @@index([status])
+  @@index([priority])
+}
+
+// Resource Allocation for workload management
+model ResourceAllocation {
+  id            String            @id @default(uuid())
+  projectId     String
+  userId        String
+  role          String?           // Role in the project
+  allocationPercentage Float      // Percentage of time allocated (0-100)
+  hourlyRate    Float?
+  startDate     DateTime
+  endDate       DateTime?
+  isActive      Boolean           @default(true)
+  skills        Json?             // Array of required/utilized skills
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  // Relations
+  project       Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User              @relation("ResourceAllocations", fields: [userId], references: [id])
+  
+  @@unique([projectId, userId, startDate])
+  @@index([projectId])
+  @@index([userId])
+  @@index([startDate, endDate])
+}
+
+// Project Communications
+model ProjectCommunication {
+  id            String               @id @default(uuid())
+  projectId     String
+  type          CommunicationType    @default(UPDATE)
+  subject       String
+  content       String
+  senderId      String
+  recipients    Json                 // Array of user IDs
+  isClientVisible Boolean            @default(false)
+  attachments   Json?                // Array of file references
+  scheduledFor  DateTime?            // For scheduled communications
+  sentAt        DateTime?
+  createdAt     DateTime             @default(now())
+  
+  // Relations
+  project       Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sender        User                 @relation("CommunicationSender", fields: [senderId], references: [id])
+  
+  @@index([projectId])
+  @@index([type])
+  @@index([isClientVisible])
+  @@index([sentAt])
+}
+
+// Project Documents with version control
+model ProjectDocument {
+  id            String               @id @default(uuid())
+  projectId     String
+  name          String
+  description   String?
+  filePath      String
+  fileSize      BigInt
+  mimeType      String
+  version       String               @default("1.0")
+  isLatest      Boolean              @default(true)
+  category      DocumentCategory     @default(GENERAL)
+  isClientVisible Boolean            @default(false)
+  uploadedBy    String
+  parentDocumentId String?           // For version tracking
+  metadata      Json?                // Additional file metadata
+  createdAt     DateTime             @default(now())
+  
+  // Relations
+  project       Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploader      User                 @relation("DocumentUploader", fields: [uploadedBy], references: [id])
+  parentDocument ProjectDocument?    @relation("DocumentVersions", fields: [parentDocumentId], references: [id])
+  versions      ProjectDocument[]    @relation("DocumentVersions")
+  
+  @@index([projectId])
+  @@index([category])
+  @@index([isClientVisible])
+  @@index([isLatest])
+}
+
+// Project Budget Tracking
+model ProjectBudgetItem {
+  id            String               @id @default(uuid())
+  projectId     String
+  category      BudgetCategory
+  name          String
+  description   String?
+  budgetedAmount Float
+  actualAmount  Float                @default(0)
+  variance      Float                @default(0)    // Calculated field
+  isRecurring   Boolean              @default(false)
+  recurringFrequency String?         // monthly, weekly, etc.
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  
+  // Relations
+  project       Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@index([projectId])
+  @@index([category])
+}
+
+// Enhanced Enums for Advanced Project Management
+enum ProjectMethodology {
+  AGILE
+  WATERFALL
+  HYBRID
+  KANBAN
+  SCRUM
+  LEAN
+  PRINCE2
+}
+
+enum DependencyType {
+  FINISH_TO_START
+  START_TO_START
+  FINISH_TO_FINISH
+  START_TO_FINISH
+}
+
+enum RiskCategory {
+  TECHNICAL
+  BUSINESS
+  RESOURCE
+  SCHEDULE
+  BUDGET
+  EXTERNAL
+  QUALITY
+  COMMUNICATION
+}
+
+enum RiskStatus {
+  OPEN
+  MITIGATED
+  CLOSED
+  MONITORING
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  CANCELLED
+}
+
+enum ChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  IMPLEMENTED
+  CANCELLED
+}
+
+enum CommunicationType {
+  UPDATE
+  ANNOUNCEMENT
+  ALERT
+  REMINDER
+  REPORT
+  MEETING_MINUTES
+}
+
+enum DocumentCategory {
+  GENERAL
+  REQUIREMENTS
+  DESIGN
+  DEVELOPMENT
+  TESTING
+  DEPLOYMENT
+  CONTRACTS
+  REPORTS
+  PRESENTATIONS
+}
+
+enum BudgetCategory {
+  LABOR
+  MATERIALS
+  EQUIPMENT
+  SOFTWARE
+  TRAVEL
+  TRAINING
+  OVERHEAD
+  CONTINGENCY
 }
