@@ -11,12 +11,9 @@ import {
   BarChart3,
   Briefcase,
   Clock,
-  TrendingUp,
   AlertTriangle,
-  Calendar,
   Target,
   Users,
-  DollarSign,
   RefreshCw,
   Loader2,
 } from "lucide-react"

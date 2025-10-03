@@ -57,6 +57,7 @@ model User {
   resourceAllocations ResourceAllocation[] @relation("ResourceAllocations")
   sentCommunications ProjectCommunication[] @relation("CommunicationSender")
   uploadedDocuments ProjectDocument[] @relation("DocumentUploader")
+  expenses          Expense[]
   
   @@index([email])
   @@index([role])
@@ -158,9 +159,11 @@ model Client {
   deletedAt   DateTime? // Soft delete capability
   
   // Relations
-  projects    Project[]
-  invoices    Invoice[]
-  contactLogs ContactLog[]
+  projects         Project[]
+  invoices         Invoice[]
+  contactLogs      ContactLog[]
+  billingContracts BillingContract[]
+  paymentConfigs   PaymentConfig[]
   
   @@index([email])
   @@index([name])
@@ -212,6 +215,9 @@ model Project {
   communications  ProjectCommunication[]
   projectDocuments ProjectDocument[]
   budgetItems     ProjectBudgetItem[]
+  expenses        Expense[]
+  billingContracts BillingContract[]
+  paymentConfigs  PaymentConfig[]
   
   @@index([clientId])
   @@index([managerId])
@@ -244,7 +250,9 @@ model TimeEntry {
   userId      String
   taskId      String?
   projectId   String?
+  invoiceId   String?   // Reference to invoice when billed
   hours       Float
+  duration    Float?    // Duration in hours (for compatibility)
   billable    Boolean   @default(true)
   date        DateTime
   description String?
@@ -258,6 +266,7 @@ model TimeEntry {
   user        User      @relation(fields: [userId], references: [id])
   task        Task?     @relation(fields: [taskId], references: [id])
   project     Project?  @relation(fields: [projectId], references: [id])
+  invoice     Invoice?  @relation(fields: [invoiceId], references: [id])
   
   @@index([userId])
   @@index([taskId])
@@ -267,31 +276,212 @@ model TimeEntry {
 }
 
 model Invoice {
-  id          String    @id @default(uuid())
-  clientId    String
-  projectId   String?
-  invoiceNumber String  @unique
-  amount      Float
-  tax         Float @default(0)
-  total       Float
-  status      InvoiceStatus @default(DRAFT)
-  dueDate     DateTime
-  paidAt      DateTime?
-  lineItems   String    // JSON array of line items
-  notes       String?
-  terms       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String        @id @default(uuid())
+  clientId      String
+  projectId     String?
+  invoiceNumber String        @unique
+  amount        Float
+  taxAmount     Float         @default(0)
+  discountAmount Float        @default(0)
+  total         Float
+  currency      String        @default("USD")
+  status        InvoiceStatus @default(DRAFT)
+  billingType   BillingType   @default(HOURLY)
+  dueDate       DateTime
+  sentAt        DateTime?
+  paidAt        DateTime?
+  overdueAt     DateTime?     // When invoice became overdue
+  lastReminderAt DateTime?    // Last payment reminder sent
+  lineItems     Json          // Array of invoice line items
+  notes         String?
+  terms         String?
+  paymentInstructions String? // Custom payment instructions
+  metadata      Json?         // Additional invoice data
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   
   // Relations
-  client      Client    @relation(fields: [clientId], references: [id])
-  project     Project?  @relation(fields: [projectId], references: [id])
+  client        Client        @relation(fields: [clientId], references: [id])
+  project       Project?      @relation(fields: [projectId], references: [id])
+  payments      Payment[]
+  timeEntries   TimeEntry[]
+  expenses      Expense[]
+  paymentReminders PaymentReminder[]
+  lateFees      LateFee[]
   
   @@index([clientId])
   @@index([projectId])
   @@index([status])
   @@index([dueDate])
   @@index([invoiceNumber])
+  @@index([overdueAt])
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  invoiceId        String
+  amount           Float
+  currency         String        @default("USD")
+  paymentMethod    PaymentMethod
+  paymentReference String?       // Stripe/PayPal transaction ID
+  status           PaymentStatus @default(PENDING)
+  processedAt      DateTime?
+  failureReason    String?       // Payment failure details
+  refundAmount     Float?        // Partial refund tracking
+  refundReason     String?       // Refund justification
+  stripePaymentId  String?       // Stripe Payment Intent ID
+  paypalOrderId    String?       // PayPal Order ID
+  gatewayFees      Float?        // Transaction fees charged by gateway
+  metadata         Json?         // Additional payment gateway data
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  
+  // Relations
+  invoice          Invoice       @relation(fields: [invoiceId], references: [id])
+  paymentReminders PaymentReminder[]
+  
+  @@index([invoiceId])
+  @@index([status])
+  @@index([paymentMethod])
+  @@index([stripePaymentId])
+  @@index([paypalOrderId])
+}
+
+model PaymentReminder {
+  id          String               @id @default(uuid())
+  invoiceId   String
+  paymentId   String?              // Optional: linked to specific payment attempt
+  type        PaymentReminderType
+  sentAt      DateTime
+  dueDate     DateTime
+  amount      Float
+  lateFee     Float                @default(0)
+  reminderText String
+  emailSent   Boolean              @default(false)
+  smsGent     Boolean              @default(false)
+  responded   Boolean              @default(false)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  
+  // Relations
+  invoice     Invoice              @relation(fields: [invoiceId], references: [id])
+  payment     Payment?             @relation(fields: [paymentId], references: [id])
+  
+  @@index([invoiceId])
+  @@index([type])
+  @@index([sentAt])
+  @@index([dueDate])
+}
+
+model LateFee {
+  id          String    @id @default(uuid())
+  invoiceId   String
+  amount      Float
+  percentage  Float?    // Late fee as percentage of invoice
+  flatFee     Float?    // Fixed late fee amount
+  appliedAt   DateTime
+  reason      String
+  waived      Boolean   @default(false)
+  waivedAt    DateTime?
+  waivedBy    String?   // User ID who waived the fee
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id])
+  
+  @@index([invoiceId])
+  @@index([appliedAt])
+  @@index([waived])
+}
+
+model PaymentConfig {
+  id                    String   @id @default(uuid())
+  clientId              String?  // Client-specific config
+  projectId             String?  // Project-specific config
+  stripeEnabled         Boolean  @default(false)
+  paypalEnabled         Boolean  @default(false)
+  bankTransferEnabled   Boolean  @default(true)
+  checkEnabled          Boolean  @default(true)
+  stripePublishableKey  String?
+  stripeSecretKey       String?  // Encrypted
+  paypalClientId        String?
+  paypalClientSecret    String?  // Encrypted
+  defaultCurrency       String   @default("USD")
+  lateFeeEnabled        Boolean  @default(false)
+  lateFeePercentage     Float?   // Late fee as percentage
+  lateFeeFlatAmount     Float?   // Fixed late fee amount
+  lateFeeGraceDays      Int      @default(0)
+  reminderEnabled       Boolean  @default(true)
+  reminderDaysBefore    Int      @default(3)
+  reminderDaysAfter     Int      @default(7)
+  bankAccountName       String?
+  bankAccountNumber     String?
+  bankRoutingNumber     String?
+  bankSwiftCode         String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  client                Client?  @relation(fields: [clientId], references: [id])
+  project               Project? @relation(fields: [projectId], references: [id])
+  
+  @@index([clientId])
+  @@index([projectId])
+}
+
+model Expense {
+  id          String    @id @default(uuid())
+  projectId   String?
+  userId      String
+  invoiceId   String?   // Reference to invoice when billed
+  category    ExpenseCategory
+  amount      Float
+  currency    String    @default("USD")
+  description String
+  receiptUrl  String?
+  date        DateTime
+  reimbursed  Boolean   @default(false)
+  billable    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relations
+  project     Project?  @relation(fields: [projectId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+  invoice     Invoice?  @relation(fields: [invoiceId], references: [id])
+  
+  @@index([projectId])
+  @@index([userId])
+  @@index([category])
+  @@index([date])
+}
+
+model BillingContract {
+  id             String          @id @default(uuid())
+  clientId       String
+  projectId      String?
+  contractType   BillingType
+  hourlyRate     Float?
+  fixedAmount    Float?
+  retainerAmount Float?
+  billingCycle   BillingCycle    @default(MONTHLY)
+  startDate      DateTime
+  endDate        DateTime?
+  isActive       Boolean         @default(true)
+  autoInvoice    Boolean         @default(true)
+  metadata       Json?           // Additional contract terms
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  
+  // Relations
+  client         Client          @relation(fields: [clientId], references: [id])
+  project        Project?        @relation(fields: [projectId], references: [id])
+  
+  @@index([clientId])
+  @@index([projectId])
+  @@index([contractType])
+  @@index([isActive])
 }
 
 model Task {
@@ -453,20 +643,29 @@ model Lead {
   status      LeadStatus @default(NEW)
   value       Float
   notes       String?
-  assignedTo  String?
+  assignedTo  String? // User ID of assigned sales member
   lastContact DateTime?
   nextFollowUp DateTime?
+  qualificationScore Int @default(0) // Lead scoring
+  companySize        Int? // Number of employees
+  budget             Float?
+  timeline           String? // e.g., 'Q4 2025'
+  emailCampaignStatus String? // JSON: { sent: true, opened: false }
+  convertedToClient  Boolean @default(false)
+  convertedAt        DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   
   // Relations
   deals       Deal[]
+  activities  LeadActivity[]
   
   @@index([email])
   @@index([status])
   @@index([source])
   @@index([assignedTo])
   @@index([nextFollowUp])
+  @@index([qualificationScore])
 }
 
 model Deal {
@@ -481,17 +680,43 @@ model Deal {
   lostAt      DateTime?
   lostReason  String?
   description String?
-  assignedTo  String?
+  assignedTo  String? // User ID of assigned sales member
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  clientId    String? // Conversion: link to Client
   
   // Relations
   lead        Lead      @relation(fields: [leadId], references: [id])
+  client      Client?   @relation(fields: [clientId], references: [id])
   
   @@index([leadId])
   @@index([stage])
   @@index([closeDate])
   @@index([assignedTo])
+  @@index([clientId])
+// Lead Activity Log for tracking actions (calls, emails, notes)
+model LeadActivity {
+  id        String   @id @default(uuid())
+  leadId    String
+  userId    String // Sales team member
+  type      String // e.g., 'CALL', 'EMAIL', 'NOTE', 'MEETING'
+  subject   String?
+  content   String?
+  outcome   String?
+  scheduledAt DateTime?
+  completedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  lead      Lead     @relation(fields: [leadId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([userId])
+  @@index([type])
+  @@index([scheduledAt])
+  @@index([createdAt])
 }
 
 model ContactLog {
@@ -646,6 +871,68 @@ enum MessageType {
   BROADCAST
   NOTIFICATION
   SYSTEM
+}
+
+enum PaymentMethod {
+  STRIPE
+  PAYPAL
+  BANK_TRANSFER
+  CHECK
+  WIRE_TRANSFER
+  CASH
+  CREDIT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+  PARTIALLY_PAID
+  CHARGEBACK
+}
+
+enum PaymentReminderType {
+  BEFORE_DUE
+  ON_DUE_DATE
+  OVERDUE_1ST
+  OVERDUE_2ND
+  OVERDUE_FINAL
+  CUSTOM
+}
+
+enum ExpenseCategory {
+  TRAVEL
+  MEALS
+  OFFICE_SUPPLIES
+  SOFTWARE
+  HARDWARE
+  MARKETING
+  PROFESSIONAL_SERVICES
+  TRAINING
+  UTILITIES
+  RENT
+  INSURANCE
+  OTHER
+}
+
+enum BillingType {
+  HOURLY
+  FIXED_FEE
+  RETAINER
+  SUBSCRIPTION
+  MILESTONE_BASED
+  MIXED
+}
+
+enum BillingCycle {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  ONE_TIME
 }
 
 // NextAuth.js Models

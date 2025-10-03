@@ -58,6 +58,16 @@ const projectManagerNavigation = [
     ],
   },
   {
+    title: "Financial Management",
+    items: [
+      { title: "Financial Dashboard", url: "/project-manager/financial", icon: "TrendingUp" },
+      { title: "Invoices", url: "/project-manager/financial/invoices", icon: "FileText" },
+      { title: "Payments", url: "/project-manager/financial/payments", icon: "CreditCard" },
+      { title: "Expenses", url: "/project-manager/financial/expenses", icon: "Receipt" },
+      { title: "Financial Reports", url: "/project-manager/financial/reports", icon: "BarChart3" },
+    ],
+  },
+  {
     title: "Analytics & Reports",
     items: [
       { title: "Project Analytics", url: "/project-manager/analytics", icon: "BarChart3" },

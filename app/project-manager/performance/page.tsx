@@ -2,7 +2,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PermissionGuard } from "@/components/auth/permission-guard"
@@ -148,7 +147,7 @@ function TeamPerformanceContent() {
               {teamPerformance.length === 0 ? (
                 <p className="text-center zyphex-subheading py-8">No team performance data available</p>
               ) : (
-                teamPerformance.slice(0, 5).map((member, index) => (
+                teamPerformance.slice(0, 5).map((member, _index) => (
                   <div key={member.userId} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">

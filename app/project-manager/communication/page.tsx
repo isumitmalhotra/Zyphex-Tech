@@ -2,13 +2,11 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PermissionGuard } from "@/components/auth/permission-guard"
 import { Permission } from "@/lib/auth/permissions"
 import {
   MessageSquare,
-  Send,
   Users,
   AlertTriangle,
   RefreshCw,

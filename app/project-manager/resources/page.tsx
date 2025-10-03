@@ -13,7 +13,6 @@ import {
   Target,
   AlertTriangle,
   RefreshCw,
-  Plus,
   UserPlus,
   Calendar,
   BarChart3,

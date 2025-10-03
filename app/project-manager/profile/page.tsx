@@ -14,7 +14,6 @@ import {
   Mail,
   Phone,
   MapPin,
-  Calendar,
   Briefcase,
   Save,
   Camera,
