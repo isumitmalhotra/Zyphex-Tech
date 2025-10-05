@@ -31,11 +31,14 @@ import { useAdminProjects } from "@/hooks/use-admin-data"
 import { CreateProjectDialog } from "@/components/admin/create-project-dialog"
 import { AdminTableContainer } from "@/components/admin/admin-table-container"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "@/hooks/use-toast"
 
 export default function ProjectsPage() {
   const { projects, isLoading, error, mutate } = useAdminProjects()
   const [searchTerm, setSearchTerm] = useState("")
   const [_statusFilter, _setStatusFilter] = useState("all")
+  const router = useRouter()
 
   // Filter projects based on search and status
   const filteredProjects = projects.filter(project => {
@@ -44,6 +47,46 @@ export default function ProjectsPage() {
     const matchesStatus = _statusFilter === "all" || project.status === _statusFilter
     return matchesSearch && matchesStatus
   })
+
+  // Handler functions for project actions
+  const handleViewProject = (projectId: string) => {
+    router.push(`/admin/projects/${projectId}`)
+  }
+
+  const handleEditProject = (projectId: string) => {
+    router.push(`/admin/projects/${projectId}/edit`)
+  }
+
+  const handleDeleteProject = async (projectId: string, projectName: string) => {
+    if (!confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/projects/${projectId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete project')
+      }
+
+      toast({
+        title: "Success",
+        description: "Project deleted successfully",
+      })
+
+      // Refresh the projects list
+      mutate()
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete project. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -256,16 +299,25 @@ export default function ProjectsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="zyphex-glass-effect border-gray-800/50">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem className="hover-zyphex-glow">
+                          <DropdownMenuItem 
+                            className="hover-zyphex-glow cursor-pointer"
+                            onClick={() => handleViewProject(project.id)}
+                          >
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="hover-zyphex-glow">
+                          <DropdownMenuItem 
+                            className="hover-zyphex-glow cursor-pointer"
+                            onClick={() => handleEditProject(project.id)}
+                          >
                             <Edit className="mr-2 h-4 w-4" />
                             Edit Project
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="hover-zyphex-glow text-red-400">
+                          <DropdownMenuItem 
+                            className="hover-zyphex-glow text-red-400 cursor-pointer"
+                            onClick={() => handleDeleteProject(project.id, project.name)}
+                          >
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete Project
                           </DropdownMenuItem>

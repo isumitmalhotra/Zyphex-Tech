@@ -83,7 +83,7 @@ interface ProjectManagerDashboardData {
 }
 
 const fetcher = (url: string) => 
-  fetch(url).then((res) => res.json());
+  fetch(url).then((res) => res.json()).then((response) => response.data || response);
 
 export function useProjectManagerDashboard() {
   const { data, error, isLoading, mutate } = useSWR<ProjectManagerDashboardData>(

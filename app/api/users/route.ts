@@ -1,10 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hash } from 'bcryptjs';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 // GET /api/users - Get all users
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user with role
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, role: true }
+    });
+
+    if (!user || !['ADMIN', 'PROJECT_MANAGER', 'SUPER_ADMIN'].includes(user.role)) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -14,6 +32,7 @@ export async function GET() {
         createdAt: true,
         updatedAt: true,
       },
+      orderBy: { name: 'asc' }
     });
     
     return NextResponse.json(users);

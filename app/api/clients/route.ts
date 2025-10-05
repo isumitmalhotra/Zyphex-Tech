@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Only admin and manager can view all clients
-    if (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER') {
+    // Only admin, manager, and project manager can view all clients
+    if (!['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SUPER_ADMIN'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const clients = await prisma.client.findMany({
@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    // Only admin and manager can create clients
-    if (session.user.role !== 'ADMIN' && session.user.role !== 'MANAGER') {
+    // Only admin, manager, and project manager can create clients
+    if (!['ADMIN', 'MANAGER', 'PROJECT_MANAGER', 'SUPER_ADMIN'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
     const body = await request.json();

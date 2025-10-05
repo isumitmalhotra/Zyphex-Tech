@@ -6,8 +6,11 @@ export default function ClientAnimations() {
   useScrollAnimation()
 
   useEffect(() => {
-    // Trigger initial animations for hero section after a short delay
+    // Add ready class to enable animations after a short delay
     const timer = setTimeout(() => {
+      document.body.classList.add('scroll-animations-ready')
+      
+      // Trigger initial animations for hero section after animation system is ready
       const heroElements = document.querySelectorAll('.scroll-reveal-left, .scroll-reveal-scale, .scroll-reveal')
       heroElements.forEach((el) => {
         const rect = el.getBoundingClientRect()

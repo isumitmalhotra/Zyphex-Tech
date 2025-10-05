@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import * as nodemailer from 'nodemailer';
 
 // Email configuration interfaces
 interface EmailConfig {
@@ -17,33 +17,60 @@ interface EmailOptions {
   text?: string;
 }
 
-// Create email transporter
+// Create email transporter with enhanced configuration
 function createTransporter() {
+  // Validate required environment variables
+  const host = process.env.EMAIL_SERVER_HOST;
+  const port = process.env.EMAIL_SERVER_PORT;
+  const user = process.env.EMAIL_SERVER_USER;
+  const password = process.env.EMAIL_SERVER_PASSWORD;
+
+  if (!host || !port || !user || !password) {
+    throw new Error(
+      'Missing required email configuration. Please set EMAIL_SERVER_HOST, EMAIL_SERVER_PORT, EMAIL_SERVER_USER, and EMAIL_SERVER_PASSWORD in your .env file.'
+    );
+  }
+
+  const portNumber = Number(port);
+  if (isNaN(portNumber) || portNumber <= 0 || portNumber > 65535) {
+    throw new Error('EMAIL_SERVER_PORT must be a valid port number between 1 and 65535');
+  }
+
   const config: EmailConfig = {
-    host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
-    port: Number(process.env.EMAIL_SERVER_PORT) || 587,
+    host,
+    port: portNumber,
     auth: {
-      user: process.env.EMAIL_SERVER_USER || '',
-      pass: process.env.EMAIL_SERVER_PASSWORD || ''
+      user,
+      pass: password
     }
   };
+
+  console.log(`🔧 Configuring SMTP transporter for ${config.host}:${config.port}`);
 
   return nodemailer.createTransport({
     host: config.host,
     port: config.port,
-    secure: config.port === 465, // true for 465, false for other ports
+    secure: config.port === 465, // true for 465 (SSL), false for other ports like 587 (TLS)
     auth: config.auth,
     tls: {
-      rejectUnauthorized: false // For development only
-    }
+      rejectUnauthorized: process.env.NODE_ENV !== 'development' // Allow self-signed certificates in development
+    },
+    // Connection pooling for better performance
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 10,
+    // Enhanced timeout settings
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000,   // 30 seconds
+    socketTimeout: 60000      // 60 seconds
   });
 }
 
-// Send email utility
+// Enhanced send email utility with better error handling and logging
 async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     if (!process.env.EMAIL_SERVER_USER || !process.env.EMAIL_SERVER_PASSWORD) {
-      console.warn('Email credentials not configured, skipping email send');
+      console.warn('⚠️ Email credentials not configured, skipping email send');
       return false;
     }
 
@@ -57,11 +84,25 @@ async function sendEmail(options: EmailOptions): Promise<boolean> {
       text: options.text || options.html.replace(/<[^>]*>/g, '') // Strip HTML for text version
     };
 
+    console.log(`📤 Sending email to: ${mailOptions.to}, Subject: ${mailOptions.subject}`);
+
     const result = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', result.messageId);
+    console.log('✅ Email sent successfully:', result.messageId);
     return true;
   } catch (error) {
-    console.error('Failed to send email:', error);
+    console.error('❌ Failed to send email:', error);
+    
+    // Provide specific error messages for common issues
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid login')) {
+        console.error('💡 Tip: Check your email credentials. For Gmail, you may need an app-specific password.');
+      } else if (error.message.includes('Connection timeout')) {
+        console.error('💡 Tip: Check your SMTP server settings and firewall configuration.');
+      } else if (error.message.includes('self signed certificate')) {
+        console.error('💡 Tip: Your SMTP server uses a self-signed certificate. Consider updating TLS settings.');
+      }
+    }
+    
     return false;
   }
 }
@@ -315,15 +356,141 @@ export async function sendEmailChangeNotification(
   return oldEmailResult && newEmailResult;
 }
 
-// Test email configuration
-export async function testEmailConfiguration(): Promise<boolean> {
+// Enhanced test email configuration with detailed diagnostics
+export async function testEmailConfiguration(): Promise<{
+  success: boolean;
+  message: string;
+  details?: {
+    host?: string;
+    port?: number;
+    secure?: boolean;
+    user?: string;
+    from?: string;
+    error?: string;
+    suggestion?: string;
+  };
+}> {
   try {
+    console.log('🔍 Testing email configuration...');
+    
+    // Check if environment variables are set
+    const host = process.env.EMAIL_SERVER_HOST;
+    const port = process.env.EMAIL_SERVER_PORT;
+    const user = process.env.EMAIL_SERVER_USER;
+    const password = process.env.EMAIL_SERVER_PASSWORD;
+    
+    if (!host || !port || !user || !password) {
+      return {
+        success: false,
+        message: 'Email configuration is incomplete. Please check your environment variables.',
+        details: {
+          host: host || 'Not set',
+          port: Number(port) || 0,
+          user: user || 'Not set'
+        }
+      };
+    }
+    
     const transporter = createTransporter();
+    
+    console.log('🔗 Verifying SMTP connection...');
     await transporter.verify();
-    console.log('Email configuration is valid');
-    return true;
+    
+    console.log('✅ Email configuration is valid!');
+    
+    return {
+      success: true,
+      message: 'Email configuration is valid and ready to send emails.',
+      details: {
+        host,
+        port: Number(port),
+        secure: Number(port) === 465,
+        user,
+        from: process.env.EMAIL_FROM || 'noreply@zyphextech.com'
+      }
+    };
   } catch (error) {
-    console.error('Email configuration test failed:', error);
-    return false;
+    console.error('❌ Email configuration test failed:', error);
+    
+    let errorMessage = 'Email configuration test failed.';
+    const details: { error: string; suggestion?: string } = { 
+      error: error instanceof Error ? error.message : String(error) 
+    };
+    
+    if (error instanceof Error) {
+      if (error.message.includes('Invalid login')) {
+        errorMessage = 'Invalid email credentials. Please check your username and password.';
+        details.suggestion = 'For Gmail, you may need to generate an app-specific password.';
+      } else if (error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+        errorMessage = 'Cannot connect to email server. Please check your host and port settings.';
+        details.suggestion = 'Verify that your SMTP server address and port are correct.';
+      } else if (error.message.includes('certificate')) {
+        errorMessage = 'SSL/TLS certificate issue with email server.';
+        details.suggestion = 'Check your email server SSL/TLS configuration.';
+      }
+    }
+    
+    return {
+      success: false,
+      message: errorMessage,
+      details
+    };
   }
+}
+
+// Send test email
+export async function sendTestEmail(
+  to: string,
+  customMessage?: string
+): Promise<boolean> {
+  const appName = process.env.APP_NAME || 'Zyphex Tech';
+  const subject = `Test Email from ${appName}`;
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Test Email</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #4f46e5; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+        .success { background: #d1fae5; border: 1px solid #10b981; padding: 15px; border-radius: 5px; margin: 15px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>🧪 Test Email</h1>
+        </div>
+        <div class="content">
+          <div class="success">
+            <strong>✅ Success!</strong> Your email configuration is working correctly.
+          </div>
+          
+          <p>This is a test email from <strong>${appName}</strong>.</p>
+          
+          ${customMessage ? `<p><strong>Custom Message:</strong> ${customMessage}</p>` : ''}
+          
+          <p><strong>Configuration Details:</strong></p>
+          <ul>
+            <li>SMTP Host: ${process.env.EMAIL_SERVER_HOST}</li>
+            <li>SMTP Port: ${process.env.EMAIL_SERVER_PORT}</li>
+            <li>From Address: ${process.env.EMAIL_FROM || 'noreply@zyphextech.com'}</li>
+            <li>Test Time: ${new Date().toISOString()}</li>
+          </ul>
+          
+          <p>If you received this email, your email service is configured correctly!</p>
+          
+          <p>Best regards,<br>The ${appName} Team</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({ to, subject, html });
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 export function useScrollAnimation() {
   useEffect(() => {
@@ -68,17 +68,35 @@ export function ScrollProgressBar() {
 }
 
 export function ZyphexParticles() {
+  const [particles, setParticles] = useState<Array<{
+    left: string;
+    top: string;
+    animationDelay: string;
+    animationDuration: string;
+  }>>([]);
+
+  useEffect(() => {
+    // Generate particles only on client to avoid hydration mismatch
+    const generatedParticles = Array.from({ length: 20 }).map((_, i) => ({
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      animationDelay: `${Math.random() * 10}s`,
+      animationDuration: `${8 + Math.random() * 4}s`,
+    }));
+    setParticles(generatedParticles);
+  }, []);
+
   return (
     <div className="zyphex-particles">
-      {Array.from({ length: 20 }).map((_, i) => (
+      {particles.map((particle, i: number) => (
         <div
           key={i}
           className="zyphex-particle"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 10}s`,
-            animationDuration: `${8 + Math.random() * 4}s`,
+            left: particle.left,
+            top: particle.top,
+            animationDelay: particle.animationDelay,
+            animationDuration: particle.animationDuration,
           }}
         />
       ))}

@@ -58,8 +58,33 @@ export default function UserDashboard() {
   }
 
   if (!dashboardData) {
-    return null
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="zyphex-card border-yellow-500/30">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3 text-yellow-400">
+              <AlertCircle className="h-6 w-6" />
+              <div>
+                <h3 className="font-semibold">No data available</h3>
+                <p className="text-sm">Unable to load dashboard data</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
+
+  // Provide default values to prevent undefined errors
+  const stats = dashboardData.stats || {
+    activeProjects: 0,
+    completedProjects: 0,
+    messages: 0,
+    nextMeeting: null
+  }
+
+  const projects = dashboardData.projects || []
+  const recentActivity = dashboardData.recentActivity || []
 
   return (
     <div className="space-y-8">
@@ -86,7 +111,7 @@ export default function UserDashboard() {
             <Briefcase className="h-4 w-4 text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold zyphex-heading">{dashboardData.stats.activeProjects}</div>
+            <div className="text-2xl font-bold zyphex-heading">{stats.activeProjects}</div>
             <p className="text-xs zyphex-subheading">Currently in progress</p>
           </CardContent>
         </Card>
@@ -97,7 +122,7 @@ export default function UserDashboard() {
             <CheckCircle className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold zyphex-heading">{dashboardData.stats.completedProjects}</div>
+            <div className="text-2xl font-bold zyphex-heading">{stats.completedProjects}</div>
             <p className="text-xs zyphex-subheading">Successfully delivered</p>
           </CardContent>
         </Card>
@@ -108,7 +133,7 @@ export default function UserDashboard() {
             <MessageSquare className="h-4 w-4 text-purple-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold zyphex-heading">{dashboardData.stats.messages}</div>
+            <div className="text-2xl font-bold zyphex-heading">{stats.messages}</div>
             <p className="text-xs zyphex-subheading">Coming soon</p>
           </CardContent>
         </Card>
@@ -133,7 +158,7 @@ export default function UserDashboard() {
             <CardDescription className="zyphex-subheading">Your active development projects</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {dashboardData.projects.length === 0 ? (
+            {projects.length === 0 ? (
               <div className="text-center py-8">
                 <Briefcase className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                 <h4 className="text-lg font-medium zyphex-heading mb-2">No Projects Yet</h4>
@@ -146,7 +171,7 @@ export default function UserDashboard() {
                 </Button>
               </div>
             ) : (
-              dashboardData.projects.slice(0, 3).map((project, index) => (
+              projects.slice(0, 3).map((project, index) => (
                 <div key={index} className="space-y-3 p-4 rounded-lg zyphex-card-bg">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium zyphex-heading">{project.name}</h4>
@@ -208,14 +233,14 @@ export default function UserDashboard() {
             <CardDescription className="zyphex-subheading">Latest updates and notifications</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {dashboardData.recentActivity.length === 0 ? (
+            {recentActivity.length === 0 ? (
               <div className="text-center py-8">
                 <Bell className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                 <h4 className="text-lg font-medium zyphex-heading mb-2">No Recent Activity</h4>
                 <p className="zyphex-subheading">Your activity will appear here once you start working on projects.</p>
               </div>
             ) : (
-              dashboardData.recentActivity.map((activity, index) => {
+              recentActivity.map((activity, index) => {
                 const IconComponent = activity.icon === 'MessageSquare' ? MessageSquare :
                                    activity.icon === 'CheckCircle' ? CheckCircle :
                                    activity.icon === 'Calendar' ? Calendar :

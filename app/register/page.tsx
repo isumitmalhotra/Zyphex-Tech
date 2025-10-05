@@ -1,7 +1,7 @@
 "use client"
 
-import { ModernAuthForm } from "@/components/auth/modern-auth-form"
+import { SimpleAuthForm } from "@/components/auth/simple-auth-form"
 
 export default function RegisterPage() {
-  return <ModernAuthForm mode="signup" />
+  return <SimpleAuthForm mode="signup" />
 }

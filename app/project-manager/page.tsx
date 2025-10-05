@@ -22,6 +22,8 @@ import {
 } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 import { useProjectManagerDashboard } from "@/hooks/use-project-manager-dashboard"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 interface Project {
   id: string;
@@ -63,10 +65,10 @@ interface Activity {
   createdAt: string;
   user: { name: string | null; email: string } | null;
 }
-import Link from "next/link"
 
 function ProjectManagerDashboardContent() {
   const { dashboardData, loading, error, refresh } = useProjectManagerDashboard()
+  const router = useRouter()
 
   if (loading) {
     return (
@@ -108,7 +110,22 @@ function ProjectManagerDashboardContent() {
     )
   }
 
-  const { overview, recentProjects, upcomingDeadlines, teamPerformance, recentActivities } = dashboardData
+  // Provide default values to prevent undefined errors
+  const overview = dashboardData.overview || {
+    totalProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    totalTeamMembers: 0,
+    totalTasks: 0,
+    completedTasks: 0,
+    overdueTasks: 0,
+    taskCompletionRate: 0,
+  }
+  
+  const recentProjects = dashboardData.recentProjects || []
+  const upcomingDeadlines = dashboardData.upcomingDeadlines || []
+  const teamPerformance = dashboardData.teamPerformance || []
+  const recentActivities = dashboardData.recentActivities || []
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
@@ -195,10 +212,14 @@ function ProjectManagerDashboardContent() {
             </CardHeader>
             <CardContent className="space-y-4">
               {recentProjects.slice(0, 5).map((project: Project) => (
-                <div key={project.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                <div 
+                  key={project.id} 
+                  className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800/70 cursor-pointer transition-all duration-200"
+                  onClick={() => router.push('/project-manager/projects')}
+                >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium zyphex-heading text-sm">{project.name}</h4>
+                      <h4 className="font-medium zyphex-heading text-sm hover:text-blue-400 transition-colors">{project.name}</h4>
                       <Badge 
                         variant={project.status === 'COMPLETED' ? 'default' : 'secondary'}
                         className="text-xs"
@@ -216,15 +237,21 @@ function ProjectManagerDashboardContent() {
                       </span>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/admin/projects/${project.id}`}>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push('/project-manager/projects');
+                    }}
+                    className="hover-zyphex-glow"
+                  >
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
               ))}
               <Button variant="outline" className="w-full zyphex-button" asChild>
-                <Link href="/admin/projects">View All Projects</Link>
+                <Link href="/project-manager/projects">View All Projects</Link>
               </Button>
             </CardContent>
           </Card>
@@ -263,7 +290,7 @@ function ProjectManagerDashboardContent() {
                 </div>
               ))}
               <Button variant="outline" className="w-full zyphex-button" asChild>
-                <Link href="/admin/tasks">View All Tasks</Link>
+                <Link href="/project-manager/tasks">View All Tasks</Link>
               </Button>
             </CardContent>
           </Card>
@@ -280,7 +307,7 @@ function ProjectManagerDashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {teamPerformance.slice(0, 5).map((member: TeamMember) => (
+              {teamPerformance.filter(member => member && member.user).slice(0, 5).map((member: TeamMember) => (
                 <div key={member.userId} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
                   <div className="flex-1">
                     <h4 className="font-medium zyphex-heading text-sm">
@@ -289,17 +316,17 @@ function ProjectManagerDashboardContent() {
                     <p className="text-xs zyphex-subheading">{member.user?.email}</p>
                     <div className="flex items-center gap-4 mt-1">
                       <span className="text-xs zyphex-subheading">
-                        Hours: {Math.round((member._sum.duration || 0) * 100) / 100}
+                        Hours: {Math.round(((member._sum?.duration || 0) * 100)) / 100}
                       </span>
                       <span className="text-xs zyphex-subheading">
-                        Entries: {member._count.id}
+                        Entries: {member._count?.id || 0}
                       </span>
                     </div>
                   </div>
                 </div>
               ))}
               <Button variant="outline" className="w-full zyphex-button" asChild>
-                <Link href="/admin/team">View Team Details</Link>
+                <Link href="/project-manager/team">View Team Details</Link>
               </Button>
             </CardContent>
           </Card>
@@ -328,7 +355,7 @@ function ProjectManagerDashboardContent() {
                 </div>
               ))}
               <Button variant="outline" className="w-full zyphex-button" asChild>
-                <Link href="/admin/activities">View All Activities</Link>
+                <Link href="/project-manager/reports">View All Activities</Link>
               </Button>
             </CardContent>
           </Card>

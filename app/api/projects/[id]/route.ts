@@ -66,7 +66,7 @@ export async function PUT(
     if (name) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (status) updateData.status = status;
-    if (budget !== undefined) updateData.budget = budget ? parseFloat(budget) : null;
+    if (budget !== undefined && budget) updateData.budget = parseFloat(budget);
     if (startDate !== undefined) updateData.startDate = startDate ? new Date(startDate) : null;
     if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
     if (clientId) {

@@ -1,7 +1,7 @@
 "use client"
 
-import { ModernForgotPasswordForm } from '@/components/auth/modern-forgot-password-form'
+import { SimpleAuthForm } from "@/components/auth/simple-auth-form"
 
 export default function ForgotPasswordPage() {
-  return <ModernForgotPasswordForm />
+  return <SimpleAuthForm mode="forgot-password" />
 }

@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { useAdminClients } from "@/hooks/use-admin-data"
+import { useAdminClients, useAdminTeam } from "@/hooks/use-admin-data"
 import { useToast } from "@/hooks/use-toast"
 import { Plus, Loader2 } from "lucide-react"
 
@@ -32,16 +32,19 @@ interface CreateProjectDialogProps {
 export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { clients } = useAdminClients()
+  const { clients, isLoading: clientsLoading, error: clientsError } = useAdminClients()
+  const { teamMembers, isLoading: teamLoading, error: teamError } = useAdminTeam()
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     clientId: "",
+    managerId: "",
     status: "PLANNING",
     priority: "MEDIUM",
     budget: "",
+    hourlyRate: "",
     startDate: "",
     endDate: "",
     estimatedHours: "",
@@ -49,10 +52,10 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.clientId) {
+    if (!formData.name || !formData.clientId || !formData.budget || !formData.hourlyRate) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields (Name, Client, Budget, and Hourly Rate)",
         variant: "destructive",
       })
       return
@@ -82,9 +85,11 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
         name: "",
         description: "",
         clientId: "",
+        managerId: "",
         status: "PLANNING",
         priority: "MEDIUM",
         budget: "",
+        hourlyRate: "",
         startDate: "",
         endDate: "",
         estimatedHours: "",
@@ -110,10 +115,12 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
           New Project
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] zyphex-card border-gray-700">
+      <DialogContent 
+        className="sm:max-w-[600px] bg-gray-900 border border-gray-700 shadow-2xl text-white" 
+      >
         <DialogHeader>
-          <DialogTitle className="zyphex-heading">Create New Project</DialogTitle>
-          <DialogDescription className="zyphex-subheading">
+          <DialogTitle className="text-white text-xl font-bold mb-2">Create New Project</DialogTitle>
+          <DialogDescription className="text-gray-300">
             Add a new project to your portfolio. Fill in the details below.
           </DialogDescription>
         </DialogHeader>
@@ -121,29 +128,29 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="zyphex-heading">Project Name *</Label>
+                <Label htmlFor="name" className="text-white font-medium">Project Name *</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="zyphex-glass-effect"
+                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   placeholder="Enter project name"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="client" className="zyphex-heading">Client *</Label>
+                <Label htmlFor="client" className="text-white font-medium">Client *</Label>
                 <Select
                   value={formData.clientId}
                   onValueChange={(value) => setFormData({ ...formData, clientId: value })}
                   required
                 >
-                  <SelectTrigger className="zyphex-glass-effect">
+                  <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
                     <SelectValue placeholder="Select a client" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-800 border-gray-600">
                     {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
+                      <SelectItem key={client.id} value={client.id} className="text-white hover:bg-gray-700">
                         {client.name}
                       </SelectItem>
                     ))}
@@ -153,15 +160,36 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="zyphex-heading">Description</Label>
+              <Label htmlFor="description" className="text-white font-medium">Description</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="zyphex-glass-effect"
-                placeholder="Project description..."
+                className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                placeholder="Enter project description"
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="manager" className="text-white font-medium">Project Manager</Label>
+              <Select
+                value={formData.managerId}
+                onValueChange={(value) => setFormData({ ...formData, managerId: value })}
+              >
+                <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
+                  <SelectValue placeholder="Select a project manager" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-600">
+                  {teamMembers
+                    .filter(member => ['ADMIN', 'PROJECT_MANAGER', 'SUPER_ADMIN'].includes(member.role))
+                    .map((member) => (
+                      <SelectItem key={member.id} value={member.id} className="text-white hover:bg-gray-700">
+                        {member.name} ({member.role})
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -203,48 +231,64 @@ export function CreateProjectDialog({ onProjectCreated }: CreateProjectDialogPro
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="budget" className="zyphex-heading">Budget ($)</Label>
+                <Label htmlFor="budget" className="text-white font-medium">Budget ($) *</Label>
                 <Input
                   id="budget"
                   type="number"
                   value={formData.budget}
                   onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                  className="zyphex-glass-effect"
+                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
                   placeholder="0"
+                  required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="startDate" className="zyphex-heading">Start Date</Label>
+                <Label htmlFor="hourlyRate" className="text-white font-medium">Hourly Rate ($) *</Label>
+                <Input
+                  id="hourlyRate"
+                  type="number"
+                  step="0.01"
+                  value={formData.hourlyRate}
+                  onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
+                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="estimatedHours" className="text-white font-medium">Est. Hours</Label>
+                <Input
+                  id="estimatedHours"
+                  type="number"
+                  value={formData.estimatedHours}
+                  onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
+                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate" className="text-white font-medium">Start Date</Label>
                 <Input
                   id="startDate"
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  className="zyphex-glass-effect"
+                  className="bg-gray-800 border-gray-600 text-white"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="endDate" className="zyphex-heading">End Date</Label>
+                <Label htmlFor="endDate" className="text-white font-medium">End Date</Label>
                 <Input
                   id="endDate"
                   type="date"
                   value={formData.endDate}
                   onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  className="zyphex-glass-effect"
+                  className="bg-gray-800 border-gray-600 text-white"
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="estimatedHours" className="zyphex-heading">Estimated Hours</Label>
-              <Input
-                id="estimatedHours"
-                type="number"
-                value={formData.estimatedHours}
-                onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
-                className="zyphex-glass-effect"
-                placeholder="0"
-              />
             </div>
           </div>
           <DialogFooter>

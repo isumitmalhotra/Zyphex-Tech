@@ -16,18 +16,18 @@ export async function GET(request: NextRequest) {
 
     // Build filter conditions
     const where: {
-      isActive: boolean
-      category?: string
+      status: string
+      contentType: { name: string }
+      categories?: { contains: string }
       featured?: boolean
-      technologies?: {
-        contains: string
-      }
+      tags?: { contains: string }
     } = {
-      isActive: true
+      status: 'PUBLISHED',
+      contentType: { name: 'portfolio' }
     }
 
     if (category && category !== 'all') {
-      where.category = category
+      where.categories = { contains: category }
     }
 
     if (featured === 'true') {
@@ -35,118 +35,95 @@ export async function GET(request: NextRequest) {
     }
 
     if (technology) {
-      where.technologies = {
-        contains: technology
-      }
+      where.tags = { contains: technology }
     }
 
     // Get total count for pagination
-    const totalItems = await prisma.portfolioItem.count({ where })
+    const totalItems = await prisma.dynamicContentItem.count({ where })
     const totalPages = Math.ceil(totalItems / itemsPerPage)
 
     // Query options
     const queryOptions = {
       where,
+      include: {
+        contentType: true
+      },
       orderBy: [
         { featured: 'desc' as const },
         { order: 'asc' as const },
-        { createdAt: 'desc' as const }
+        { publishedAt: 'desc' as const }
       ],
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        description: true,
-        category: true,
-        client: true,
-        technologies: true,
-        imageUrl: true,
-        featuredImage: true,
-        projectUrl: true,
-        liveUrl: true,
-        githubUrl: true,
-        featured: true,
-        order: true,
-        createdAt: true,
-        updatedAt: true
-      },
-      skip: (currentPage - 1) * itemsPerPage,
-      take: itemsPerPage
+      take: itemsPerPage,
+      skip: (currentPage - 1) * itemsPerPage
     }
 
-    // Fetch portfolio items
-    const portfolioItems = await prisma.portfolioItem.findMany(queryOptions)
+    // Fetch portfolio items from DynamicContentItem
+    const portfolioItems = await prisma.dynamicContentItem.findMany(queryOptions)
 
     // Transform the data for frontend consumption
-    const transformedPortfolioItems = portfolioItems.map(item => ({
-      id: item.id,
-      title: item.title,
-      slug: item.slug || item.id,
-      description: item.description,
-      category: item.category,
-      client: item.client,
-      technologies: (() => {
-        try {
-          return item.technologies ? JSON.parse(item.technologies) : []
-        } catch {
-          return item.technologies ? item.technologies.split(',').map((t: string) => t.trim()) : []
-        }
-      })(),
-      featuredImage: item.featuredImage || item.imageUrl,
-      liveUrl: item.liveUrl || item.projectUrl,
-      githubUrl: item.githubUrl,
-      featured: item.featured,
-      order: item.order,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt
-    }))
-
-    // Get unique categories for filtering
-    const categoriesResult = await prisma.portfolioItem.findMany({
-      where: { isActive: true },
-      select: { category: true },
-      distinct: ['category']
+    const transformedItems = portfolioItems.map(item => {
+      const itemData = item.data ? JSON.parse(item.data) : {}
+      return {
+        id: item.id,
+        title: item.title,
+        slug: item.slug,
+        description: itemData.description || '',
+        category: itemData.category || 'Development',
+        technologies: itemData.technologies || [],
+        featuredImage: itemData.image || itemData.featuredImage || '/placeholder.svg?height=300&width=400&text=Project',
+        imageUrl: itemData.image || itemData.imageUrl || '/placeholder.svg?height=300&width=400&text=Project',
+        projectUrl: itemData.liveUrl || itemData.projectUrl,
+        liveUrl: itemData.liveUrl,
+        githubUrl: itemData.githubUrl,
+        featured: item.featured,
+        published: item.status === 'PUBLISHED',
+        isActive: true,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      }
     })
 
-    const categories = categoriesResult
-      .map(item => item.category)
-      .filter(Boolean)
-      .sort()
-
-    // Get unique technologies for filtering
-    const techResults = await prisma.portfolioItem.findMany({
-      where: { isActive: true },
-      select: { technologies: true }
+    // Get unique categories and technologies for filtering
+    const allItems = await prisma.dynamicContentItem.findMany({
+      where: {
+        status: 'PUBLISHED',
+        contentType: { name: 'portfolio' }
+      },
+      select: {
+        data: true,
+        categories: true,
+        tags: true
+      }
     })
 
-    const technologies = Array.from(
-      new Set(
-        techResults
-          .flatMap(item => {
-            try {
-              return item.technologies ? JSON.parse(item.technologies) : []
-            } catch {
-              return item.technologies ? item.technologies.split(',').map((t: string) => t.trim()) : []
-            }
-          })
-          .filter(Boolean)
-      )
-    ).sort()
+    const categories = new Set<string>()
+    const technologies = new Set<string>()
+
+    allItems.forEach(item => {
+      const itemData = item.data ? JSON.parse(item.data) : {}
+      const itemCategories: string[] = item.categories ? JSON.parse(item.categories) : []
+      const itemTags: string[] = item.tags ? JSON.parse(item.tags) : []
+
+      if (itemData.category) categories.add(itemData.category)
+      itemCategories.forEach(cat => categories.add(cat))
+      itemTags.forEach(tech => technologies.add(tech))
+      if (itemData.technologies && Array.isArray(itemData.technologies)) {
+        itemData.technologies.forEach((tech: string) => technologies.add(tech))
+      }
+    })
 
     return NextResponse.json({
-      success: true,
-      data: transformedPortfolioItems,
+      items: transformedItems,
       pagination: {
         currentPage,
         totalPages,
         totalItems,
-        itemsPerPage,
         hasNext: currentPage < totalPages,
         hasPrev: currentPage > 1
       },
       filters: {
-        categories,
-        technologies
+        categories: Array.from(categories),
+        technologies: Array.from(technologies)
       }
     })
 
@@ -155,11 +132,18 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(
       { 
-        success: false,
-        error: 'Failed to fetch portfolio items',
-        data: [],
-        pagination: null,
-        filters: null
+        items: [],
+        pagination: {
+          currentPage: 1,
+          totalPages: 0,
+          totalItems: 0,
+          hasNext: false,
+          hasPrev: false
+        },
+        filters: {
+          categories: [],
+          technologies: []
+        }
       },
       { status: 500 }
     )

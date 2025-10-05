@@ -1,75 +1,84 @@
-import { NextResponse } from 'next/server';
-import { hash } from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
-import { createVerificationToken } from '@/lib/tokens';
-import { sendVerificationEmail } from '@/lib/email';
+import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
+import { hashPassword } from '@/lib/auth/password'
+import { registerSchema } from '@/lib/validation/schemas'
+import { secureApiRoute } from '@/lib/auth/security-middleware'
 
-export async function POST(request: Request) {
+const prisma = new PrismaClient()
+
+export async function POST(request: NextRequest) {
+  // Apply security middleware with rate limiting and validation
+  const { security, data, error } = await secureApiRoute(
+    request,
+    'registration',
+    registerSchema
+  )
+  
+  if (error) {
+    return error
+  }
+
+  if (!data) {
+    return security.createErrorResponse('Invalid request data', 400)
+  }
+
+  const { name, email, password, role } = data
+
   try {
-    const { name, email, password, role } = await request.json();
-
-    // Validate input
-    if (!name || !email || !password) {
-      return NextResponse.json(
-        { message: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+      where: { email: email.toLowerCase() }
+    })
 
     if (existingUser) {
-      return NextResponse.json(
-        { message: 'User already exists' },
-        { status: 409 }
-      );
+      return security.createErrorResponse('User already exists with this email', 409)
     }
 
-    // Hash password
-    const hashedPassword = await hash(password, 10);
+    // Hash password with enhanced security
+    const hashedPassword = await hashPassword(password)
 
-    // Create user (email not verified initially)
-    const user = await prisma.user.create({
+    // Create new user
+    const newUser = await prisma.user.create({
       data: {
         name,
-        email,
+        email: email.toLowerCase(),
         password: hashedPassword,
         role: role || 'USER',
-        emailVerified: null, // Not verified yet
+        emailVerified: null, // Will be verified via email
       },
-    });
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true
+      }
+    })
 
-    // Generate verification token and send email
-    try {
-      const token = await createVerificationToken(email);
-      const verificationUrl = `${process.env.APP_URL || process.env.NEXTAUTH_URL}/api/auth/verify-email?token=${token}`;
-      
-      await sendVerificationEmail(email, verificationUrl, name);
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Don't fail registration if email fails, but log it
-    }
+    // Log successful registration for audit
+    console.log('✅ New user registered:', {
+      userId: newUser.id,
+      email: newUser.email,
+      role: newUser.role,
+      timestamp: new Date().toISOString(),
+      ip: security.getClientIP()
+    })
 
-    // Remove password from response
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password: _, ...userWithoutPassword } = user;
+    return security.createResponse({
+      success: true,
+      message: 'Account created successfully. Please verify your email.',
+      user: newUser,
+      requiresEmailVerification: true
+    }, 201)
 
-    return NextResponse.json(
-      { 
-        message: 'User created successfully. Please check your email for verification.',
-        user: userWithoutPassword,
-        requiresEmailVerification: true
-      },
-      { status: 201 }
-    );
   } catch (error) {
-    console.error('Registration error:', error);
-    return NextResponse.json(
-      { message: 'An error occurred during registration' },
-      { status: 500 }
-    );
+    console.error('❌ Registration error:', error)
+    
+    return security.createErrorResponse(
+      'Failed to create account. Please try again.',
+      500
+    )
+  } finally {
+    await prisma.$disconnect()
   }
 }

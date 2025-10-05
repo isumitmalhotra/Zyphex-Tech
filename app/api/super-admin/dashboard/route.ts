@@ -81,7 +81,7 @@ export async function GET(_request: Request) {
       },
       include: {
         timeEntries: {
-          where: { startTime: { gte: thirtyDaysAgo } },
+          where: { date: { gte: thirtyDaysAgo } },
           select: { duration: true }
         },
         assignedTasks: {
@@ -160,7 +160,7 @@ export async function GET(_request: Request) {
         where: {
           timeEntries: {
             none: {
-              startTime: { gte: thirtyDaysAgo }
+              date: { gte: thirtyDaysAgo }
             }
           }
         }
@@ -197,10 +197,10 @@ export async function GET(_request: Request) {
       name: string | null;
       email: string;
       role: string;
-      timeEntries: Array<{ duration?: number }>;
+      timeEntries: Array<{ duration: number | null }>;
       assignedTasks: Array<{ status: string }>;
     }) => {
-      const totalHours = user.timeEntries.reduce((total: number, entry: { duration?: number }) => 
+      const totalHours = user.timeEntries.reduce((total: number, entry: { duration: number | null }) => 
         total + (entry.duration || 0), 0);
       const completedTasks = user.assignedTasks.filter((task: { status: string }) => 
         task.status === 'DONE').length;

@@ -38,8 +38,8 @@ export async function GET(request: NextRequest) {
     const userRole = session.user.role;
     const userId = session.user.id;
 
-    // If user is not an admin or manager, only show projects they are part of
-    if (userRole !== 'ADMIN' && userRole !== 'MANAGER') {
+    // If user is not an admin, super admin, or project manager, only show projects they are part of
+    if (userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN' && userRole !== 'PROJECT_MANAGER') {
       const projects = await prisma.project.findMany({
         where: {
           ...where,
@@ -76,8 +76,52 @@ export async function GET(request: NextRequest) {
       
       return NextResponse.json({ projects });
     }
+
+    // For PROJECT_MANAGER, show projects they manage OR are assigned to
+    if (userRole === 'PROJECT_MANAGER') {
+      const projects = await prisma.project.findMany({
+        where: {
+          ...where,
+          OR: [
+            { managerId: userId }, // Projects they manage
+            { 
+              users: {
+                some: {
+                  id: userId
+                }
+              }
+            } // Projects they are assigned to as team members
+          ]
+        },
+        include: {
+          client: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          users: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
+          teams: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+      
+      return NextResponse.json({ projects });
+    }
     
-    // For admin and manager, show all projects
+    // For admin and super admin, show all projects
     const projects = await prisma.project.findMany({
       where,
       include: {

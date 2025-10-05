@@ -62,11 +62,23 @@ export default async function HomePage() {
   // Fetch content from CMS
   let pageContent
   let blogPosts: ContentItem[] = []
+  let services: ContentItem[] = []
+  let testimonials: ContentItem[] = []
   
   try {
     pageContent = await getPageContent('home')
     // Also fetch some featured blog posts for the updates section
     blogPosts = await getItemsByContentType('blog', {
+      featured: true,
+      limit: 3
+    })
+    // Fetch featured services for the services overview section
+    services = await getItemsByContentType('services', {
+      featured: true,
+      limit: 6
+    })
+    // Fetch testimonials for the testimonials section
+    testimonials = await getItemsByContentType('testimonials', {
       featured: true,
       limit: 3
     })
@@ -123,6 +135,54 @@ export default async function HomePage() {
     return ""
   }
 
+  // Helper functions for service data
+  const getServiceData = (service: ContentItem): any => {
+    if (service.data && typeof service.data === 'object') {
+      return service.data
+    }
+    return {}
+  }
+
+  const getServiceIcon = (service: ContentItem): string => {
+    const data = getServiceData(service)
+    return data.icon || "Code"
+  }
+
+  const getServiceFeatures = (service: ContentItem): string[] => {
+    const data = getServiceData(service)
+    return data.features || []
+  }
+
+  // Helper functions for testimonial data
+  const getTestimonialData = (testimonial: ContentItem): any => {
+    if (testimonial.data && typeof testimonial.data === 'object') {
+      return testimonial.data
+    }
+    return {}
+  }
+
+  const getTestimonialName = (testimonial: ContentItem): string => {
+    const data = getTestimonialData(testimonial)
+    return data.name || "Anonymous"
+  }
+
+  const getTestimonialRole = (testimonial: ContentItem): string => {
+    const data = getTestimonialData(testimonial)
+    const role = data.role || ""
+    const company = data.company || ""
+    return company ? `${role}, ${company}` : role
+  }
+
+  const getTestimonialContent = (testimonial: ContentItem): string => {
+    const data = getTestimonialData(testimonial)
+    return data.content || ""
+  }
+
+  const getTestimonialRating = (testimonial: ContentItem): number => {
+    const data = getTestimonialData(testimonial)
+    return data.rating || 5
+  }
+
   const getPostSlug = (post: ContentItem | FallbackPost): string => {
     return post.slug || post.id
   }
@@ -136,7 +196,7 @@ export default async function HomePage() {
         <MinimalParticles />
 
         <div className="container mx-auto container-padding relative z-10">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[80vh] lg:min-h-[70vh]">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center min-h-[60vh] lg:min-h-[50vh]">
             <div className="space-y-6 lg:space-y-8 scroll-reveal-left order-2 lg:order-1">
               <div className="space-y-4 lg:space-y-6">
                 <Badge variant="secondary" className="w-fit zyphex-blue-glow animate-zyphex-glow text-xs sm:text-sm">
@@ -230,63 +290,22 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: "Code",
-                title: "Custom Software Development",
-                description:
-                  "Tailored applications built with cutting-edge technologies to solve your specific business challenges.",
-                features: ["Web Applications", "Mobile Apps", "API Development"],
-              },
-              {
-                icon: "Globe",
-                title: "Cloud Solutions & Migration",
-                description:
-                  "Seamless cloud adoption strategies that enhance scalability, security, and cost-effectiveness.",
-                features: ["AWS/Azure Migration", "Cloud Architecture", "DevOps Implementation"],
-              },
-              {
-                icon: "Database",
-                title: "Data Analytics & BI",
-                description:
-                  "Transform raw data into actionable insights with advanced analytics and business intelligence solutions.",
-                features: ["Data Warehousing", "Real-time Analytics", "Custom Dashboards"],
-              },
-              {
-                icon: "Smartphone",
-                title: "Mobile App Development",
-                description: "Native and cross-platform mobile applications that deliver exceptional user experiences.",
-                features: ["iOS Development", "Android Development", "React Native"],
-              },
-              {
-                icon: "Zap",
-                title: "IT Consulting & Strategy",
-                description: "Strategic technology guidance to align your IT infrastructure with business objectives.",
-                features: ["Technology Roadmap", "Digital Transformation", "IT Audit"],
-              },
-              {
-                icon: "Users",
-                title: "Dedicated Development Teams",
-                description:
-                  "Skilled remote teams that integrate seamlessly with your existing workflows and processes.",
-                features: ["Remote Teams", "Staff Augmentation", "Project Management"],
-              },
-            ].map((service, index) => (
+            {services.length > 0 ? services.map((service, index) => (
               <Card
-                key={index}
+                key={service.id}
                 className={`zyphex-card hover-zyphex-lift scroll-reveal-scale`}
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <CardHeader className="pb-4">
                   <div className="w-12 h-12 zyphex-gradient-primary rounded-lg flex items-center justify-center mb-4 animate-pulse-3d hover-zyphex-glow">
-                    <Icon3D icon={service.icon} size={24} color="white" />
+                    <Icon3D icon={getServiceIcon(service)} size={24} color="white" />
                   </div>
                   <CardTitle className="text-xl zyphex-heading">{service.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <CardDescription className="zyphex-subheading leading-relaxed">{service.description}</CardDescription>
+                  <CardDescription className="zyphex-subheading leading-relaxed">{getServiceData(service).description || service.title}</CardDescription>
                   <ul className="space-y-2">
-                    {service.features.map((feature, idx) => (
+                    {getServiceFeatures(service).map((feature, idx) => (
                       <li
                         key={idx}
                         className="flex items-center gap-2 text-sm zyphex-subheading hover:text-white transition-colors duration-200"
@@ -298,7 +317,78 @@ export default async function HomePage() {
                   </ul>
                 </CardContent>
               </Card>
-            ))}
+            )) : (
+              // Fallback to hardcoded services if database is empty
+              [
+                {
+                  icon: "Code",
+                  title: "Custom Software Development",
+                  description:
+                    "Tailored applications built with cutting-edge technologies to solve your specific business challenges.",
+                  features: ["Web Applications", "Mobile Apps", "API Development"],
+                },
+                {
+                  icon: "Globe",
+                  title: "Cloud Solutions & Migration",
+                  description:
+                    "Seamless cloud adoption strategies that enhance scalability, security, and cost-effectiveness.",
+                  features: ["AWS/Azure Migration", "Cloud Architecture", "DevOps Implementation"],
+                },
+                {
+                  icon: "Database",
+                  title: "Data Analytics & BI",
+                  description:
+                    "Transform raw data into actionable insights with advanced analytics and business intelligence solutions.",
+                  features: ["Data Warehousing", "Real-time Analytics", "Custom Dashboards"],
+                },
+                {
+                  icon: "Smartphone",
+                  title: "Mobile App Development",
+                  description: "Native and cross-platform mobile applications that deliver exceptional user experiences.",
+                  features: ["iOS Development", "Android Development", "React Native"],
+                },
+                {
+                  icon: "Zap",
+                  title: "IT Consulting & Strategy",
+                  description: "Strategic technology guidance to align your IT infrastructure with business objectives.",
+                  features: ["Technology Roadmap", "Digital Transformation", "IT Audit"],
+                },
+                {
+                  icon: "Users",
+                  title: "Dedicated Development Teams",
+                  description:
+                    "Skilled remote teams that integrate seamlessly with your existing workflows and processes.",
+                  features: ["Remote Teams", "Staff Augmentation", "Project Management"],
+                },
+              ].map((service, index) => (
+                <Card
+                  key={index}
+                  className={`zyphex-card hover-zyphex-lift scroll-reveal-scale`}
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <CardHeader className="pb-4">
+                    <div className="w-12 h-12 zyphex-gradient-primary rounded-lg flex items-center justify-center mb-4 animate-pulse-3d hover-zyphex-glow">
+                      <Icon3D icon={service.icon} size={24} color="white" />
+                    </div>
+                    <CardTitle className="text-xl zyphex-heading">{service.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <CardDescription className="zyphex-subheading leading-relaxed">{service.description}</CardDescription>
+                    <ul className="space-y-2">
+                      {service.features.map((feature, idx) => (
+                        <li
+                          key={idx}
+                          className="flex items-center gap-2 text-sm zyphex-subheading hover:text-white transition-colors duration-200"
+                        >
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
           <div className="text-center mt-12 scroll-reveal">
             <Button size="lg" className="zyphex-button-primary hover-zyphex-lift" asChild>
@@ -518,38 +608,16 @@ export default async function HomePage() {
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Sarah Johnson",
-                role: "CTO, TechStart Inc.",
-                content:
-                  "The team delivered an exceptional cloud migration solution that reduced our infrastructure costs by 40% while improving performance. Their expertise and professionalism are unmatched.",
-                rating: 5,
-              },
-              {
-                name: "Michael Chen",
-                role: "CEO, DataFlow Solutions",
-                content:
-                  "Working with Zyphex Tech transformed our data analytics capabilities. The custom dashboard they built gives us insights we never had before, directly impacting our decision-making process.",
-                rating: 5,
-              },
-              {
-                name: "Emily Rodriguez",
-                role: "Operations Director, RetailMax",
-                content:
-                  "Their mobile app development team created an amazing customer experience for our retail business. Sales through the app increased by 60% in the first quarter after launch.",
-                rating: 5,
-              },
-            ].map((testimonial, index) => (
+            {testimonials.length > 0 ? testimonials.map((testimonial, index) => (
               <Card
-                key={index}
+                key={testimonial.id}
                 className={`zyphex-card hover-zyphex-lift relative scroll-reveal-rotate`}
                 style={{ animationDelay: `${index * 200}ms` }}
               >
                 <CardHeader>
                   <Quote className="h-8 w-8 text-blue-400 mb-4 animate-pulse-3d" />
                   <div className="flex gap-1 mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
+                    {[...Array(getTestimonialRating(testimonial))].map((_, i) => (
                       <Star
                         key={i}
                         className="h-5 w-5 fill-yellow-400 text-yellow-400 animate-zyphex-glow"
@@ -559,14 +627,65 @@ export default async function HomePage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <p className="zyphex-subheading leading-relaxed italic">&ldquo;{testimonial.content}&rdquo;</p>
+                  <p className="zyphex-subheading leading-relaxed italic">&ldquo;{getTestimonialContent(testimonial)}&rdquo;</p>
                   <div className="border-t border-gray-700 pt-4">
-                    <div className="font-semibold zyphex-heading">{testimonial.name}</div>
-                    <div className="text-sm zyphex-subheading">{testimonial.role}</div>
+                    <div className="font-semibold zyphex-heading">{getTestimonialName(testimonial)}</div>
+                    <div className="text-sm zyphex-subheading">{getTestimonialRole(testimonial)}</div>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )) : (
+              // Fallback testimonials if database is empty
+              [
+                {
+                  name: "Sarah Johnson",
+                  role: "CTO, TechStart Inc.",
+                  content:
+                    "The team delivered an exceptional cloud migration solution that reduced our infrastructure costs by 40% while improving performance. Their expertise and professionalism are unmatched.",
+                  rating: 5,
+                },
+                {
+                  name: "Michael Chen",
+                  role: "CEO, DataFlow Solutions",
+                  content:
+                    "Working with Zyphex Tech transformed our data analytics capabilities. The custom dashboard they built gives us insights we never had before, directly impacting our decision-making process.",
+                  rating: 5,
+                },
+                {
+                  name: "Emily Rodriguez",
+                  role: "Operations Director, RetailMax",
+                  content:
+                    "Their mobile app development team created an amazing customer experience for our retail business. Sales through the app increased by 60% in the first quarter after launch.",
+                  rating: 5,
+                },
+              ].map((testimonial, index) => (
+                <Card
+                  key={index}
+                  className={`zyphex-card hover-zyphex-lift relative scroll-reveal-rotate`}
+                  style={{ animationDelay: `${index * 200}ms` }}
+                >
+                  <CardHeader>
+                    <Quote className="h-8 w-8 text-blue-400 mb-4 animate-pulse-3d" />
+                    <div className="flex gap-1 mb-4">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className="h-5 w-5 fill-yellow-400 text-yellow-400 animate-zyphex-glow"
+                          style={{ animationDelay: `${i * 100}ms` }}
+                        />
+                      ))}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="zyphex-subheading leading-relaxed italic">&ldquo;{testimonial.content}&rdquo;</p>
+                    <div className="border-t border-gray-700 pt-4">
+                      <div className="font-semibold zyphex-heading">{testimonial.name}</div>
+                      <div className="text-sm zyphex-subheading">{testimonial.role}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>

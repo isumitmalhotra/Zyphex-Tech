@@ -26,6 +26,7 @@ export interface ContentSection {
   description?: string
   imageUrl?: string
   layoutSettings: Record<string, unknown>
+  contentData?: Record<string, unknown> // Add contentData field
   isActive: boolean
   order: number
   createdAt: Date
@@ -118,6 +119,7 @@ function transformSection(dbSection: SectionWithContentType): ContentSection {
     description: dbSection.description || undefined,
     imageUrl: dbSection.imageUrl || undefined,
     layoutSettings: parseJsonField(dbSection.layoutSettings, {}),
+    contentData: parseJsonField((dbSection as any).contentData, {}), // Add contentData parsing
     isActive: dbSection.isActive,
     order: dbSection.order,
     createdAt: dbSection.createdAt,
