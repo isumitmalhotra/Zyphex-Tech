@@ -9,7 +9,7 @@ import { useSearchParams } from "next/navigation"
 
 export default function AuthErrorPage() {
   const searchParams = useSearchParams()
-  const error = searchParams.get('error')
+  const error = searchParams?.get('error')
 
   const getErrorMessage = (errorCode: string | null) => {
     switch (errorCode) {
@@ -77,7 +77,7 @@ export default function AuthErrorPage() {
             <Alert className="border-red-500/20 bg-red-500/10">
               <AlertCircle className="h-4 w-4 text-red-400" />
               <AlertDescription className="text-red-300">
-                {getErrorMessage(error)}
+                {getErrorMessage(error || null)}
               </AlertDescription>
             </Alert>
 

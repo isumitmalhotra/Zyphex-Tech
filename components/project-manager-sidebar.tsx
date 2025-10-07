@@ -45,6 +45,7 @@ const projectManagerNavigation = [
       { title: "Team Members", url: "/project-manager/team", icon: "Users" },
       { title: "Task Assignment", url: "/project-manager/tasks", icon: "CheckCircle" },
       { title: "Workload Management", url: "/project-manager/workload", icon: "Clock" },
+      { title: "Messages", url: "/project-manager/messages", icon: "MessageSquare" },
       { title: "Team Communication", url: "/project-manager/communication", icon: "MessageSquare" },
     ],
   },

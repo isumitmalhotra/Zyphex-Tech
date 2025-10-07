@@ -22,6 +22,8 @@ import {
 } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 import { useProjectManagerDashboard } from "@/hooks/use-project-manager-dashboard"
+import { DashboardMessaging } from "@/components/dashboard-messaging"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -68,6 +70,7 @@ interface Activity {
 
 function ProjectManagerDashboardContent() {
   const { dashboardData, loading, error, refresh } = useProjectManagerDashboard()
+  const { data: session } = useSession()
   const router = useRouter()
 
   if (loading) {
@@ -360,6 +363,15 @@ function ProjectManagerDashboardContent() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Real-time Messaging - Temporarily disabled due to connection issues */}
+        {/* {session?.user && (
+          <DashboardMessaging 
+            userRole="PROJECT_MANAGER"
+            userId={session.user.id}
+            compact={true}
+          />
+        )} */}
       </div>
     </div>
   )

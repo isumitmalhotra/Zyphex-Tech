@@ -25,9 +25,12 @@ import {
 } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 import { useClientDashboard } from "@/hooks/use-client-dashboard"
+import { DashboardMessaging } from "@/components/dashboard-messaging"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 
 function ClientDashboardContent() {
+  const { data: session } = useSession()
   const { dashboardData, loading, error, refresh } = useClientDashboard()
 
   if (loading) {
@@ -413,6 +416,15 @@ function ClientDashboardContent() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Real-time Messaging - Temporarily disabled */}
+        {/* {session?.user && (
+          <DashboardMessaging 
+            userRole="CLIENT"
+            userId={session.user.id}
+            compact={true}
+          />
+        )} */}
       </div>
     </div>
   )

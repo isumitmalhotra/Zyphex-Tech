@@ -24,6 +24,8 @@ import {
 } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 import { useTeamMemberDashboard } from "@/hooks/use-team-member-dashboard"
+import { DashboardMessaging } from "@/components/dashboard-messaging"
+import { useSession } from "next-auth/react"
 
 // Type definitions for better type safety
 interface TaskType {
@@ -71,6 +73,7 @@ interface DocumentType {
 
 function TeamMemberDashboardContent() {
   const { dashboardData, loading, error, refresh } = useTeamMemberDashboard()
+  const { data: session } = useSession()
 
   if (loading) {
     return (
@@ -417,6 +420,15 @@ function TeamMemberDashboardContent() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Real-time Messaging - Temporarily disabled */}
+        {/* {session?.user && (
+          <DashboardMessaging 
+            userRole="TEAM_MEMBER"
+            userId={session.user.id}
+            compact={true}
+          />
+        )} */}
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
+import { RealtimeNotifications } from "@/components/realtime/RealtimeNotifications"
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -47,11 +48,11 @@ export default function Header() {
     if (href === "/") {
       return pathname === "/"
     }
-    return pathname.startsWith(href)
+    return pathname?.startsWith(href) || false
   }
 
-  const isAdminRoute = pathname.startsWith("/admin")
-  const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/register")
+  const isAdminRoute = pathname?.startsWith("/admin") || false
+  const isAuthRoute = pathname?.startsWith("/login") || pathname?.startsWith("/register") || false
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-gray-800/50 zyphex-glass-effect">
@@ -88,6 +89,9 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-4">
             {session ? (
               <>
+                {/* Real-time Notifications */}
+                <RealtimeNotifications />
+                
                 <div className="relative">
                   <Button 
                     id="user-dropdown-trigger"

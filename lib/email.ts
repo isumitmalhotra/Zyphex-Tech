@@ -67,7 +67,7 @@ function createTransporter() {
 }
 
 // Enhanced send email utility with better error handling and logging
-async function sendEmail(options: EmailOptions): Promise<boolean> {
+export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     if (!process.env.EMAIL_SERVER_USER || !process.env.EMAIL_SERVER_PASSWORD) {
       console.warn('⚠️ Email credentials not configured, skipping email send');

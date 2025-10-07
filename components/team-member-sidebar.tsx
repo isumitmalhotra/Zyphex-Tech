@@ -28,7 +28,7 @@ const teamMemberNavigation = [
       { title: "My Tasks", url: "/team-member/tasks", icon: "CheckCircle" },
       { title: "Projects", url: "/team-member/projects", icon: "Briefcase" },
       { title: "Time Tracking", url: "/team-member/time", icon: "Clock" },
-      { title: "Team Chat", url: "/team-member/chat", icon: "MessageSquare" },
+      { title: "Messages", url: "/team-member/messages", icon: "MessageSquare" },
     ],
   },
   {

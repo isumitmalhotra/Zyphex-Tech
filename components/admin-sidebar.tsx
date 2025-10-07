@@ -12,6 +12,7 @@ import {
   User2,
   Briefcase,
   FileText,
+  MessageSquare,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -155,6 +156,11 @@ const data = {
           url: "/admin/content",
         },
       ],
+    },
+    {
+      title: "Messages",
+      url: "/admin/messages",
+      icon: MessageSquare,
     },
   ],
 }

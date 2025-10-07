@@ -34,6 +34,8 @@ import {
 import { SubtleBackground } from "@/components/subtle-background"
 import { Icon3D } from "@/components/3d-icons"
 import { useAdminDashboard } from "@/hooks/use-admin-dashboard"
+import { DashboardMessaging } from "@/components/dashboard-messaging"
+import { useSession } from "next-auth/react"
 
 export default function AdminDashboard() {
   return (
@@ -59,6 +61,7 @@ export default function AdminDashboard() {
 
 function AdminDashboardContent() {
   const { data, error, isLoading, mutate } = useAdminDashboard()
+  const { data: session } = useSession()
 
   // Handle loading state
   if (isLoading) {
@@ -322,6 +325,15 @@ function AdminDashboardContent() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Real-time Messaging - Temporarily disabled */}
+        {/* {session?.user && (
+          <DashboardMessaging 
+            userRole="ADMIN"
+            userId={session.user.id}
+            compact={true}
+          />
+        )} */}
       </div>
     </div>
   )

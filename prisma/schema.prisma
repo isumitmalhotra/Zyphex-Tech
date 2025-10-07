@@ -49,6 +49,12 @@ model User {
   auditLogs        AuditLog[]
   refreshTokens    RefreshToken[]
 
+  // New messaging relations
+  createdChannels  Channel[]         @relation("ChannelCreator")
+  channels         Channel[]         @relation("ChannelMembers")
+  messageReads     MessageRead[]     @relation("UserMessageReads")
+  messageReactions MessageReaction[] @relation("UserMessageReactions")
+
   // Advanced Project Management Relations
   ownedRisks          ProjectRisk[]          @relation("RiskOwner")
   identifiedRisks     ProjectRisk[]          @relation("RiskIdentifier")
@@ -220,6 +226,9 @@ model Project {
   expenses            Expense[]
   billingContracts    BillingContract[]
   paymentConfigs      PaymentConfig[]
+
+  // New messaging relations
+  channels Channel[]
 
   @@index([clientId])
   @@index([managerId])
@@ -552,7 +561,8 @@ model ActivityLog {
 model Message {
   id          String      @id @default(uuid())
   senderId    String
-  receiverId  String? // Null for broadcast messages
+  receiverId  String? // Null for broadcast messages or channel messages
+  channelId   String? // New: for channel-based messages
   projectId   String?
   subject     String?
   content     String
@@ -565,17 +575,75 @@ model Message {
   updatedAt   DateTime    @updatedAt
 
   // Relations
-  sender   User      @relation("MessageSender", fields: [senderId], references: [id])
-  receiver User?     @relation("MessageReceiver", fields: [receiverId], references: [id])
-  project  Project?  @relation(fields: [projectId], references: [id])
-  parent   Message?  @relation("MessageThread", fields: [parentId], references: [id])
-  replies  Message[] @relation("MessageThread")
+  sender    User              @relation("MessageSender", fields: [senderId], references: [id])
+  receiver  User?             @relation("MessageReceiver", fields: [receiverId], references: [id])
+  channel   Channel?          @relation(fields: [channelId], references: [id])
+  project   Project?          @relation(fields: [projectId], references: [id])
+  parent    Message?          @relation("MessageThread", fields: [parentId], references: [id])
+  replies   Message[]         @relation("MessageThread")
+  reads     MessageRead[]
+  reactions MessageReaction[]
 
   @@index([senderId])
   @@index([receiverId])
+  @@index([channelId])
   @@index([projectId])
   @@index([createdAt])
   @@index([readAt])
+}
+
+model Channel {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  type        ChannelType @default(TEAM)
+  isPrivate   Boolean     @default(false)
+  projectId   String?
+  createdById String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  project   Project?  @relation(fields: [projectId], references: [id])
+  createdBy User      @relation("ChannelCreator", fields: [createdById], references: [id])
+  members   User[]    @relation("ChannelMembers")
+  messages  Message[]
+
+  @@unique([name, projectId]) // Channel names must be unique within a project
+  @@index([projectId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model MessageRead {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation("UserMessageReads", fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([userId])
+  @@index([readAt])
+}
+
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  // Relations
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation("UserMessageReactions", fields: [userId], references: [id])
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
 }
 
 model Document {
@@ -875,6 +943,16 @@ enum MessageType {
   BROADCAST
   NOTIFICATION
   SYSTEM
+  REPLY
+}
+
+enum ChannelType {
+  TEAM
+  PROJECT
+  DIRECT
+  GENERAL
+  ADMIN
+  CLIENT
 }
 
 enum PaymentMethod {

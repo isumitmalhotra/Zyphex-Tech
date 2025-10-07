@@ -51,8 +51,8 @@ export function EnhancedAuthForm({ mode = 'signin' }: EnhancedAuthFormProps) {
   const isSignUp = mode === 'signup'
   const isForgotPassword = mode === 'forgot-password'
   const isResetPassword = mode === 'reset-password'
-  const errorParam = searchParams.get('error')
-  const token = searchParams.get('token')
+  const errorParam = searchParams?.get('error')
+  const token = searchParams?.get('token')
 
   // Handle OAuth errors
   useEffect(() => {
@@ -72,7 +72,7 @@ export function EnhancedAuthForm({ mode = 'signin' }: EnhancedAuthFormProps) {
   // Redirect if already authenticated (except for reset password)
   useEffect(() => {
     if (status === 'authenticated' && session && !isResetPassword) {
-      const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+      const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
       router.push(callbackUrl)
     }
   }, [session, status, router, searchParams, isResetPassword])
@@ -126,7 +126,7 @@ export function EnhancedAuthForm({ mode = 'signin' }: EnhancedAuthFormProps) {
           })
           
           if (signInResult?.ok) {
-            const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+            const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
             router.push(callbackUrl)
           } else {
             setError('Registration successful, but sign-in failed. Please try logging in manually.')
@@ -182,7 +182,7 @@ export function EnhancedAuthForm({ mode = 'signin' }: EnhancedAuthFormProps) {
         })
         
         if (result?.ok) {
-          const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+          const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
           router.push(callbackUrl)
         } else {
           setError('Invalid email or password')
@@ -201,7 +201,7 @@ export function EnhancedAuthForm({ mode = 'signin' }: EnhancedAuthFormProps) {
     setError('')
     
     try {
-      const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+      const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
       await signIn(provider, { callbackUrl })
     } catch (error) {
       console.error(`${provider} sign-in error:`, error)

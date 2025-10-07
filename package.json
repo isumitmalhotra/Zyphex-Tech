@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
+    "dev": "node server.js",
+    "dev:next": "next dev",
     "lint": "next lint",
-    "start": "next start",
+    "start": "NODE_ENV=production node server.js",
+    "start:next": "next start",
     "db:seed": "node prisma/seed.js"
   },
   "prisma": {
@@ -82,7 +84,6 @@
     "react-day-picker": "latest",
     "react-dom": "^18",
     "react-hook-form": "latest",
-    "react-icons": "^5.5.0",
     "react-resizable-panels": "latest",
     "recharts": "latest",
     "sharp": "^0.34.3",

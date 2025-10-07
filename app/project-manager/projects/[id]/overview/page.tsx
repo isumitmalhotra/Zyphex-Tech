@@ -24,6 +24,9 @@ import {
 import { useRouter } from "next/navigation"
 import { SubtleBackground } from "@/components/subtle-background"
 import { format, differenceInDays } from "date-fns"
+import { RealtimeTaskUpdates } from "@/components/realtime/RealtimeTaskUpdates"
+import { RealtimeProjectActivity } from "@/components/realtime/RealtimeProjectActivity"
+import { RealtimeMessages } from "@/components/realtime/RealtimeMessages"
 
 interface ProjectStats {
   id: string
@@ -438,6 +441,29 @@ export default function ProjectOverviewPage({ params }: { params: { id: string }
             </div>
           </CardContent>
         </Card>
+
+        {/* Real-time Features Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+          {/* Real-time Task Updates */}
+          <RealtimeTaskUpdates 
+            projectId={params.id}
+            className="lg:col-span-1"
+          />
+          
+          {/* Real-time Project Activity */}
+          <RealtimeProjectActivity 
+            projectId={params.id}
+            className="lg:col-span-1"
+            maxHeight="h-80"
+          />
+          
+          {/* Real-time Messages */}
+          <RealtimeMessages 
+            projectId={params.id}
+            className="lg:col-span-1 xl:col-span-1"
+            maxHeight="h-80"
+          />
+        </div>
       </div>
     </div>
   )

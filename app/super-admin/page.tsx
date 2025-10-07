@@ -10,7 +10,7 @@ import { Permission } from "@/lib/auth/permissions"
 import {
   Shield,
   Users,
-  Briefcase,
+  Building,
   DollarSign,
   TrendingUp,
   Activity,
@@ -20,18 +20,21 @@ import {
   Lock,
   UserCheck,
   Clock,
-  
   ArrowRight,
   RefreshCw,
   AlertCircle,
   Loader2,
+  Briefcase,
 } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 import { useSuperAdminDashboard } from "@/hooks/use-super-admin-dashboard"
+import { DashboardMessaging } from "@/components/dashboard-messaging"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 
 function SuperAdminDashboardContent() {
   const { dashboardData, loading, error, refresh } = useSuperAdminDashboard()
+  const { data: session } = useSession()
 
   if (loading) {
     return (
@@ -464,6 +467,15 @@ function SuperAdminDashboardContent() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Real-time Messaging - Temporarily disabled */}
+      {/* {session?.user && (
+        <DashboardMessaging 
+          userRole="SUPER_ADMIN"
+          userId={session.user.id}
+          compact={true}
+        />
+      )} */}
     </div>
   )
 }
