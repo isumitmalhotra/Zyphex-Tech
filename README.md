@@ -86,6 +86,20 @@ The following API routes have been implemented:
    pnpm dev
    ```
 
+## 📚 Documentation
+
+Comprehensive project documentation is organized in the `/docs` folder:
+
+- **[📚 Main Documentation Index](./docs/README.md)** - Complete documentation overview
+- **[🚀 Deployment Guides](./docs/deployment/)** - CI/CD, deployment, and DevOps
+- **[📖 Implementation Guides](./docs/guides/)** - Feature implementation and setup
+- **[🔍 Audits & Reports](./docs/audits/)** - Code quality, performance, and fixes
+
+### Quick Links:
+- **[Quick Action Checklist](./docs/deployment/QUICK_ACTION_CHECKLIST.md)** - Set up CI/CD in 15 minutes
+- **[Email Service Setup](./docs/guides/EMAIL_SERVICE_SETUP_COMPLETE.md)** - Email integration
+- **[FAANG Level Code Audit](./docs/audits/FAANG_LEVEL_CODE_AUDIT.md)** - Code quality review
+
 ## Next Steps
 
 - Implement authentication with NextAuth.js
