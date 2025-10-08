@@ -79,8 +79,12 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 
     const transporter = createTransporter();
     
+    // Use the authenticated email address as sender
+    const fromAddress = process.env.EMAIL_FROM || process.env.EMAIL_SERVER_USER || 'No-reply@zyphextech.com';
+    const fromName = process.env.EMAIL_FROM_NAME || 'Zyphex Tech';
+    
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'noreply@zyphextech.com',
+      from: `${fromName} <${fromAddress}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
@@ -88,7 +92,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     };
 
     console.log('📧 Sending email with config:', {
-      from: mailOptions.from,
+      from: `${fromName} <${fromAddress}>`,
       to: mailOptions.to,
       host: process.env.EMAIL_SERVER_HOST,
       port: process.env.EMAIL_SERVER_PORT,
