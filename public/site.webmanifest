@@ -1,0 +1,26 @@
+{
+  "name": "Zyphex Tech - Remote IT Services",
+  "short_name": "Zyphex Tech",
+  "description": "Leading Remote IT Services Agency - Custom software development, cloud solutions, and digital transformation",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/zyphex-logo.png",
+      "sizes": "500x500",
+      "type": "image/png"
+    }
+  ]
+}
