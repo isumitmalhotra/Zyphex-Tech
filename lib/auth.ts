@@ -5,6 +5,8 @@ import AzureADProvider from 'next-auth/providers/azure-ad'
 import { PrismaClient } from '@prisma/client'
 import { verifyPassword, PasswordAttemptTracker } from './auth/password'
 import { loginSchema } from './validation/schemas'
+import { generateWelcomeEmail } from './email/templates'
+import { sendEmail } from './email'
 
 const prisma = new PrismaClient()
 
@@ -254,7 +256,35 @@ export const authOptions: NextAuthOptions = {
 
   events: {
     async signIn({ user, account, isNewUser }) {
-      // Sign-in event logged for audit
+      // Send welcome email for new OAuth users
+      if (isNewUser && user.email && user.name) {
+        try {
+          const appUrl = process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000'
+          const dashboardUrl = `${appUrl}/dashboard`
+          
+          // Generate welcome email with modern template
+          const welcomeEmailTemplate = generateWelcomeEmail({
+            recipientName: user.name,
+            dashboardUrl,
+            appName: process.env.APP_NAME || 'Zyphex Tech',
+            appUrl,
+            supportEmail: process.env.SUPPORT_EMAIL || 'support@zyphextech.com'
+          })
+
+          // Send welcome email
+          await sendEmail({
+            to: user.email,
+            subject: welcomeEmailTemplate.subject,
+            html: welcomeEmailTemplate.html,
+            text: welcomeEmailTemplate.text
+          })
+
+          console.log(`✅ Welcome email sent to ${user.email} (OAuth: ${account?.provider})`)
+        } catch (emailError) {
+          console.error('❌ Failed to send welcome email:', emailError)
+          // Don't fail sign-in if email fails
+        }
+      }
     },
 
     async signOut({ token }) {
