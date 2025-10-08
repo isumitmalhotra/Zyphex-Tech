@@ -99,11 +99,11 @@ function checkRateLimit(req: NextRequestWithAuth): boolean {
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
   
-  // More generous rate limits for development
+  // More generous rate limits for development and production
   const isDevelopment = process.env.NODE_ENV === 'development';
   const maxRequests = req.nextUrl.pathname.startsWith('/api/') 
-    ? (isDevelopment ? 500 : 100) // API: 500 dev, 100 prod
-    : (isDevelopment ? 2000 : 1000); // Pages: 2000 dev, 1000 prod
+    ? (isDevelopment ? 1000 : 500) // API: 1000 dev, 500 prod (increased from 100)
+    : (isDevelopment ? 5000 : 2000); // Pages: 5000 dev, 2000 prod (increased from 1000)
   
   const record = requestCounts.get(key);
   

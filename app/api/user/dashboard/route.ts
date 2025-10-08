@@ -17,11 +17,15 @@ function calculateProjectProgress(status: string): number {
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('📊 Dashboard API called for user dashboard')
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
+      console.log('❌ Dashboard: Unauthorized - no session')
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    console.log(`✅ Dashboard: Fetching data for user ${session.user.id}`)
 
     // Get query parameters for filtering
     const { searchParams } = new URL(request.url)
@@ -376,8 +380,18 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(dashboardData)
   } catch (error) {
+    console.error('❌ Dashboard error:', error)
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Failed to fetch dashboard data"
+      },
       { status: 500 }
     )
   }

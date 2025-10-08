@@ -114,10 +114,30 @@ export async function POST(request: NextRequest) {
     }, 201)
 
   } catch (error) {
-    return security.createErrorResponse(
-      'Failed to create account. Please try again.',
-      500
-    )
+    console.error('Registration error:', error)
+    
+    // Provide more specific error messages
+    let errorMessage = 'Failed to create account. Please try again.'
+    
+    if (error instanceof Error) {
+      // Log the full error for debugging
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      })
+      
+      // Check for specific database errors
+      if (error.message.includes('Unique constraint')) {
+        errorMessage = 'An account with this email already exists.'
+      } else if (error.message.includes('connection')) {
+        errorMessage = 'Database connection error. Please try again in a moment.'
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Request timeout. Please try again.'
+      }
+    }
+    
+    return security.createErrorResponse(errorMessage, 500)
   } finally {
     await prisma.$disconnect()
   }

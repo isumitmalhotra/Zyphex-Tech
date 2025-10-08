@@ -57,15 +57,15 @@ class InMemoryRateLimiter {
 
 const rateLimiter = new InMemoryRateLimiter()
 
-// Rate limit configurations
+// Rate limit configurations (increased for better UX)
 export const RATE_LIMITS = {
-  login: { max: 5, window: 15 * 60 * 1000 }, // 5 attempts per 15 minutes
-  api: { max: 100, window: 15 * 60 * 1000 }, // 100 requests per 15 minutes
-  registration: { max: 3, window: 60 * 60 * 1000 }, // 3 registrations per hour
-  'password-reset': { max: 3, window: 60 * 60 * 1000 }, // 3 password resets per hour
-  'project-creation': { max: 10, window: 60 * 60 * 1000 }, // 10 projects per hour
-  'file-upload': { max: 20, window: 60 * 60 * 1000 }, // 20 file uploads per hour
-  'message-send': { max: 50, window: 60 * 60 * 1000 } // 50 messages per hour
+  login: { max: 10, window: 15 * 60 * 1000 }, // 10 attempts per 15 minutes (increased from 5)
+  api: { max: 300, window: 15 * 60 * 1000 }, // 300 requests per 15 minutes (increased from 100)
+  registration: { max: 5, window: 60 * 60 * 1000 }, // 5 registrations per hour (increased from 3)
+  'password-reset': { max: 5, window: 60 * 60 * 1000 }, // 5 password resets per hour (increased from 3)
+  'project-creation': { max: 20, window: 60 * 60 * 1000 }, // 20 projects per hour (increased from 10)
+  'file-upload': { max: 50, window: 60 * 60 * 1000 }, // 50 file uploads per hour (increased from 20)
+  'message-send': { max: 100, window: 60 * 60 * 1000 } // 100 messages per hour (increased from 50)
 } as const
 
 export type RateLimitType = keyof typeof RATE_LIMITS
