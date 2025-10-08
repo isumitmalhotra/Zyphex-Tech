@@ -24,7 +24,7 @@ import React from "react"
 
 
 export default function UserDashboard() {
-  const { dashboardData, loading, error } = useUserDashboard()
+  const { dashboardData, loading, error, refetch } = useUserDashboard()
 
 
 
@@ -163,12 +163,7 @@ export default function UserDashboard() {
                 <Briefcase className="h-12 w-12 text-gray-500 mx-auto mb-4" />
                 <h4 className="text-lg font-medium zyphex-heading mb-2">No Projects Yet</h4>
                 <p className="zyphex-subheading mb-4">Start your first project with us!</p>
-                <Button className="zyphex-button-primary" asChild>
-                  <Link href="/contact">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Request New Project
-                  </Link>
-                </Button>
+                <ProjectRequestForm onSuccess={refetch} />
               </div>
             ) : (
               projects.slice(0, 3).map((project, index) => (

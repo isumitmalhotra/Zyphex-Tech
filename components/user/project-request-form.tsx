@@ -30,14 +30,27 @@ export function ProjectRequestForm({ onSuccess }: ProjectRequestFormProps) {
     setLoading(true)
 
     try {
+      // Convert budget string to number if needed
+      const budget = formData.budget && formData.budget !== 'custom' 
+        ? parseInt(formData.budget) 
+        : undefined
+
       const response = await fetch("/api/user/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          budget,
+          timeline: formData.timeline,
+          requirements: formData.requirements
+        })
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error("Failed to submit project request")
+        throw new Error(data.error || "Failed to submit project request")
       }
 
       toast.success("Project request submitted successfully! We'll review it shortly.")
@@ -50,8 +63,9 @@ export function ProjectRequestForm({ onSuccess }: ProjectRequestFormProps) {
       })
       setOpen(false)
       onSuccess?.()
-    } catch (error) {
-      toast.error("Failed to submit project request")
+    } catch (error: any) {
+      console.error('Project request error:', error)
+      toast.error(error.message || "Failed to submit project request")
     } finally {
       setLoading(false)
     }
