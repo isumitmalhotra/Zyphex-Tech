@@ -16,30 +16,18 @@ ADMIN_EMAIL="sumitmalhotra@zyphextech.com"
 ADMIN_NAME="Sumit Malhotra"
 ADMIN_ROLE="ADMIN"
 
-# First, we need to hash the password using Node.js
-# We'll create a temporary Node.js script to hash the password
-cat > /tmp/hash-password.js << 'EOF'
-const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
-
-async function hashPassword(password) {
-  const salt = await bcrypt.genSalt(12);
-  return bcrypt.hash(password, salt);
-}
-
-hashPassword('Sumit@001').then(hash => {
+# Generate hashed password using project's bcryptjs
+echo "Hashing password..."
+HASHED_PASSWORD=$(node -e "
+const bcrypt = require('./node_modules/bcryptjs');
+bcrypt.hash('Sumit@001', 12).then(hash => {
   console.log(hash);
   process.exit(0);
 }).catch(err => {
   console.error(err);
   process.exit(1);
 });
-EOF
-
-# Generate hashed password
-echo "Hashing password..."
-HASHED_PASSWORD=$(cd /var/www/zyphextech && node /tmp/hash-password.js)
-rm /tmp/hash-password.js
+")
 
 if [ -z "$HASHED_PASSWORD" ]; then
   echo "❌ Failed to hash password"
