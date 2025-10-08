@@ -49,7 +49,7 @@ jobs:
             
             # Install/update dependencies
             echo "📦 Installing dependencies..."
-            npm ci --production=false
+            npm ci --legacy-peer-deps
             
             # Generate Prisma Client
             echo "🔧 Generating Prisma Client..."
