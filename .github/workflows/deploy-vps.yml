@@ -79,16 +79,32 @@ jobs:
             echo "🗄️  Running database migrations..."
             npx prisma migrate deploy
             
+            # Clean old build completely
+            echo "🧹 Cleaning old build..."
+            rm -rf .next
+            rm -rf .next.bak
+            
+            # Create fresh .next directory to avoid cache issues
+            mkdir -p .next
+            
             # Build application
             echo "🏗️  Building application..."
-            npm run build
+            NODE_ENV=production npm run build
+            
+            # Verify build succeeded
+            if [ ! -d ".next" ] || [ ! -f ".next/BUILD_ID" ]; then
+              echo "❌ Build verification failed!"
+              exit 1
+            fi
+            echo "✅ Build verified successfully"
             
             # Restart application with PM2
             echo "🔄 Restarting application..."
             pm2 restart zyphextech --update-env
             
             # Wait for application to be ready
-            sleep 5
+            echo "⏳ Waiting for application to start..."
+            sleep 10
             
             # Health check
             echo "🏥 Running health check..."
@@ -98,7 +114,8 @@ jobs:
             else
               echo "❌ Health check failed! Rolling back..."
               git reset --hard HEAD~1
-              npm ci --production=false
+              npm ci --legacy-peer-deps
+              rm -rf .next
               npm run build
               pm2 restart zyphextech
               exit 1
