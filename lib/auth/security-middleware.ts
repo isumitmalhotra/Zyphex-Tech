@@ -35,7 +35,13 @@ const SECURITY_HEADERS = {
 
 // CORS configuration
 const CORS_CONFIG = {
-  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+  allowedOrigins: process.env.ALLOWED_ORIGINS?.split(',') || [
+    'http://localhost:3000',
+    'https://www.zyphextech.com',
+    'https://zyphextech.com',
+    process.env.NEXTAUTH_URL || '',
+    process.env.APP_URL || ''
+  ].filter(Boolean), // Remove empty strings
   allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type',
@@ -221,7 +227,19 @@ export class SecurityMiddleware {
     const origin = this.request.headers.get('origin')
     if (!origin) return true // Same-origin requests don't have origin header
     
-    return CORS_CONFIG.allowedOrigins.includes(origin)
+    // Allow configured origins
+    if (CORS_CONFIG.allowedOrigins.includes(origin)) {
+      return true
+    }
+    
+    // Allow same domain (for API routes called from same domain)
+    const requestUrl = new URL(this.request.url)
+    const originUrl = new URL(origin)
+    if (requestUrl.hostname === originUrl.hostname) {
+      return true
+    }
+    
+    return false
   }
   
   // Validate request headers
@@ -267,6 +285,11 @@ export async function secureApiRoute(
   
   // Check origin
   if (!security.isOriginAllowed()) {
+    console.error('❌ Origin not allowed:', {
+      origin: request.headers.get('origin'),
+      url: request.url,
+      allowedOrigins: CORS_CONFIG.allowedOrigins
+    })
     return {
       security,
       error: security.createErrorResponse('Origin not allowed', 403)
