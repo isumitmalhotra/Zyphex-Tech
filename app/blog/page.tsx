@@ -4,6 +4,8 @@ import { BlogGrid } from '@/components/blog/blog-grid'
 import { BlogSearch } from '@/components/blog/blog-search'
 import { BlogCategories } from '@/components/blog/blog-categories'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Blog | ZyphexTech',
   description: 'Latest insights, tutorials, and updates from ZyphexTech on technology, development, and digital innovation.',

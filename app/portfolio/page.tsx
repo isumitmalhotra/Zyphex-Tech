@@ -3,6 +3,8 @@ import { PortfolioGrid } from '@/components/portfolio/portfolio-grid'
 import { PortfolioFilters } from '@/components/portfolio/portfolio-filters'
 import { notFound } from 'next/navigation'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Portfolio | ZyphexTech',
   description: 'Explore our portfolio of successful projects, case studies, and digital solutions. See how we help businesses transform and grow.',
