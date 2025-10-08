@@ -218,10 +218,10 @@ npm run lint
 ### Post-Deployment Verification:
 ```bash
 # Check PM2 status
-ssh root@116.203.64.91 -p 222 "pm2 status"
+ssh deploy@66.116.199.219 "pm2 status"
 
 # View logs
-ssh root@116.203.64.91 -p 222 "pm2 logs zyphextech --lines 50"
+ssh deploy@66.116.199.219 "pm2 logs zyphextech --lines 50"
 
 # Test application
 curl https://www.zyphextech.com
@@ -245,8 +245,8 @@ curl https://www.zyphextech.com
 
 ### VPS Monitoring:
 ```bash
-# SSH into VPS
-ssh root@116.203.64.91 -p 222
+# SSH into VPS (using deploy user)
+ssh deploy@66.116.199.219
 
 # PM2 monitoring
 pm2 monit           # Real-time monitoring
@@ -480,7 +480,7 @@ gh workflow view deploy-vps.yml
 gh workflow run deploy-vps.yml
 
 # SSH to VPS
-ssh root@116.203.64.91 -p 222
+ssh deploy@66.116.199.219
 
 # Check application
 pm2 status

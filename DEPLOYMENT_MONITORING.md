@@ -46,7 +46,11 @@ Current workflow: `Deploy to VPS`
 
 #### SSH into VPS:
 ```bash
-ssh root@116.203.64.91 -p 222
+# Using deploy user (recommended)
+ssh deploy@66.116.199.219
+
+# Or using root user
+ssh root@66.116.199.219
 ```
 
 #### Check Application Status:
@@ -310,7 +314,7 @@ If deployment causes critical issues:
 
 ```bash
 # SSH to VPS
-ssh root@116.203.64.91 -p 222
+ssh deploy@66.116.199.219
 
 # Navigate to app
 cd /var/www/zyphextech
@@ -364,9 +368,10 @@ pm2 env 0  # Check PM2 process ID first with: pm2 list
 - Repository: https://github.com/isumitmalhotra/Zyphex-Tech
 
 **VPS Provider:**
-- Provider: Hetzner
-- IP: 116.203.64.91
-- Port: 222
+- IP: 66.116.199.219
+- Port: 22 (standard SSH)
+- Deploy User: deploy
+- Root User: root
 
 ---
 
