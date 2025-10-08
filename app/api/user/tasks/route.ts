@@ -140,7 +140,6 @@ export async function GET(request: NextRequest) {
       summary
     })
   } catch (error) {
-    console.error('Error fetching tasks:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -237,7 +236,6 @@ export async function PUT(request: NextRequest) {
       task: updatedTask
     })
   } catch (error: any) {
-    console.error('Error updating task:', error)
     
     // Handle Prisma-specific errors
     if (error.code === 'P2025') {

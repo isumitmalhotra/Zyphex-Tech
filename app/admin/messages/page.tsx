@@ -98,65 +98,37 @@ export default function AdminMessages() {
   useEffect(() => {
     const fetchChannels = async () => {
       try {
-        console.log("🔍 Fetching channels from /api/admin/messages/channels");
         const response = await fetch("/api/admin/messages/channels");
-        console.log(
-          "📡 Channels API Response:",
-          response.status,
-          response.statusText
-        );
         if (response.ok) {
           const data = await response.json();
-          console.log("📋 Channels data received:", data);
           setChannels(data.channels || []);
           // Auto-select first channel if available
           if (data.channels && data.channels.length > 0) {
             setSelectedChannel(data.channels[0].id);
           }
-        } else {
-          console.error(
-            "❌ Failed to fetch channels:",
-            response.status,
-            response.statusText
-          );
         }
       } catch (error) {
-        console.error("💥 Error fetching channels:", error);
+        // Error fetching channels - handle silently or show user notification
       }
     };
 
     const fetchUsers = async () => {
       try {
-        console.log("🔍 Fetching users from /api/admin/messages/users");
         const response = await fetch("/api/admin/messages/users");
-        console.log(
-          "📡 Users API Response:",
-          response.status,
-          response.statusText
-        );
         if (response.ok) {
           const data = await response.json();
-          console.log("👥 Users data received:", data);
           setUsers(data.users || []);
-        } else {
-          console.error(
-            "❌ Failed to fetch users:",
-            response.status,
-            response.statusText
-          );
         }
       } catch (error) {
-        console.error("💥 Error fetching users:", error);
+        // Error fetching users - handle silently or show user notification
       }
     };
 
     if (session?.user) {
-      console.log("🔐 User session found:", session.user);
       Promise.all([fetchChannels(), fetchUsers()]).finally(() => {
         setLoading(false);
       });
     } else {
-      console.log("⚠️ No user session found");
       setLoading(false);
     }
   }, [session]);
@@ -166,18 +138,11 @@ export default function AdminMessages() {
     if (selectedChannel) {
       const fetchMessages = async () => {
         try {
-          console.log("📨 Fetching messages for channel:", selectedChannel);
           const response = await fetch(
             `/api/admin/messages/channels/${selectedChannel}/messages`
           );
-          console.log(
-            "📡 Messages API Response:",
-            response.status,
-            response.statusText
-          );
           if (response.ok) {
             const data = await response.json();
-            console.log("💬 Messages data received:", data);
             // Transform API messages to frontend format
             const transformedMessages = (data.messages || []).map(
               (msg: any) => ({
@@ -195,15 +160,9 @@ export default function AdminMessages() {
             );
             setMessages(transformedMessages);
           } else {
-            console.error(
-              "❌ Failed to fetch messages:",
-              response.status,
-              response.statusText
-            );
             setMessages([]);
           }
         } catch (error) {
-          console.error("💥 Error fetching messages:", error);
           setMessages([]);
         }
       };
@@ -216,12 +175,6 @@ export default function AdminMessages() {
     if (!messageText.trim() || !selectedChannel) return;
 
     try {
-      console.log(
-        "📤 Sending message to channel:",
-        selectedChannel,
-        "Content:",
-        messageText
-      );
       const response = await fetch(
         `/api/admin/messages/channels/${selectedChannel}/messages`,
         {
@@ -236,14 +189,8 @@ export default function AdminMessages() {
         }
       );
 
-      console.log(
-        "📡 Send message API Response:",
-        response.status,
-        response.statusText
-      );
       if (response.ok) {
         const responseData = await response.json();
-        console.log("✅ Message sent successfully:", responseData);
         const newMessage: Message = {
           id: responseData.data.id,
           senderId: responseData.data.sender.id,
@@ -262,17 +209,9 @@ export default function AdminMessages() {
 
         setMessages((prev) => [...prev, newMessage]);
         setMessageText("");
-      } else {
-        const errorData = await response.text();
-        console.error(
-          "❌ Failed to send message:",
-          response.status,
-          response.statusText,
-          errorData
-        );
       }
     } catch (error) {
-      console.error("💥 Error sending message:", error);
+      // Error sending message - handle silently or show user notification
     }
   };
 

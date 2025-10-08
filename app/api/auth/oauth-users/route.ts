@@ -78,7 +78,6 @@ export async function GET() {
       message: 'OAuth user creation statistics retrieved successfully'
     })
   } catch (error) {
-    console.error('Error fetching OAuth user statistics:', error)
     return NextResponse.json(
       { 
         success: false, 

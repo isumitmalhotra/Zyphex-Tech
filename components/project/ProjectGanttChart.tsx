@@ -187,7 +187,7 @@ export default function ProjectGanttChart({
           on_click: (task: { id: string }) => {
             const taskData = project.tasks.find(t => t.id === task.id)
             if (taskData) {
-              console.log('Selected task:', taskData)
+              // Task selected
             }
           },
           on_date_change: (task: { id: string }, start: Date, end: Date) => {
@@ -218,7 +218,7 @@ export default function ProjectGanttChart({
         document.head.appendChild(style)
 
       } catch (error) {
-        console.error('Error initializing Gantt chart:', error)
+        // Error initializing Gantt chart
       }
     }
 

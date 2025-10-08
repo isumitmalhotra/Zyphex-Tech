@@ -8,6 +8,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useScrollAnimation } from "@/components/scroll-animations"
 import { SubtleBackground, MinimalParticles } from "@/components/subtle-background"
+import { generateGradientPlaceholder } from "@/lib/utils/images"
 
 export default function UpdatesPage() {
   useScrollAnimation()
@@ -23,7 +24,7 @@ export default function UpdatesPage() {
       category: "Remote Work",
       readTime: "8 min read",
       views: "1.2k",
-      image: "/placeholder.svg?height=300&width=600",
+      image: generateGradientPlaceholder(600, 300, "remote-work-1"),
       featured: true,
     },
     {
@@ -36,7 +37,7 @@ export default function UpdatesPage() {
       category: "Artificial Intelligence",
       readTime: "12 min read",
       views: "2.1k",
-      image: "/placeholder.svg?height=300&width=600",
+      image: generateGradientPlaceholder(600, 300, "ai-integration-2"),
       featured: true,
     },
     {
@@ -49,7 +50,7 @@ export default function UpdatesPage() {
       category: "Security",
       readTime: "10 min read",
       views: "1.8k",
-      image: "/placeholder.svg?height=300&width=600",
+      image: generateGradientPlaceholder(600, 300, "cybersecurity-3"),
       featured: false,
     },
     {
@@ -62,7 +63,7 @@ export default function UpdatesPage() {
       category: "Web Development",
       readTime: "15 min read",
       views: "3.2k",
-      image: "/placeholder.svg?height=300&width=600",
+      image: generateGradientPlaceholder(600, 300, "web-dev-4"),
       featured: false,
     },
     {
@@ -75,7 +76,7 @@ export default function UpdatesPage() {
       category: "Database",
       readTime: "11 min read",
       views: "1.5k",
-      image: "/placeholder.svg?height=300&width=600",
+      image: generateGradientPlaceholder(600, 300, "database-5"),
       featured: false,
     },
     {
@@ -88,7 +89,7 @@ export default function UpdatesPage() {
       category: "Mobile Development",
       readTime: "9 min read",
       views: "2.3k",
-      image: "/placeholder.svg?height=300&width=600",
+      image: generateGradientPlaceholder(600, 300, "mobile-dev-6"),
       featured: false,
     },
   ]
@@ -176,7 +177,7 @@ export default function UpdatesPage() {
                 >
                   <div className="relative overflow-hidden">
                     <Image
-                      src={post.image || "/placeholder.svg"}
+                      src={post.image || generateGradientPlaceholder(600, 300, post.title)}
                       alt={post.title}
                       width={600}
                       height={300}
@@ -253,7 +254,7 @@ export default function UpdatesPage() {
                 >
                   <div className="relative overflow-hidden">
                     <Image
-                      src={post.image || "/placeholder.svg"}
+                      src={post.image || generateGradientPlaceholder(400, 200, post.title)}
                       alt={post.title}
                       width={400}
                       height={200}

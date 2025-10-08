@@ -128,8 +128,6 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Portfolio API error:', error)
-    
     return NextResponse.json(
       { 
         items: [],

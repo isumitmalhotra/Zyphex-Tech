@@ -52,7 +52,6 @@ export function ProjectRequestForm({ onSuccess }: ProjectRequestFormProps) {
       onSuccess?.()
     } catch (error) {
       toast.error("Failed to submit project request")
-      console.error(error)
     } finally {
       setLoading(false)
     }

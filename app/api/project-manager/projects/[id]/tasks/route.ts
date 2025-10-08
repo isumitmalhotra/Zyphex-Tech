@@ -57,7 +57,6 @@ export async function GET(
 
     return NextResponse.json({ tasks })
   } catch (error) {
-    console.error("Error fetching tasks:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -154,7 +153,6 @@ export async function POST(
       task: newTask 
     })
   } catch (error) {
-    console.error("Error creating task:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

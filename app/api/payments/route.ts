@@ -71,7 +71,6 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Payment fetch error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch payments" },
       { status: 500 }
@@ -180,7 +179,6 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Payment processing error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to process payment" },
       { status: 500 }

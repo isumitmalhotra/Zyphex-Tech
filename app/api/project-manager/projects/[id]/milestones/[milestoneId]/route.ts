@@ -75,7 +75,6 @@ export async function PUT(
       milestone: updatedMilestone 
     })
   } catch (error) {
-    console.error("Error updating milestone:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -131,7 +130,6 @@ export async function DELETE(
       message: "Milestone deleted successfully" 
     })
   } catch (error) {
-    console.error("Error deleting milestone:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

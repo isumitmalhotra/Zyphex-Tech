@@ -143,7 +143,6 @@ export function ModernAuthForm({ mode = 'signin' }: AuthFormProps) {
       const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
       await signIn(provider, { callbackUrl })
     } catch (error) {
-      console.error(`Error during ${provider} OAuth:`, error)
       setError(`Failed to sign in with ${provider}. Please try again.`)
       setLoadingProvider(null)
     }

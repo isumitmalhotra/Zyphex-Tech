@@ -64,7 +64,6 @@ export class S3StorageAdapter implements StorageAdapter {
       await this.s3.send(command)
       return true
     } catch (error) {
-      console.error('Error deleting file from S3:', error)
       return false
     }
   }

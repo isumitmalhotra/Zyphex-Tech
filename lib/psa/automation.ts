@@ -87,7 +87,6 @@ export class WorkflowEngine {
         }
       ];
     } catch (error) {
-      console.error('Error fetching workflow templates:', error);
       throw error;
     }
   }
@@ -111,7 +110,6 @@ export class WorkflowEngine {
         }
       ];
     } catch (error) {
-      console.error('Error fetching workflow executions:', error);
       throw error;
     }
   }
@@ -132,7 +130,6 @@ export class WorkflowEngine {
         }
       ];
     } catch (error) {
-      console.error('Error fetching scheduled workflows:', error);
       throw error;
     }
   }
@@ -154,7 +151,6 @@ export class WorkflowEngine {
         updatedAt: new Date()
       };
     } catch (error) {
-      console.error('Error updating workflow template:', error);
       throw error;
     }
   }
@@ -165,9 +161,8 @@ export class WorkflowEngine {
   async deleteWorkflowTemplate(workflowId: string): Promise<void> {
     try {
       // In real implementation, would delete from database
-      console.log(`Workflow template ${workflowId} deleted`);
+      // Workflow template deleted
     } catch (error) {
-      console.error('Error deleting workflow template:', error);
       throw error;
     }
   }
@@ -186,7 +181,6 @@ export class WorkflowEngine {
 
       return await this.executeWorkflow(workflowId, context);
     } catch (error) {
-      console.error('Error creating invoice automation:', error);
       throw error;
     }
   }
@@ -205,7 +199,6 @@ export class WorkflowEngine {
 
       return await this.executeWorkflow(workflowId, context);
     } catch (error) {
-      console.error('Error executing client onboarding:', error);
       throw error;
     }
   }
@@ -334,7 +327,6 @@ export class WorkflowEngine {
         }
       }
     } catch (error) {
-      console.error('Error scheduling automated tasks:', error);
       throw error;
     }
   }
@@ -394,7 +386,6 @@ export class WorkflowEngine {
         });
       }
     } catch (error) {
-      console.error('Error generating automated invoice:', error);
       throw error;
     }
   }
@@ -435,9 +426,7 @@ export class WorkflowEngine {
       });
 
       // In real implementation, send email using email service
-      console.log(`Sending email: ${template.subject}`);
-      console.log(`Content: ${emailContent}`);
-      console.log(`Context:`, context);
+      // Sending email notification
 
       // Log the notification
       await this.executeWorkflow('email_notification', {
@@ -447,7 +436,6 @@ export class WorkflowEngine {
         ...context
       });
     } catch (error) {
-      console.error('Error sending automated notification:', error);
       throw error;
     }
   }
@@ -661,19 +649,20 @@ export class WorkflowEngine {
     // Mock action implementations
     switch (action) {
       case 'create_tasks':
-        console.log('Creating tasks:', parameters);
+        // Creating tasks
         break;
       case 'send_email':
-        console.log('Sending email:', parameters);
+        // Sending email
         break;
       case 'create_invoice':
-        console.log('Creating invoice:', parameters);
+        // Creating invoice
         break;
       case 'assign_user':
-        console.log('Assigning user:', parameters);
+        // Assigning user
         break;
       default:
-        console.log(`Executing action: ${action}`, parameters);
+        // Executing action
+        break;
     }
   }
 
@@ -701,7 +690,7 @@ export class WorkflowEngine {
   }
 
   private async sendNotification(action: string, parameters: Record<string, unknown>): Promise<void> {
-    console.log(`Sending notification: ${action}`, parameters);
+    // Sending notification
   }
 
   private async executeDelay(parameters: Record<string, unknown>): Promise<void> {
@@ -710,7 +699,7 @@ export class WorkflowEngine {
   }
 
   private async requestApproval(parameters: Record<string, unknown>): Promise<void> {
-    console.log('Requesting approval:', parameters);
+    // Requesting approval
     // In real implementation, would create approval request
   }
 
@@ -751,7 +740,7 @@ export class WorkflowEngine {
     };
     
     execution.logs.push(logEntry);
-    console.log(`[${level}] ${message}`, data || '');
+    // Log entry added
   }
 }
 

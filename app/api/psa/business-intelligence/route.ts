@@ -113,7 +113,6 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Business Intelligence Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -179,7 +178,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Business Intelligence POST Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

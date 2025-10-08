@@ -54,7 +54,6 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Automation GET Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -128,7 +127,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Automation POST Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -165,7 +163,6 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Automation PUT Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -205,7 +202,6 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Automation DELETE Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

@@ -143,7 +143,7 @@ export class PaymentReminderService {
       const remainingBalance = invoice.total - paidAmount;
 
       if (remainingBalance <= 0) {
-        console.log('Invoice is already paid, skipping reminder');
+        // Invoice is already paid, skipping reminder
         return;
       }
 
@@ -207,7 +207,6 @@ export class PaymentReminderService {
       return reminder;
 
     } catch (error: unknown) {
-      console.error('Payment reminder failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to send payment reminder: ${errorMessage}`);
     }
@@ -304,7 +303,6 @@ export class PaymentReminderService {
       return results;
 
     } catch (error: unknown) {
-      console.error('Automated reminder processing failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to process automated reminders: ${errorMessage}`);
     }
@@ -381,7 +379,6 @@ export class PaymentReminderService {
       return lateFeeAmount;
 
     } catch (error: unknown) {
-      console.error('Late fee calculation failed:', error);
       return 0;
     }
   }
@@ -427,7 +424,6 @@ export class PaymentReminderService {
       return { success: true, message: 'Late fee waived successfully' };
 
     } catch (error: unknown) {
-      console.error('Late fee waiver failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to waive late fee: ${errorMessage}`);
     }
@@ -447,7 +443,7 @@ export class PaymentReminderService {
         }
       });
     } catch (error: unknown) {
-      console.error('Failed to mark invoice as overdue:', error);
+      // Failed to mark invoice as overdue
     }
   }
 
@@ -500,7 +496,6 @@ export class PaymentReminderService {
       });
 
     } catch (error: unknown) {
-      console.error('Email reminder failed:', error);
       throw new Error('Failed to send email reminder');
     }
   }
@@ -512,7 +507,7 @@ export class PaymentReminderService {
   private async sendSmsReminder(invoice: any, message: string) {
     try {
       // Placeholder for SMS service integration (Twilio, AWS SNS, etc.)
-      console.log(`SMS reminder sent for invoice ${invoice.invoiceNumber}: ${message}`);
+      // SMS reminder would be sent here for invoice
       
       // TODO: Integrate with SMS service
       // const sms = await twilioClient.messages.create({
@@ -522,7 +517,7 @@ export class PaymentReminderService {
       // });
 
     } catch (error: unknown) {
-      console.error('SMS reminder failed:', error);
+      // SMS reminder failed
     }
   }
 

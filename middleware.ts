@@ -135,12 +135,6 @@ export default async function middleware(req: NextRequestWithAuth) {
   
   // Apply rate limiting (except for NextAuth internal endpoints)
   if (!isNextAuthInternal && !checkRateLimit(req)) {
-    console.warn('🚨 Rate limit exceeded:', {
-      ip: getRateLimitKey(req),
-      path,
-      timestamp: new Date().toISOString()
-    });
-    
     return new NextResponse('Too Many Requests', {
       status: 429,
       headers: {
@@ -153,17 +147,6 @@ export default async function middleware(req: NextRequestWithAuth) {
   // Get authentication token
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const isAuthenticated = !!token;
-
-  // Security logging for sensitive routes
-  if (path.startsWith('/api/') || path.includes('admin') || path.includes('super-admin')) {
-    console.log('🔐 Secure route access:', {
-      path,
-      authenticated: isAuthenticated,
-      role: token?.role || 'none',
-      ip: getRateLimitKey(req).replace('rate_limit:', ''),
-      timestamp: new Date().toISOString()
-    });
-  }
 
   // Allow access to auth-related routes and public routes
   if (
@@ -212,12 +195,6 @@ export default async function middleware(req: NextRequestWithAuth) {
 
   // If the user is not authenticated, redirect to login
   if (!isAuthenticated) {
-    console.warn('🚫 Unauthenticated access attempt:', {
-      path,
-      ip: getRateLimitKey(req).replace('rate_limit:', ''),
-      timestamp: new Date().toISOString()
-    });
-    
     const url = new URL('/login', req.url);
     url.searchParams.set('callbackUrl', encodeURI(req.url));
     return NextResponse.redirect(url);
@@ -226,15 +203,6 @@ export default async function middleware(req: NextRequestWithAuth) {
   // Check if the user has the required role
   const userRole = token.role as string;
   if (!protectedRoute.roles.includes(userRole)) {
-    console.warn('🚫 Unauthorized role access attempt:', {
-      path,
-      userRole,
-      requiredRoles: protectedRoute.roles,
-      userId: token.id,
-      ip: getRateLimitKey(req).replace('rate_limit:', ''),
-      timestamp: new Date().toISOString()
-    });
-    
     // Redirect to unauthorized page or appropriate dashboard
     const dashboardRoutes: Record<string, string> = {
       'USER': '/user',

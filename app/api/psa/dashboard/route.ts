@@ -90,7 +90,6 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('PSA Dashboard Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -149,7 +148,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('PSA Dashboard POST Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

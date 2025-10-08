@@ -62,7 +62,7 @@ export class AutomatedInvoiceScheduler {
     this.recurringRules.set(newRule.id, newRule)
 
     // In production, store in database
-    console.log('Created recurring invoice rule:', newRule)
+    // Created recurring invoice rule
 
     // Schedule the first invoice
     await this.scheduleInvoiceJob(newRule)
@@ -93,7 +93,7 @@ export class AutomatedInvoiceScheduler {
 
     this.recurringRules.set(ruleId, updatedRule)
 
-    console.log('Updated recurring invoice rule:', updatedRule)
+    // Updated recurring invoice rule
 
     return updatedRule
   }
@@ -112,7 +112,7 @@ export class AutomatedInvoiceScheduler {
       this.scheduledJobs.delete(job.id)
     }
 
-    console.log(`Deleted recurring rule ${ruleId} and cancelled ${pendingJobs.length} pending jobs`)
+    // Deleted recurring rule and cancelled pending jobs
   }
 
   /**
@@ -144,14 +144,14 @@ export class AutomatedInvoiceScheduler {
         job.attempts < 3 // Max 3 attempts
       )
 
-    console.log(`Processing ${dueJobs.length} scheduled invoice jobs`)
+    // Processing scheduled invoice jobs
 
     for (const job of dueJobs) {
       try {
         await this.processInvoiceJob(job)
         results.push(job)
       } catch (error) {
-        console.error(`Error processing job ${job.id}:`, error)
+        // Error processing job
         job.status = 'FAILED'
         job.attempts += 1
         job.errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -212,7 +212,7 @@ export class AutomatedInvoiceScheduler {
       // Schedule the next invoice
       await this.scheduleInvoiceJob(rule)
 
-      console.log(`Successfully generated recurring invoice ${invoice.id} for rule ${rule.id}`)
+      // Successfully generated recurring invoice
 
     } catch (error) {
       job.status = 'FAILED'
@@ -236,7 +236,7 @@ export class AutomatedInvoiceScheduler {
 
     this.scheduledJobs.set(job.id, job)
 
-    console.log(`Scheduled invoice job ${job.id} for ${job.scheduledFor}`)
+    // Scheduled invoice job
 
     return job
   }
@@ -349,7 +349,7 @@ export class AutomatedInvoiceScheduler {
       this.recurringRules.set(rule.id, rule)
     }
 
-    console.log(`Loaded ${mockRules.length} recurring invoice rules`)
+    // Loaded recurring invoice rules
   }
 
   /**
@@ -411,7 +411,7 @@ export class AutomatedInvoiceScheduler {
     const failedJobs = this.getScheduledJobs()
       .filter(job => job.status === 'FAILED' && job.attempts < 3)
 
-    console.log(`Retrying ${failedJobs.length} failed jobs`)
+    // Retrying failed jobs
 
     for (const job of failedJobs) {
       job.status = 'PENDING'
@@ -425,13 +425,13 @@ export class AutomatedInvoiceScheduler {
    * Start the scheduler (in production, this would be a cron job or background service)
    */
   startScheduler(intervalMinutes: number = 60): void {
-    console.log(`Starting automated invoice scheduler (checking every ${intervalMinutes} minutes)`)
+    // Starting automated invoice scheduler
 
     this.schedulerInterval = setInterval(async () => {
       try {
         await this.processScheduledJobs()
       } catch (error) {
-        console.error('Error in scheduled job processing:', error)
+        // Error in scheduled job processing
       }
     }, intervalMinutes * 60 * 1000)
   }
@@ -443,7 +443,7 @@ export class AutomatedInvoiceScheduler {
     if (this.schedulerInterval) {
       clearInterval(this.schedulerInterval)
       this.schedulerInterval = undefined
-      console.log('Stopped automated invoice scheduler')
+      // Stopped automated invoice scheduler
     }
   }
 }

@@ -107,7 +107,6 @@ export function MediaSelectorDialog({
       const data = await response.json()
       setAssets(data.assets || [])
     } catch (error) {
-      console.error('Error loading media assets:', error)
       toast({
         title: "Error",
         description: "Failed to load media assets",
@@ -154,7 +153,6 @@ export function MediaSelectorDialog({
         setShowUpload(false)
       }
     } catch (error) {
-      console.error('Upload error:', error)
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to upload file",

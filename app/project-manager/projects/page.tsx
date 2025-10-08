@@ -97,7 +97,7 @@ export default function AllProjectsPage() {
         setProjects(data.projects || [])
       }
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      // Error fetching projects - handle silently
     } finally {
       setLoading(false)
     }

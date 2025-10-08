@@ -77,7 +77,6 @@ export class IntegrationHub {
         }
       ];
     } catch (error) {
-      console.error('Error fetching active endpoints:', error);
       throw error;
     }
   }
@@ -96,7 +95,6 @@ export class IntegrationHub {
         syncErrors: 2
       };
     } catch (error) {
-      console.error('Error getting integration status:', error);
       throw error;
     }
   }
@@ -119,7 +117,6 @@ export class IntegrationHub {
         }
       ];
     } catch (error) {
-      console.error('Error fetching webhook history:', error);
       throw error;
     }
   }
@@ -141,7 +138,6 @@ export class IntegrationHub {
         ]
       };
     } catch (error) {
-      console.error('Error getting integration overview:', error);
       throw error;
     }
   }
@@ -159,7 +155,6 @@ export class IntegrationHub {
         lastTested: new Date()
       };
     } catch (error) {
-      console.error('Error testing integration:', error);
       throw error;
     }
   }
@@ -181,10 +176,8 @@ export class IntegrationHub {
       };
 
       // In real implementation, would save to database
-      console.log('Integration configured:', newEndpoint);
       return newEndpoint;
     } catch (error) {
-      console.error('Error configuring integration:', error);
       throw error;
     }
   }
@@ -195,9 +188,8 @@ export class IntegrationHub {
   async removeEndpoint(endpointId: string): Promise<void> {
     try {
       // In real implementation, would remove from database
-      console.log(`Integration endpoint ${endpointId} removed`);
+      // Integration endpoint removed
     } catch (error) {
-      console.error('Error removing endpoint:', error);
       throw error;
     }
   }
@@ -211,7 +203,6 @@ export class IntegrationHub {
     // In real implementation, save to database
     // await prisma.integrationEndpoint.create({ data: newEndpoint });
 
-    console.log('Registered webhook:', newEndpoint);
     return newEndpoint;
   }
 
@@ -240,7 +231,6 @@ export class IntegrationHub {
       this.logWebhookEvent(webhookEvent, 'Webhook processed successfully');
 
     } catch (error) {
-      console.error('Error processing webhook:', error);
       throw error;
     }
   }
@@ -255,7 +245,7 @@ export class IntegrationHub {
         throw new Error(`Endpoint ${endpointId} not found or inactive`);
       }
 
-      console.log(`Starting sync for endpoint: ${endpoint.name}`);
+      // Starting sync for endpoint
 
       // Mock external API call
       const response = await this.makeExternalRequest(endpoint);
@@ -267,10 +257,9 @@ export class IntegrationHub {
       endpoint.lastSync = new Date();
       endpoint.errorCount = 0;
 
-      console.log(`Sync completed for endpoint: ${endpoint.name}`);
+      // Sync completed for endpoint
 
     } catch (error) {
-      console.error(`Sync failed for endpoint ${endpointId}:`, error);
       
       // Increment error count
       const endpoint = await this.getEndpoint(endpointId);
@@ -280,7 +269,7 @@ export class IntegrationHub {
         // Disable endpoint after too many failures
         if (endpoint.errorCount >= 5) {
           endpoint.isActive = false;
-          console.warn(`Endpoint ${endpointId} disabled due to repeated failures`);
+          // Endpoint disabled due to repeated failures
         }
       }
       
@@ -309,7 +298,6 @@ export class IntegrationHub {
     };
 
     // In real implementation, save to database and register routes
-    console.log('Created API endpoint:', endpoint);
     return endpoint;
   }
 
@@ -421,7 +409,7 @@ export class IntegrationHub {
         throw new Error(`Integration ${integrationId} not found`);
       }
 
-      console.log(`Installing integration: ${integration.name}`);
+      // Installing integration
 
       // Create integration endpoint
       const _endpoint = await this.registerWebhook({
@@ -438,10 +426,9 @@ export class IntegrationHub {
       // Setup integration-specific configurations
       await this.setupIntegrationConfig(integrationId, config);
 
-      console.log(`Integration ${integration.name} installed successfully`);
+      // Integration installed successfully
 
     } catch (error) {
-      console.error(`Failed to install integration ${integrationId}:`, error);
       throw error;
     }
   }
@@ -459,9 +446,8 @@ export class IntegrationHub {
         }
       }
 
-      console.log(`Synchronized ${endpoints.length} integrations`);
+      // Synchronized integrations
     } catch (error) {
-      console.error('Error syncing integrations:', error);
       throw error;
     }
   }
@@ -534,7 +520,7 @@ export class IntegrationHub {
       if (taskReferences) {
         for (const taskRef of taskReferences) {
           // Update task with commit information
-          console.log(`Linking commit ${commit.id} to task ${taskRef}`);
+          // Linking commit to task
         }
       }
     }
@@ -545,7 +531,7 @@ export class IntegrationHub {
     const pullRequest = payload.pull_request as { title: string; number: number };
     
     if (action === 'opened') {
-      console.log(`New pull request opened: ${pullRequest.title} (#${pullRequest.number})`);
+      // New pull request opened
       // Create notification or update project status
     }
   }
@@ -555,7 +541,7 @@ export class IntegrationHub {
     const issue = payload.issue as { title: string; number: number };
     
     if (action === 'opened') {
-      console.log(`New GitHub issue: ${issue.title} (#${issue.number})`);
+      // New GitHub issue
       // Optionally create task in project management system
     }
   }
@@ -582,7 +568,7 @@ export class IntegrationHub {
     // Look for project references or commands
     if (text?.includes('/project-status')) {
       // Send project status update to Slack
-      console.log(`Project status requested in channel ${channel}`);
+      // Project status requested in channel
     }
   }
 
@@ -590,7 +576,7 @@ export class IntegrationHub {
     const text = payload.text as string;
     const user = payload.user as string;
     
-    console.log(`Bot mentioned by ${user}: ${text}`);
+    // Bot mentioned by user
     // Process the mention and respond appropriately
   }
 
@@ -611,14 +597,14 @@ export class IntegrationHub {
 
   private async handleQuickBooksInvoiceCreated(payload: Record<string, unknown>): Promise<void> {
     const invoiceId = payload.invoiceId as string;
-    console.log(`QuickBooks invoice created: ${invoiceId}`);
+    // QuickBooks invoice created
     // Sync invoice data to local system
   }
 
   private async handleQuickBooksPaymentReceived(payload: Record<string, unknown>): Promise<void> {
     const paymentId = payload.paymentId as string;
     const amount = payload.amount as number;
-    console.log(`Payment received: ${paymentId} for $${amount}`);
+    // Payment received
     // Update invoice status in local system
   }
 
@@ -629,7 +615,7 @@ export class IntegrationHub {
 
   private async makeExternalRequest(endpoint: IntegrationEndpoint): Promise<Record<string, unknown>> {
     // Mock external API request
-    console.log(`Making external request to: ${endpoint.endpoint}`);
+    // Making external request to endpoint
     
     // Simulate different response types
     switch (endpoint.name.toLowerCase()) {
@@ -652,12 +638,12 @@ export class IntegrationHub {
   }
 
   private async processExternalData(endpoint: IntegrationEndpoint, data: Record<string, unknown>): Promise<void> {
-    console.log(`Processing external data for ${endpoint.name}:`, data);
+    // Processing external data for endpoint
     // Process and store the external data
   }
 
   private async setupIntegrationConfig(integrationId: string, config: Record<string, unknown>): Promise<void> {
-    console.log(`Setting up configuration for ${integrationId}:`, config);
+    // Setting up configuration for integration
     // Setup integration-specific configurations
   }
 
@@ -693,7 +679,7 @@ export class IntegrationHub {
     }
     
     webhookEvent.processingLogs.push(`${new Date().toISOString()}: ${message}`);
-    console.log(`[Webhook ${webhookEvent.id}] ${message}`);
+    // Webhook log message
   }
 }
 

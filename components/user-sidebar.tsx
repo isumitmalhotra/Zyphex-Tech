@@ -60,15 +60,10 @@ export function UserSidebar() {
   // Get dynamic counts - hooks must be called at top level
   const { counts } = useSidebarCounts()
   
-  // Debug: Log session data to check if image is present
+  // Session data loaded
   React.useEffect(() => {
     if (session?.user) {
-      console.log('Session user data:', {
-        name: session.user.name,
-        email: session.user.email,
-        image: session.user.image,
-        hasImage: !!session.user.image
-      });
+      // Session loaded successfully
     }
   }, [session])
   
@@ -157,7 +152,6 @@ export function UserSidebar() {
                 className="w-10 h-10 rounded-full object-cover"
                 unoptimized={true}
                 onError={(e) => {
-                  console.error('Failed to load image:', session.user.image);
                   // Hide the image element if it fails to load and show fallback
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';

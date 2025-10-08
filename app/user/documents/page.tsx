@@ -53,7 +53,7 @@ export default function UserDocuments() {
         setDocuments(data.documents || [])
       }
     } catch (error) {
-      console.error('Error fetching documents:', error)
+      // Error fetching documents - handle silently
     }
   }
 

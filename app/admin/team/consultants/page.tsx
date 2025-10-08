@@ -22,7 +22,7 @@ export default function ConsultantsPage() {
     {
       id: 1,
       name: "Dr. Sarah Mitchell",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Senior Technology Consultant",
       specialization: "Digital Transformation, Strategy",
       experience: "15 years",
@@ -42,7 +42,7 @@ export default function ConsultantsPage() {
     {
       id: 2,
       name: "Michael Rodriguez",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Business Strategy Consultant",
       specialization: "Business Analysis, Process Optimization",
       experience: "12 years",
@@ -62,7 +62,7 @@ export default function ConsultantsPage() {
     {
       id: 3,
       name: "Jennifer Wong",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Data Analytics Consultant",
       specialization: "Data Strategy, BI Solutions",
       experience: "10 years",
@@ -82,7 +82,7 @@ export default function ConsultantsPage() {
     {
       id: 4,
       name: "David Park",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Cybersecurity Consultant",
       specialization: "Security Assessment, Compliance",
       experience: "14 years",
@@ -102,7 +102,7 @@ export default function ConsultantsPage() {
     {
       id: 5,
       name: "Lisa Thompson",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Marketing Technology Consultant",
       specialization: "MarTech Stack, Automation",
       experience: "9 years",

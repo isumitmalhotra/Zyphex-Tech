@@ -66,6 +66,11 @@ model User {
   expenses            Expense[]
   LeadActivity        LeadActivity[]
 
+  // Meeting relations
+  organizedMeetings  Meeting[]           @relation("MeetingOrganizer")
+  meetingAttendances MeetingAttendee[]   @relation("MeetingAttendees")
+  assignedActionItems MeetingActionItem[] @relation("ActionItemAssignee")
+
   @@index([email])
   @@index([role])
   @@index([deletedAt])
@@ -172,6 +177,8 @@ model Client {
   billingContracts BillingContract[]
   paymentConfigs   PaymentConfig[]
   Deal             Deal[]
+  meetings         Meeting[]
+  meetingAttendances MeetingAttendee[]
 
   @@index([email])
   @@index([name])
@@ -229,6 +236,9 @@ model Project {
 
   // New messaging relations
   channels Channel[]
+  
+  // Meeting relations
+  meetings Meeting[]
 
   @@index([clientId])
   @@index([managerId])
@@ -1551,4 +1561,435 @@ enum BudgetCategory {
   TRAINING
   OVERHEAD
   CONTINGENCY
+}
+
+// Tools & Integrations Management
+model Integration {
+  id            String             @id @default(uuid())
+  name          String
+  type          IntegrationType
+  category      IntegrationCategory
+  description   String?
+  isEnabled     Boolean            @default(false)
+  configuration Json? // Encrypted configuration data
+  apiKey        String? // Encrypted API key
+  webhookUrl    String?
+  lastSyncAt    DateTime?
+  status        IntegrationStatus  @default(INACTIVE)
+  errorMessage  String?
+  syncFrequency String? // cron expression
+  metadata      Json? // Additional metadata
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  // Relations
+  logs IntegrationLog[]
+
+  @@index([type])
+  @@index([category])
+  @@index([status])
+  @@index([isEnabled])
+}
+
+model IntegrationLog {
+  id            String      @id @default(uuid())
+  integrationId String
+  action        String // sync, test, enable, disable, configure
+  status        String // success, error, warning
+  message       String?
+  metadata      Json?
+  createdAt     DateTime    @default(now())
+
+  // Relations
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId])
+  @@index([action])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum IntegrationType {
+  SLACK
+  GITHUB
+  GOOGLE_ANALYTICS
+  TRELLO
+  ZOOM
+  HUBSPOT
+  JIRA
+  DISCORD
+  MICROSOFT_TEAMS
+  ASANA
+  LINEAR
+  NOTION
+  FIGMA
+  STRIPE
+  MAILCHIMP
+}
+
+enum IntegrationCategory {
+  COMMUNICATION
+  DEVELOPMENT
+  ANALYTICS
+  PROJECT_MANAGEMENT
+  CRM
+  MEETINGS
+  DESIGN
+  PAYMENTS
+  MARKETING
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+  SYNCING
+  PENDING
+}
+
+// Meeting and Calendar Models
+enum MeetingType {
+  IN_PERSON
+  VIDEO_CALL
+  PHONE_CALL
+  CONFERENCE
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+  IN_PROGRESS
+  RESCHEDULED
+  NO_SHOW
+}
+
+enum AttendeeStatus {
+  INVITED
+  ACCEPTED
+  DECLINED
+  TENTATIVE
+  NO_RESPONSE
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model Meeting {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  duration    Int // Duration in minutes
+  type        MeetingType   @default(VIDEO_CALL)
+  status      MeetingStatus @default(SCHEDULED)
+  location    String? // Physical location or meeting link
+  timezone    String        @default("UTC")
+
+  // Organizer
+  organizerId String
+  organizer   User   @relation("MeetingOrganizer", fields: [organizerId], references: [id])
+
+  // Project association (optional)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id])
+
+  // Client association (optional)
+  clientId String?
+  client   Client?  @relation(fields: [clientId], references: [id])
+
+  // Recurrence settings
+  isRecurring       Boolean              @default(false)
+  recurrenceRule    String? // RRULE format
+  recurrenceFreq    RecurrenceFrequency?
+  recurrenceEnd     DateTime?
+  parentMeetingId   String? // For recurring meeting instances
+  recurringMeetings Meeting[]            @relation("RecurringInstances")
+  parentMeeting     Meeting?             @relation("RecurringInstances", fields: [parentMeetingId], references: [id])
+
+  // Meeting content
+  agenda       String? // JSON array of agenda items
+  notes        String? // Meeting notes/minutes
+  recordingUrl String?
+  attachments  String? // JSON array of attachment URLs
+
+  // Metadata
+  reminderSent Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  attendees   MeetingAttendee[]
+  actionItems MeetingActionItem[]
+
+  @@index([organizerId])
+  @@index([projectId])
+  @@index([clientId])
+  @@index([startTime])
+  @@index([status])
+  @@index([type])
+}
+
+model MeetingAttendee {
+  id        String         @id @default(uuid())
+  meetingId String
+  userId    String?
+  clientId  String?
+  email     String? // For external attendees
+  name      String? // For external attendees
+  status    AttendeeStatus @default(INVITED)
+  isRequired Boolean       @default(true)
+  attended  Boolean        @default(false)
+  joinedAt  DateTime?
+  leftAt    DateTime?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  // Relations
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user    User?   @relation("MeetingAttendees", fields: [userId], references: [id])
+  client  Client? @relation(fields: [clientId], references: [id])
+
+  @@index([meetingId])
+  @@index([userId])
+  @@index([clientId])
+  @@index([status])
+}
+
+model MeetingActionItem {
+  id          String    @id @default(uuid())
+  meetingId   String
+  title       String
+  description String?
+  assigneeId  String?
+  dueDate     DateTime?
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  priority    Priority  @default(MEDIUM)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  meeting  Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  assignee User?   @relation("ActionItemAssignee", fields: [assigneeId], references: [id])
+
+  @@index([meetingId])
+  @@index([assigneeId])
+  @@index([dueDate])
+  @@index([completed])
+}
+
+// ============================================================================
+// REPORTING SYSTEM MODELS
+// ============================================================================
+
+enum ReportType {
+  PROJECT_STATUS
+  PROJECT_TIMELINE
+  TASK_COMPLETION
+  RESOURCE_ALLOCATION
+  RISK_ASSESSMENT
+  REVENUE_BY_PROJECT
+  PROFITABILITY_ANALYSIS
+  BUDGET_VS_ACTUAL
+  INVOICE_STATUS
+  PAYMENT_COLLECTION
+  TEAM_PRODUCTIVITY
+  INDIVIDUAL_PERFORMANCE
+  TIME_TRACKING
+  WORKLOAD_DISTRIBUTION
+  SKILL_UTILIZATION
+  CLIENT_SATISFACTION
+  PROJECT_DELIVERABLES
+  COMMUNICATION_LOGS
+  SERVICE_LEVEL
+  CUSTOM
+}
+
+enum ReportCategory {
+  PROJECTS
+  FINANCIAL
+  TEAM
+  CLIENTS
+  TIME
+  CUSTOM
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+  CSV
+  JSON
+}
+
+enum ReportStatus {
+  DRAFT
+  GENERATING
+  COMPLETED
+  FAILED
+  SCHEDULED
+}
+
+enum ReportFrequency {
+  ONCE
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model ReportTemplate {
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  category    ReportCategory
+  type        ReportType
+  isBuiltIn   Boolean        @default(false) // Pre-built templates vs custom
+  isActive    Boolean        @default(true)
+  
+  // Template configuration
+  config      Json // Data sources, filters, chart types, formatting options
+  layout      Json? // Report layout configuration
+  
+  // Metadata
+  createdBy   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  
+  // Relations
+  reports     Report[]
+  schedules   ReportSchedule[]
+  
+  @@index([category])
+  @@index([type])
+  @@index([isBuiltIn])
+  @@index([isActive])
+}
+
+model Report {
+  id           String       @id @default(uuid())
+  name         String
+  description  String?
+  category     ReportCategory
+  type         ReportType
+  status       ReportStatus @default(DRAFT)
+  
+  // Report configuration
+  templateId   String?
+  template     ReportTemplate? @relation(fields: [templateId], references: [id])
+  config       Json // Filters, date ranges, data sources
+  
+  // Generated data
+  data         Json? // Report data
+  metadata     Json? // Statistics, totals, summaries
+  
+  // File storage
+  pdfUrl       String? // URL to generated PDF
+  excelUrl     String? // URL to generated Excel file
+  csvUrl       String? // URL to generated CSV file
+  fileSize     Int? // File size in bytes
+  
+  // Generation info
+  generatedAt  DateTime?
+  generatedBy  String?
+  generationTime Int? // Time taken in milliseconds
+  
+  // Error tracking
+  error        String? // Error message if generation failed
+  retryCount   Int @default(0)
+  
+  // Access control
+  isPublic     Boolean @default(false)
+  sharedWith   String[] // Array of user IDs
+  
+  // Metadata
+  viewCount    Int @default(0)
+  downloadCount Int @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  expiresAt    DateTime? // Auto-delete old reports
+  
+  // Relations
+  scheduleId   String?
+  schedule     ReportSchedule? @relation(fields: [scheduleId], references: [id])
+  
+  @@index([category])
+  @@index([type])
+  @@index([status])
+  @@index([templateId])
+  @@index([scheduleId])
+  @@index([generatedAt])
+  @@index([expiresAt])
+}
+
+model ReportSchedule {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  
+  // Template and configuration
+  templateId  String
+  template    ReportTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  config      Json // Filters, parameters
+  
+  // Schedule settings
+  frequency   ReportFrequency
+  cronExpression String? // For custom schedules
+  timezone    String @default("UTC")
+  
+  // Delivery settings
+  format      ReportFormat
+  recipients  String[] // Array of email addresses
+  emailSubject String?
+  emailBody   String?
+  
+  // Execution info
+  isActive    Boolean @default(true)
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+  lastStatus  String? // Success, Failed
+  failureCount Int @default(0)
+  
+  // Metadata
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  reports     Report[]
+  
+  @@index([templateId])
+  @@index([frequency])
+  @@index([isActive])
+  @@index([nextRunAt])
+}
+
+model ReportCache {
+  id          String   @id @default(uuid())
+  cacheKey    String   @unique // Hash of report type + filters
+  category    ReportCategory
+  type        ReportType
+  data        Json // Cached report data
+  metadata    Json? // Cached statistics
+  
+  // Cache management
+  hitCount    Int @default(0)
+  lastAccess  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  
+  @@index([cacheKey])
+  @@index([category])
+  @@index([type])
+  @@index([expiresAt])
+  @@index([lastAccess])
 }

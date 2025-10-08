@@ -45,7 +45,7 @@ function createTransporter() {
     }
   };
 
-  console.log(`🔧 Configuring SMTP transporter for ${config.host}:${config.port}`);
+  // Configuring SMTP transporter
 
   return nodemailer.createTransport({
     host: config.host,
@@ -70,7 +70,7 @@ function createTransporter() {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
     if (!process.env.EMAIL_SERVER_USER || !process.env.EMAIL_SERVER_PASSWORD) {
-      console.warn('⚠️ Email credentials not configured, skipping email send');
+      // Email credentials not configured, skipping email send
       return false;
     }
 
@@ -84,22 +84,22 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       text: options.text || options.html.replace(/<[^>]*>/g, '') // Strip HTML for text version
     };
 
-    console.log(`📤 Sending email to: ${mailOptions.to}, Subject: ${mailOptions.subject}`);
+    // Sending email
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully:', result.messageId);
+    // Email sent successfully
     return true;
   } catch (error) {
-    console.error('❌ Failed to send email:', error);
+    // Failed to send email
     
     // Provide specific error messages for common issues
     if (error instanceof Error) {
       if (error.message.includes('Invalid login')) {
-        console.error('💡 Tip: Check your email credentials. For Gmail, you may need an app-specific password.');
+        // Tip: Check your email credentials. For Gmail, you may need an app-specific password.
       } else if (error.message.includes('Connection timeout')) {
-        console.error('💡 Tip: Check your SMTP server settings and firewall configuration.');
+        // Tip: Check your SMTP server settings and firewall configuration.
       } else if (error.message.includes('self signed certificate')) {
-        console.error('💡 Tip: Your SMTP server uses a self-signed certificate. Consider updating TLS settings.');
+        // Tip: Your SMTP server uses a self-signed certificate. Consider updating TLS settings.
       }
     }
     
@@ -371,7 +371,7 @@ export async function testEmailConfiguration(): Promise<{
   };
 }> {
   try {
-    console.log('🔍 Testing email configuration...');
+    // Testing email configuration...
     
     // Check if environment variables are set
     const host = process.env.EMAIL_SERVER_HOST;
@@ -393,10 +393,10 @@ export async function testEmailConfiguration(): Promise<{
     
     const transporter = createTransporter();
     
-    console.log('🔗 Verifying SMTP connection...');
+    // Verifying SMTP connection...
     await transporter.verify();
     
-    console.log('✅ Email configuration is valid!');
+    // Email configuration is valid!
     
     return {
       success: true,
@@ -410,7 +410,7 @@ export async function testEmailConfiguration(): Promise<{
       }
     };
   } catch (error) {
-    console.error('❌ Email configuration test failed:', error);
+    // Email configuration test failed
     
     let errorMessage = 'Email configuration test failed.';
     const details: { error: string; suggestion?: string } = { 

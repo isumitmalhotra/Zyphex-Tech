@@ -19,7 +19,7 @@ app.prepare().then(() => {
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
     } catch (err) {
-      console.error('Error occurred handling', req.url, err);
+      // Error handling request
       res.statusCode = 500;
       res.end('internal server error');
     }
@@ -59,7 +59,7 @@ app.prepare().then(() => {
         const decodedString = Buffer.from(token, 'base64').toString();
         decoded = JSON.parse(decodedString);
       } catch (error) {
-        console.error('Token decode error:', error);
+        // Invalid token format
         return next(new Error('Invalid token format'));
       }
       
@@ -70,14 +70,14 @@ app.prepare().then(() => {
       
       next();
     } catch (error) {
-      console.error('Socket authentication error:', error);
+      // Authentication failed
       next(new Error('Authentication failed'));
     }
   });
 
   // Socket.io connection handling
   io.on('connection', (socket) => {
-    console.log(`🔌 User ${socket.userName} (${socket.userId}) connected to Socket.io`);
+    // User connected
     
     // Join user to their personal room
     socket.join(`user_${socket.userId}`);
@@ -85,7 +85,6 @@ app.prepare().then(() => {
     // Handle joining channel rooms
     socket.on('join_channel', (channelId) => {
       socket.join(`channel_${channelId}`);
-      console.log(`User ${socket.userName} joined channel ${channelId}`);
       
       // Notify other channel members
       socket.to(`channel_${channelId}`).emit('user_joined_channel', {
@@ -99,7 +98,6 @@ app.prepare().then(() => {
     // Handle leaving channel rooms
     socket.on('leave_channel', (channelId) => {
       socket.leave(`channel_${channelId}`);
-      console.log(`User ${socket.userName} left channel ${channelId}`);
       
       // Notify other channel members
       socket.to(`channel_${channelId}`).emit('user_left_channel', {
@@ -132,10 +130,8 @@ app.prepare().then(() => {
           io.to(`user_${receiverId}`).emit('new_message', messageData);
           socket.emit('message_sent', messageData); // Confirmation to sender
         }
-
-        console.log(`📨 Message sent by ${socket.userName}`);
       } catch (error) {
-        console.error('Error sending message:', error);
+        // Error sending message
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
@@ -175,7 +171,7 @@ app.prepare().then(() => {
 
     // Handle disconnect
     socket.on('disconnect', (reason) => {
-      console.log(`❌ User ${socket.userName} (${socket.userId}) disconnected: ${reason}`);
+      // User disconnected
     });
 
     // Send welcome message
@@ -188,15 +184,14 @@ app.prepare().then(() => {
 
   httpServer
     .once('error', (err) => {
-      console.error('HTTP Server error:', err);
+      // HTTP Server error
       process.exit(1);
     })
     .on('clientError', (err, socket) => {
-      console.error('Client error:', err);
+      // Client error
       socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
     })
     .listen(port, () => {
-      console.log(`🚀 Next.js server ready on http://${hostname}:${port}`);
-      console.log(`🔌 Socket.io server ready on ws://${hostname}:${port}/api/socket/io`);
+      // Server ready and listening
     });
 });

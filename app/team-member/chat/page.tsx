@@ -131,7 +131,6 @@ export default function TeamMemberMessagesPage() {
         toast.error("Failed to load channels")
       }
     } catch (error) {
-      console.error("Error fetching channels:", error)
       toast.error("Failed to load channels")
     } finally {
       setLoading(false)
@@ -146,7 +145,6 @@ export default function TeamMemberMessagesPage() {
         setMessages(data.messages || [])
       }
     } catch (error) {
-      console.error("Error fetching messages:", error)
       toast.error("Failed to load messages")
     }
   }
@@ -221,7 +219,6 @@ export default function TeamMemberMessagesPage() {
         toast.error("Failed to send message")
       }
     } catch (error) {
-      console.error("Error sending message:", error)
       toast.error("Failed to send message")
     } finally {
       setSending(false)

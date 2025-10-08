@@ -45,7 +45,7 @@ export class PSACore {
    */
   async initialize(config?: Partial<PSAConfig>): Promise<void> {
     try {
-      console.log('🚀 Initializing PSA Core Module...');
+      // Initializing PSA Core Module...
 
       if (config) {
         this.config = { ...this.config, ...config };
@@ -66,10 +66,9 @@ export class PSACore {
       await this.startBackgroundServices();
 
       this.isInitialized = true;
-      console.log('✅ PSA Core Module initialized successfully');
+      // PSA Core Module initialized successfully
 
     } catch (error) {
-      console.error('❌ Failed to initialize PSA Core Module:', error);
       throw new Error(`PSA Core initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -132,7 +131,6 @@ export class PSACore {
         lastUpdated: new Date()
       };
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
       throw new Error('Failed to fetch dashboard data');
     }
   }
@@ -149,7 +147,7 @@ export class PSACore {
     this.ensureInitialized();
 
     try {
-      console.log(`🔄 Executing workflow: ${templateId}`);
+      // Executing workflow
 
       // Execute the workflow
       const result = await this.automation.executeWorkflow(templateId, context);
@@ -172,7 +170,6 @@ export class PSACore {
         notifications: []
       };
     } catch (error) {
-      console.error(`Error executing workflow ${templateId}:`, error);
       throw error;
     }
   }
@@ -189,10 +186,10 @@ export class PSACore {
     this.ensureInitialized();
 
     try {
-      console.log(`📨 Processing webhook: ${endpoint}`);
+      // Processing webhook
 
       // Basic webhook processing - simplified since integration methods aren't implemented
-      console.log('Webhook payload:', payload);
+      // Webhook payload received
 
       // Check if dashboard refresh is needed (simplified check)
       if (endpoint.includes('project') || endpoint.includes('task')) {
@@ -201,7 +198,7 @@ export class PSACore {
 
       // Trigger automated workflows if configured
       if (this.config.automation.enabled) {
-        console.log('Automation enabled for webhook:', endpoint);
+        // Automation enabled for webhook
       }
 
       return {
@@ -211,7 +208,6 @@ export class PSACore {
         updates: ['dashboard_updated']
       };
     } catch (error) {
-      console.error(`Error processing webhook ${endpoint}:`, error);
       throw error;
     }
   }
@@ -223,7 +219,7 @@ export class PSACore {
     this.ensureInitialized();
 
     try {
-      console.log(`📊 Generating ${type} business report`);
+      // Generating business report
 
       let report;
       switch (type) {
@@ -243,12 +239,10 @@ export class PSACore {
           throw new Error(`Unknown report type: ${type}`);
       }
 
-      // Log report generation
-      console.log(`✅ ${type} report generated successfully`);
+      // Report generated successfully
 
       return report;
     } catch (error) {
-      console.error(`Error generating ${type} report:`, error);
       throw error;
     }
   }
@@ -290,7 +284,6 @@ export class PSACore {
         version: this.config.version
       };
     } catch (error) {
-      console.error('Error checking system health:', error);
       return {
         overall: 'ERROR',
         components: {
@@ -316,47 +309,46 @@ export class PSACore {
       
       // Apply configuration to subsystems (simplified)
       if (newConfig.dashboard) {
-        console.log('Dashboard configuration updated');
+        // Dashboard configuration updated
       }
       
       if (newConfig.automation) {
-        console.log('Automation configuration updated');
+        // Automation configuration updated
       }
       
       if (newConfig.integration) {
-        console.log('Integration configuration updated');
+        // Integration configuration updated
       }
 
-      console.log('✅ PSA configuration updated successfully');
+      // PSA configuration updated successfully
     } catch (error) {
-      console.error('Error updating PSA configuration:', error);
       throw error;
     }
   }
 
   // Private initialization methods
   private async initializeDashboard(): Promise<void> {
-    console.log('📊 Initializing Dashboard module...');
+    // Initializing Dashboard module...
     // Dashboard initialization simplified
   }
 
   private async initializeAutomation(): Promise<void> {
-    console.log('⚙️ Initializing Automation module...');
+    // Initializing Automation module...
     // Automation initialization simplified
   }
 
   private async initializeIntegration(): Promise<void> {
-    console.log('🔗 Initializing Integration module...');
+    // Initializing Integration module...
     // Integration initialization simplified
   }
 
   private async initializeBusinessIntelligence(): Promise<void> {
-    console.log('📈 Initializing Business Intelligence module...');
+    // Initializing Business Intelligence module...
     // BI module doesn't require specific initialization in current implementation
   }
 
   private async setupModuleCommunication(): Promise<void> {
-    console.log('🔗 Setting up inter-module communication...');
+    // Setting up inter-module communication...
     
     // Set up event listeners for cross-module notifications
     // In a real implementation, this would use an event bus or message queue
@@ -368,7 +360,7 @@ export class PSACore {
   }
 
   private async startBackgroundServices(): Promise<void> {
-    console.log('🚀 Starting background services...');
+    // Starting background services...
 
     // Start periodic metric refresh
     if (this.config.dashboard.autoRefresh) {
@@ -376,19 +368,19 @@ export class PSACore {
         try {
           await this.dashboard.refreshAllMetrics();
         } catch (error) {
-          console.error('Background metric refresh failed:', error);
+          // Background metric refresh failed
         }
       }, this.config.dashboard.refreshInterval || 300000); // 5 minutes default
     }
 
     // Start automation scheduler
     if (this.config.automation.enabled) {
-      console.log('Automation scheduler enabled');
+      // Automation scheduler enabled
     }
 
     // Start integration monitoring
     if (this.config.integration.monitoringEnabled) {
-      console.log('Integration monitoring enabled');
+      // Integration monitoring enabled
     }
   }
 
@@ -446,17 +438,17 @@ export class PSACore {
 
   private async sendWorkflowNotifications(templateId: string, result: unknown): Promise<void> {
     // Implementation would send notifications based on workflow results
-    console.log(`📧 Sending notifications for workflow: ${templateId}`, result);
+    // Sending notifications for workflow
   }
 
   private async logWorkflowExecution(templateId: string, result: unknown): Promise<void> {
     // Implementation would log workflow execution for BI analysis
-    console.log(`📝 Logging workflow execution: ${templateId}`, result);
+    // Logging workflow execution
   }
 
   private async triggerAutomatedWorkflows(endpoint: string, payload: unknown): Promise<void> {
     // Implementation would trigger relevant automated workflows based on webhook events
-    console.log(`🔄 Triggering automated workflows for: ${endpoint}`, payload);
+    // Triggering automated workflows
   }
 
   private async checkDashboardHealth(): Promise<'HEALTHY' | 'WARNING' | 'ERROR'> {
@@ -464,7 +456,6 @@ export class PSACore {
       await this.dashboard.getProjectHealth();
       return 'HEALTHY';
     } catch (error) {
-      console.error('Dashboard health check failed:', error);
       return 'ERROR';
     }
   }
@@ -474,7 +465,6 @@ export class PSACore {
       // Simplified health check
       return 'HEALTHY';
     } catch (error) {
-      console.error('Automation health check failed:', error);
       return 'ERROR';
     }
   }
@@ -484,7 +474,6 @@ export class PSACore {
       // Simplified health check  
       return 'HEALTHY';
     } catch (error) {
-      console.error('Integration health check failed:', error);
       return 'ERROR';
     }
   }
@@ -494,7 +483,6 @@ export class PSACore {
       // Simple health check for BI module
       return 'HEALTHY';
     } catch (error) {
-      console.error('Business Intelligence health check failed:', error);
       return 'ERROR';
     }
   }

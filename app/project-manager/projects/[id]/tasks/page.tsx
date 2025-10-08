@@ -131,7 +131,6 @@ export default function ProjectTasksPage({ params }: { params: { id: string } })
       const data = await response.json()
       setProject(data.project)
     } catch (error) {
-      console.error('Error fetching project:', error)
       setError('Failed to load project details')
     }
   }
@@ -144,7 +143,6 @@ export default function ProjectTasksPage({ params }: { params: { id: string } })
       const data = await response.json()
       setTasks(data.tasks)
     } catch (error) {
-      console.error('Error fetching tasks:', error)
       setError('Failed to load tasks')
     } finally {
       setLoading(false)
@@ -208,7 +206,6 @@ export default function ProjectTasksPage({ params }: { params: { id: string } })
         description: "Task created successfully",
       })
     } catch (error) {
-      console.error('Error creating task:', error)
       toast({
         title: "Error",
         description: "Failed to create task",
@@ -251,7 +248,6 @@ export default function ProjectTasksPage({ params }: { params: { id: string } })
         description: "Task updated successfully",
       })
     } catch (error) {
-      console.error('Error updating task:', error)
       toast({
         title: "Error",
         description: "Failed to update task",
@@ -279,7 +275,6 @@ export default function ProjectTasksPage({ params }: { params: { id: string } })
         description: "Task deleted successfully",
       })
     } catch (error) {
-      console.error('Error deleting task:', error)
       toast({
         title: "Error",
         description: "Failed to delete task",

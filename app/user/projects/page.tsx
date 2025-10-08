@@ -44,11 +44,9 @@ export default function ProjectsPage() {
         const data = await response.json()
         setProjects(data.projects || [])
       } else {
-        console.error("Failed to fetch projects")
         toast.error("Failed to load projects")  
       }
     } catch (error) {
-      console.error("Error fetching projects:", error)
       toast.error("Failed to load projects")
     } finally {
       setLoading(false)

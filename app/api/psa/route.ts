@@ -10,7 +10,6 @@ async function ensurePSAInitialized() {
       await psaCore.initialize();
       initialized = true;
     } catch (error) {
-      console.error('Failed to initialize PSA Core:', error);
       throw error;
     }
   }
@@ -52,7 +51,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
     }
   } catch (error) {
-    console.error('PSA API error:', error);
     return NextResponse.json(
       { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -95,7 +93,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
     }
   } catch (error) {
-    console.error('PSA API error:', error);
     return NextResponse.json(
       { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

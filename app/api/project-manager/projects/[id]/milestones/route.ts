@@ -48,7 +48,6 @@ export async function GET(
 
     return NextResponse.json({ milestones })
   } catch (error) {
-    console.error("Error fetching milestones:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -126,7 +125,6 @@ export async function POST(
       milestone: newMilestone 
     })
   } catch (error) {
-    console.error("Error creating milestone:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

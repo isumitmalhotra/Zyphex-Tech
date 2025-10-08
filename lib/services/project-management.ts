@@ -5,14 +5,12 @@ export class ProjectManagementService {
   // Test if new models are available (when Prisma client is regenerated)
   async testNewModels() {
     try {
-      console.log('Testing new models...')
       // TODO: Implement when Prisma client is regenerated with new models
       return {
         message: 'Advanced models not yet available - need Prisma regeneration',
         available: false
       }
     } catch (_error) {
-      console.error('New models not yet available')
       return false
     }
   }
@@ -28,7 +26,6 @@ export class ProjectManagementService {
   }) {
     try {
       // For now, create a basic project with existing schema
-      console.log('Creating advanced project with fallback to basic project...')
       
       const project = await prisma.project.create({
         data: {
@@ -47,11 +44,9 @@ export class ProjectManagementService {
         }
       })
 
-      console.log('Project created successfully with basic features')
       return project
 
     } catch (error) {
-      console.error('Error creating advanced project:', error)
       throw error
     }
   }
@@ -59,7 +54,6 @@ export class ProjectManagementService {
   // Get project with dependencies (simplified version)
   async getTasksWithDependencies(projectId: string) {
     try {
-      console.log('Getting tasks with dependencies...')
       
       const project = await prisma.project.findUnique({
         where: { id: projectId },
@@ -87,7 +81,6 @@ export class ProjectManagementService {
       }
 
     } catch (error) {
-      console.error('Error getting tasks with dependencies:', error)
       throw error
     }
   }
@@ -99,10 +92,8 @@ export class ProjectManagementService {
     targetDate: Date
   }>) {
     try {
-      console.log('Creating project milestones...')
       
       // TODO: Implement when ProjectMilestone model is available
-      console.log(`Would create ${milestones.length} milestones for project ${projectId}`)
       
       return {
         message: 'Milestone creation not yet implemented',
@@ -111,7 +102,6 @@ export class ProjectManagementService {
       }
 
     } catch (_error) {
-      console.error('Milestone creation not available yet')
       return { error: 'Milestones not available' }
     }
   }
@@ -125,10 +115,8 @@ export class ProjectManagementService {
     probabilityScore: number
   }>) {
     try {
-      console.log('Creating project risks...')
       
       // TODO: Implement when ProjectRisk model is available
-      console.log(`Would create ${risks.length} risks for project ${projectId}`)
       
       return {
         message: 'Risk creation not yet implemented',
@@ -137,7 +125,6 @@ export class ProjectManagementService {
       }
 
     } catch (_error) {
-      console.error('Risk creation not available yet')
       return { error: 'Risks not available' }
     }
   }
@@ -181,7 +168,6 @@ export class ProjectManagementService {
       }
 
     } catch (error) {
-      console.error('Error getting project analytics:', error)
       throw error
     }
   }

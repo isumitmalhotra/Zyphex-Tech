@@ -222,7 +222,6 @@ export class AutoInvoiceService {
       return invoice
 
     } catch (error) {
-      console.error('Error generating time-based invoice:', error)
       throw error
     }
   }
@@ -337,7 +336,6 @@ export class AutoInvoiceService {
       return invoice
 
     } catch (error) {
-      console.error('Error generating milestone invoice:', error)
       throw error
     }
   }
@@ -431,7 +429,6 @@ export class AutoInvoiceService {
       return invoice
 
     } catch (error) {
-      console.error('Error generating recurring invoice:', error)
       throw error
     }
   }
@@ -625,7 +622,7 @@ export class AutoInvoiceService {
         const rate = await this.fetchExchangeRate(from, to)
         this.exchangeRates.set(pair, rate)
       } catch (error) {
-        console.error(`Failed to initialize exchange rate for ${pair}:`, error)
+        // Silent failure for exchange rate initialization
       }
     })
   }
@@ -656,15 +653,6 @@ export class AutoInvoiceService {
         attachments: []
       }
 
-      // In production, integrate with email service
-      console.log('Sending invoice email:', {
-        to: emailData.to,
-        subject: emailData.subject,
-        invoiceNumber: invoice.invoiceNumber,
-        amount: invoice.total,
-        currency: (invoice as Record<string, unknown>).currency as string || 'USD'
-      })
-
       // Update invoice status to SENT
       await this.prisma.invoice.update({
         where: { id: invoiceId },
@@ -677,7 +665,6 @@ export class AutoInvoiceService {
       return true
 
     } catch (error) {
-      console.error('Error sending invoice email:', error)
       throw error
     }
   }

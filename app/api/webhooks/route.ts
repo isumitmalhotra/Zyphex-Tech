@@ -97,7 +97,8 @@ export async function POST(request: NextRequest) {
         break;
       
       default:
-        console.log(`Unhandled webhook source: ${source}`);
+        // Unhandled webhook source
+        break;
     }
 
     return NextResponse.json({
@@ -108,7 +109,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Webhook processing error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -305,7 +305,6 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Manual workflow execution error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -354,7 +353,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Webhook logs error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

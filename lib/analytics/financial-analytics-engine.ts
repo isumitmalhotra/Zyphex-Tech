@@ -184,7 +184,6 @@ export class FinancialAnalyticsEngine {
       };
 
     } catch (error: unknown) {
-      console.error('Project profitability calculation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to calculate project profitability: ${errorMessage}`);
     }
@@ -271,7 +270,6 @@ export class FinancialAnalyticsEngine {
       };
 
     } catch (error: unknown) {
-      console.error('Client LTV calculation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to calculate client LTV: ${errorMessage}`);
     }
@@ -341,7 +339,6 @@ export class FinancialAnalyticsEngine {
       return projections;
 
     } catch (error: unknown) {
-      console.error('Revenue forecasting failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to generate revenue forecasting: ${errorMessage}`);
     }
@@ -403,7 +400,6 @@ export class FinancialAnalyticsEngine {
       return analysis;
 
     } catch (error: unknown) {
-      console.error('Cash flow analysis failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to analyze cash flow: ${errorMessage}`);
     }
@@ -494,7 +490,6 @@ export class FinancialAnalyticsEngine {
       };
 
     } catch (error: unknown) {
-      console.error('Financial dashboard generation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to generate financial dashboard: ${errorMessage}`);
     }

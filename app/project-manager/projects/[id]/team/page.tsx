@@ -85,7 +85,6 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
       const data = await response.json()
       setProject(data.project)
     } catch (error) {
-      console.error('Error fetching project:', error)
       setError('Failed to load project details')
     } finally {
       setLoading(false)
@@ -101,7 +100,7 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
         user.role !== 'CLIENT' && user.role !== 'SUPER_ADMIN'
       ))
     } catch (error) {
-      console.error('Error fetching users:', error)
+      // Error fetching users - handle silently
     }
   }
 
@@ -135,7 +134,6 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
         description: "Team member added successfully",
       })
     } catch (error) {
-      console.error('Error adding team member:', error)
       toast({
         title: "Error",
         description: "Failed to add team member",
@@ -166,7 +164,6 @@ export default function ProjectTeamPage({ params }: { params: { id: string } }) 
         description: "Team member removed successfully",
       })
     } catch (error) {
-      console.error('Error removing team member:', error)
       toast({
         title: "Error",
         description: "Failed to remove team member",

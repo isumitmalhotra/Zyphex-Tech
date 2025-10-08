@@ -29,7 +29,6 @@ export const GET = withPermissions([Permission.VIEW_TEAMS])(async (_request) => 
 
     return NextResponse.json({ teamMembers });
   } catch (error) {
-    console.error('Error fetching team members:', error);
     return NextResponse.json({ error: 'Failed to fetch team members' }, { status: 500 });
   }
 })

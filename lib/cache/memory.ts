@@ -22,7 +22,6 @@ export class MemoryCacheAdapter implements CacheAdapter {
       const value = memoryCache.get<T>(key);
       return value || null;
     } catch (error) {
-      console.warn('Memory cache get error:', error);
       return null;
     }
   }
@@ -31,7 +30,6 @@ export class MemoryCacheAdapter implements CacheAdapter {
     try {
       return memoryCache.set(key, value, ttl);
     } catch (error) {
-      console.warn('Memory cache set error:', error);
       return false;
     }
   }
@@ -40,7 +38,6 @@ export class MemoryCacheAdapter implements CacheAdapter {
     try {
       return memoryCache.del(key) > 0;
     } catch (error) {
-      console.warn('Memory cache delete error:', error);
       return false;
     }
   }
@@ -61,7 +58,6 @@ export class MemoryCacheAdapter implements CacheAdapter {
       
       return true;
     } catch (error) {
-      console.warn('Memory cache delete pattern error:', error);
       return false;
     }
   }
@@ -71,7 +67,6 @@ export class MemoryCacheAdapter implements CacheAdapter {
       memoryCache.flushAll();
       return true;
     } catch (error) {
-      console.warn('Memory cache clear error:', error);
       return false;
     }
   }

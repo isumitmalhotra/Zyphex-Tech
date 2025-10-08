@@ -133,7 +133,6 @@ export default function ProjectMilestonesPage({ params }: { params: { id: string
       const data = await response.json()
       setProject(data.project)
     } catch (error) {
-      console.error('Error fetching project:', error)
       setError('Failed to load project details')
     }
   }
@@ -146,7 +145,6 @@ export default function ProjectMilestonesPage({ params }: { params: { id: string
       const data = await response.json()
       setMilestones(data.milestones)
     } catch (error) {
-      console.error('Error fetching milestones:', error)
       setError('Failed to load milestones')
     } finally {
       setLoading(false)
@@ -188,7 +186,6 @@ export default function ProjectMilestonesPage({ params }: { params: { id: string
         description: "Milestone created successfully",
       })
     } catch (error) {
-      console.error('Error creating milestone:', error)
       toast({
         title: "Error",
         description: "Failed to create milestone",
@@ -229,7 +226,6 @@ export default function ProjectMilestonesPage({ params }: { params: { id: string
         description: "Milestone updated successfully",
       })
     } catch (error) {
-      console.error('Error updating milestone:', error)
       toast({
         title: "Error",
         description: "Failed to update milestone",
@@ -257,7 +253,6 @@ export default function ProjectMilestonesPage({ params }: { params: { id: string
         description: "Milestone deleted successfully",
       })
     } catch (error) {
-      console.error('Error deleting milestone:', error)
       toast({
         title: "Error",
         description: "Failed to delete milestone",

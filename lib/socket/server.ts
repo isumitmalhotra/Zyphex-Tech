@@ -64,7 +64,6 @@ export class SocketManager {
         
         next();
       } catch (error) {
-        console.error('Socket authentication error:', error);
         next(new Error('Authentication failed'));
       }
     });
@@ -73,7 +72,6 @@ export class SocketManager {
   private setupEventHandlers() {
     this.io.on('connection', (socket) => {
       const authSocket = socket as AuthenticatedSocket;
-      console.log(`User ${authSocket.userName} (${authSocket.userId}) connected`);
       
       // Store user socket mapping
       this.userSockets.set(authSocket.userId, authSocket.id);
@@ -101,9 +99,7 @@ export class SocketManager {
             timestamp: new Date().toISOString()
           });
 
-          console.log(`User ${authSocket.userName} joined channel ${channelId}`);
         } catch (error) {
-          console.error('Error joining channel:', error);
           authSocket.emit('error', { message: 'Failed to join channel' });
         }
       });
@@ -120,7 +116,6 @@ export class SocketManager {
           timestamp: new Date().toISOString()
         });
 
-        console.log(`User ${authSocket.userName} left channel ${channelId}`);
       });
 
       // Handle new messages
@@ -178,9 +173,7 @@ export class SocketManager {
             }
           }
 
-          console.log(`Message sent by ${authSocket.userName} in ${channelId ? `channel ${channelId}` : 'direct message'}`);
         } catch (error) {
-          console.error('Error sending message:', error);
           authSocket.emit('error', { message: 'Failed to send message' });
         }
       });
@@ -218,7 +211,6 @@ export class SocketManager {
           }
 
         } catch (error) {
-          console.error('Error adding reaction:', error);
           authSocket.emit('error', { message: 'Failed to add reaction' });
         }
       });
@@ -303,7 +295,6 @@ export class SocketManager {
           }
 
         } catch (error) {
-          console.error('Error marking message as read:', error);
           authSocket.emit('error', { message: 'Failed to mark message as read' });
         }
       });
@@ -333,9 +324,7 @@ export class SocketManager {
             timestamp: new Date().toISOString()
           });
 
-          console.log(`User ${authSocket.userName} joined project ${projectId}`);
         } catch (error) {
-          console.error('Error joining project:', error);
           authSocket.emit('error', { message: 'Failed to join project' });
         }
       });
@@ -354,12 +343,10 @@ export class SocketManager {
           timestamp: new Date().toISOString()
         });
 
-        console.log(`User ${authSocket.userName} left project ${projectId}`);
       });
 
       // Handle disconnect
       authSocket.on('disconnect', () => {
-        console.log(`User ${authSocket.userName} (${authSocket.userId}) disconnected`);
         
         // Remove from user socket mapping
         this.userSockets.delete(authSocket.userId);
@@ -386,7 +373,6 @@ export class SocketManager {
       });
       return !!project;
     } catch (error) {
-      console.error('Error verifying project access:', error);
       return false;
     }
   }
@@ -444,7 +430,6 @@ export class SocketManager {
 
       return !!channel;
     } catch (error) {
-      console.error('Error verifying channel access:', error);
       return false;
     }
   }
@@ -463,7 +448,7 @@ export class SocketManager {
         }
       });
     } catch (error) {
-      console.error('Error logging activity:', error);
+      // Error logging activity
     }
   }
 
@@ -475,8 +460,7 @@ export class SocketManager {
     if (socketId) {
       this.io.to(socketId).emit(event, data);
     } else {
-      // User not connected, could store notification for later
-      console.log(`User ${userId} not connected, notification queued`);
+      // User not connected, notification queued
     }
   }
 

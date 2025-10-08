@@ -96,7 +96,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(securityMetrics)
 
   } catch (error) {
-    console.error('Security metrics error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch security metrics' },
       { status: 500 }

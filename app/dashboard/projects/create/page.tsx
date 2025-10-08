@@ -1,12 +1,19 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ProjectCreationWizard } from '@/components/project/ProjectCreationWizard'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, CheckCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Loader2 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+
+interface Client {
+  id: string
+  name: string
+  email: string
+  company: string | null
+}
 
 interface CreatedProject {
   id: string
@@ -41,6 +48,41 @@ export default function CreateProjectPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [createdProject, setCreatedProject] = useState<CreatedProject | null>(null)
   const [error, setError] = useState<string>('')
+  const [availableClients, setAvailableClients] = useState<Client[]>([])
+  const [isLoadingClients, setIsLoadingClients] = useState(true)
+  const [clientsError, setClientsError] = useState<string>('')
+
+  // Fetch available clients on component mount
+  useEffect(() => {
+    const fetchClients = async () => {
+      setIsLoadingClients(true)
+      setClientsError('')
+
+      try {
+        const response = await fetch('/api/clients/available')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch clients')
+        }
+
+        const data = await response.json()
+        
+        if (data.success && Array.isArray(data.clients)) {
+          setAvailableClients(data.clients)
+        } else {
+          throw new Error('Invalid response format')
+        }
+      } catch (err) {
+        setClientsError(err instanceof Error ? err.message : 'Failed to load clients')
+      } finally {
+        setIsLoadingClients(false)
+      }
+    }
+
+    if (session) {
+      fetchClients()
+    }
+  }, [session])
 
   const handleProjectCreate = async (projectData: ProjectCreationData) => {
     setIsLoading(true)
@@ -64,7 +106,6 @@ export default function CreateProjectPage() {
       setCreatedProject(project)
       
     } catch (err) {
-      console.error('Error creating project:', err)
       setError(err instanceof Error ? err.message : 'Failed to create project')
     } finally {
       setIsLoading(false)
@@ -168,12 +209,33 @@ export default function CreateProjectPage() {
         </Card>
       )}
 
-      {/* Project Creation Wizard */}
-      <ProjectCreationWizard
-        onProjectCreate={handleProjectCreate}
-        isLoading={isLoading}
-        availableClients={[]} // TODO: Fetch from API
-      />
+      {/* Clients Loading Error Display */}
+      {clientsError && (
+        <Card className="mb-6 border-yellow-200 bg-yellow-50">
+          <CardContent className="p-4">
+            <p className="text-yellow-800">
+              Warning: {clientsError}. Client selection may be limited.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Loading State */}
+      {isLoadingClients ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400 mb-4" />
+            <p className="text-gray-600">Loading clients...</p>
+          </CardContent>
+        </Card>
+      ) : (
+        /* Project Creation Wizard */
+        <ProjectCreationWizard
+          onProjectCreate={handleProjectCreate}
+          isLoading={isLoading}
+          availableClients={availableClients as any}
+        />
+      )}
     </div>
   )
 }

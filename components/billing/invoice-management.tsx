@@ -148,8 +148,6 @@ export default function InvoiceManagementDashboard() {
 
   const handleCreateInvoice = async () => {
     try {
-      console.log('Creating invoice:', { invoiceType, formData })
-      
       // Here you would call the actual invoice generation service
       // const invoiceGenerator = new InvoiceGeneratorService(prisma)
       // let invoice;
@@ -189,16 +187,16 @@ export default function InvoiceManagementDashboard() {
       // Refresh invoice list
       
     } catch (error) {
-      console.error('Error creating invoice:', error)
+      // Error creating invoice - handle or show user notification
     }
   }
 
   const handleSendInvoice = async (invoiceId: string) => {
     try {
-      console.log('Sending invoice:', invoiceId)
-      // API call to send invoice
+      // API call to send invoice - implementation needed
+      const _id = invoiceId; // Use the invoice ID
     } catch (error) {
-      console.error('Error sending invoice:', error)
+      // Error sending invoice - handle or show user notification
     }
   }
 

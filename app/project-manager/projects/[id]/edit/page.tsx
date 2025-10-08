@@ -118,7 +118,6 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
         managerId: data.project.managerId || '',
       })
     } catch (error) {
-      console.error('Error fetching project:', error)
       setError('Failed to load project details')
     } finally {
       setLoading(false)

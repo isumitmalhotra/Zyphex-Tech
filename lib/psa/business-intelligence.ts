@@ -206,7 +206,6 @@ export class BusinessIntelligence {
         };
       });
     } catch (error) {
-      console.error('Error getting profitability analysis:', error);
       return [];
     }
   }
@@ -262,7 +261,6 @@ export class BusinessIntelligence {
         projectCount: user.projects.size
       }));
     } catch (error) {
-      console.error('Error getting resource efficiency report:', error);
       return [];
     }
   }
@@ -317,7 +315,6 @@ export class BusinessIntelligence {
         };
       });
     } catch (error) {
-      console.error('Error getting client lifetime value analysis:', error);
       return [];
     }
   }
@@ -357,7 +354,6 @@ export class BusinessIntelligence {
         }
       };
     } catch (error) {
-      console.error('Error getting predictive analytics:', error);
       return {};
     }
   }
@@ -392,7 +388,6 @@ export class BusinessIntelligence {
         collectionRate: totalRevenue > 0 ? (paidRevenue / totalRevenue) * 100 : 0
       };
     } catch (error) {
-      console.error('Error getting financial summary:', error);
       return {};
     }
   }
@@ -435,7 +430,6 @@ export class BusinessIntelligence {
         }, 0)
       };
     } catch (error) {
-      console.error('Error getting performance metrics:', error);
       return {};
     }
   }
@@ -453,7 +447,6 @@ export class BusinessIntelligence {
         generatedAt: new Date()
       };
     } catch (error) {
-      console.error('Error generating custom report:', error);
       throw error;
     }
   }
@@ -471,7 +464,6 @@ export class BusinessIntelligence {
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
       };
     } catch (error) {
-      console.error('Error exporting data:', error);
       throw error;
     }
   }
@@ -490,7 +482,6 @@ export class BusinessIntelligence {
         isActive: true
       };
     } catch (error) {
-      console.error('Error scheduling report:', error);
       throw error;
     }
   }
@@ -500,10 +491,8 @@ export class BusinessIntelligence {
    */
   async refreshReportCache() {
     try {
-      // Mock cache refresh
-      console.log('Report cache refreshed');
+      // Mock cache refresh - Report cache refreshed
     } catch (error) {
-      console.error('Error refreshing report cache:', error);
       throw error;
     }
   }

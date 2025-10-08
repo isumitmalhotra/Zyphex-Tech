@@ -55,7 +55,7 @@ export function RealtimeMessages({ projectId, projectName, className, maxHeight 
           setMessages(data.messages || []);
         }
       } catch (error) {
-        console.error('Error loading messages:', error);
+        // Error loading messages
       }
     };
 

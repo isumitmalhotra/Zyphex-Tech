@@ -124,7 +124,6 @@ export default function UserBilling() {
       
       setBillingData(mockData)
     } catch (error) {
-      console.error("Error fetching billing data:", error)
       toast.error("Failed to load billing information")
     }
   }

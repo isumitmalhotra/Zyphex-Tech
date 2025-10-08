@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,8 +16,18 @@ import {
   Users,
   Target
 } from 'lucide-react'
-import BillingConfigurationComponent from '@/components/billing/billing-configuration'
 import type { BillingModel, BillingConfiguration } from '@/lib/billing/billing-engine'
+
+// Dynamic import for heavy billing component
+const BillingConfigurationComponent = dynamic(
+  () => import('@/components/billing/billing-configuration'),
+  {
+    loading: () => <div className="flex items-center justify-center h-64">
+      <div className="animate-pulse">Loading billing configuration...</div>
+    </div>,
+    ssr: false
+  }
+)
 
 // Mock data for demonstration
 const mockProjects = [

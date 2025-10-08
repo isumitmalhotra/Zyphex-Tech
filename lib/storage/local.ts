@@ -44,7 +44,6 @@ export class LocalStorageAdapter implements StorageAdapter {
       await fs.unlink(filePath)
       return true
     } catch (error) {
-      console.error('Error deleting file:', error)
       return false
     }
   }

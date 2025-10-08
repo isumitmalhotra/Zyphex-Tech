@@ -37,28 +37,25 @@ export default function SocketTestPage() {
     markMessageAsRead
   } = useSocketMessaging({
     onNewMessage: (message) => {
-      console.log("📨 New message received:", message)
       setMessages(prev => [...prev, message as TestMessage])
     },
     onMessageRead: (data) => {
-      console.log("✅ Message read:", data)
+      // Message read
     },
     onTypingStart: (data) => {
-      console.log("👀 User started typing:", data)
       setTypingUsers(prev => prev.includes(data.userId) ? prev : [...prev, data.userId])
     },
     onTypingStop: (data) => {
-      console.log("👀 User stopped typing:", data)
       setTypingUsers(prev => prev.filter(id => id !== data.userId))
     },
     onUserJoinedChannel: (data) => {
-      console.log("👋 User joined channel:", data)
+      // User joined channel
     },
     onUserLeftChannel: (data) => {
-      console.log("👋 User left channel:", data)
+      // User left channel
     },
     onError: (error) => {
-      console.error("❌ Socket error:", error)
+      // Socket error
     }
   })
 
@@ -81,7 +78,7 @@ export default function SocketTestPage() {
         setChannels(data.channels || [])
       }
     } catch (error) {
-      console.error("Error fetching channels:", error)
+      // Error fetching channels
     }
   }
 
@@ -93,7 +90,7 @@ export default function SocketTestPage() {
         setMessages(data.messages || [])
       }
     } catch (error) {
-      console.error("Error fetching messages:", error)
+      // Error fetching messages
     }
   }
 
@@ -116,7 +113,7 @@ export default function SocketTestPage() {
         // Message will be added via Socket.io event
       }
     } catch (error) {
-      console.error("Error sending message:", error)
+      // Error sending message
     }
   }
 

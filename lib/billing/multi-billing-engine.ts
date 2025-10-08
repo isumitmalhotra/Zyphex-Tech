@@ -141,7 +141,6 @@ export class MultiBillingEngine {
         breakdown: Object.values(userBreakdown)
       }
     } catch (error) {
-      console.error('Error calculating hourly billing:', error)
       throw new Error('Failed to calculate hourly billing')
     }
   }
@@ -191,7 +190,6 @@ export class MultiBillingEngine {
         readyForInvoicing: readyForInvoicing as any[]
       }
     } catch (error) {
-      console.error('Error calculating fixed-fee billing:', error)
       throw new Error('Failed to calculate fixed-fee billing')
     }
   }
@@ -245,7 +243,6 @@ export class MultiBillingEngine {
         utilizationRate
       }
     } catch (error) {
-      console.error('Error calculating retainer billing:', error)
       throw new Error('Failed to calculate retainer billing')
     }
   }
@@ -318,7 +315,6 @@ export class MultiBillingEngine {
         subscriptionStatus: subscriptionContract.status as any
       }
     } catch (error) {
-      console.error('Error calculating subscription billing:', error)
       throw new Error('Failed to calculate subscription billing')
     }
   }
@@ -404,7 +400,6 @@ export class MultiBillingEngine {
         invoicingSchedule
       }
     } catch (error) {
-      console.error('Error calculating mixed billing:', error)
       throw new Error('Failed to calculate mixed billing')
     }
   }
@@ -530,7 +525,6 @@ export class MultiBillingEngine {
         dueDate
       }
     } catch (error) {
-      console.error('Error generating invoice:', error)
       throw new Error('Failed to generate invoice')
     }
   }
@@ -597,7 +591,6 @@ export class MultiBillingEngine {
         hourlyProfitability
       }
     } catch (error) {
-      console.error('Error calculating project profitability:', error)
       throw new Error('Failed to calculate project profitability')
     }
   }
@@ -655,7 +648,6 @@ export class MultiBillingEngine {
 
       return { generatedInvoices, errors }
     } catch (error) {
-      console.error('Error in auto-invoicing:', error)
       throw new Error('Failed to process auto-invoicing')
     }
   }

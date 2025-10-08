@@ -217,7 +217,6 @@ export const GET = withPermissions([Permission.VIEW_DASHBOARD])(async (request) 
     });
 
   } catch (error) {
-    console.error('Team Member dashboard error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch dashboard data' },
       { status: 500 }

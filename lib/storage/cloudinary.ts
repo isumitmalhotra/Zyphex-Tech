@@ -61,7 +61,6 @@ export class CloudinaryStorageAdapter implements StorageAdapter {
       const result = await cloudinary.uploader.destroy(filename)
       return result.result === 'ok'
     } catch (error) {
-      console.error('Error deleting file from Cloudinary:', error)
       return false
     }
   }

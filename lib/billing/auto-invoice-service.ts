@@ -227,7 +227,6 @@ export class AutoInvoiceService {
       return invoice
 
     } catch (error) {
-      console.error('Error generating time-based invoice:', error)
       throw error
     }
   }
@@ -337,7 +336,6 @@ export class AutoInvoiceService {
       return invoice
 
     } catch (error) {
-      console.error('Error generating milestone invoice:', error)
       throw error
     }
   }
@@ -369,7 +367,6 @@ export class AutoInvoiceService {
       }
 
     } catch (error) {
-      console.error('Error generating recurring invoice:', error)
       throw error
     }
   }
@@ -397,7 +394,6 @@ export class AutoInvoiceService {
             }
           }
         } catch (error) {
-          console.error(`Error processing rule ${rule.id}:`, error)
           results.push({ ruleId: rule.id, status: 'error', error: (error as Error).message })
         }
       }
@@ -405,7 +401,6 @@ export class AutoInvoiceService {
       return results
 
     } catch (error) {
-      console.error('Error processing scheduled invoices:', error)
       throw error
     }
   }
@@ -558,7 +553,6 @@ export class AutoInvoiceService {
    */
   private async sendInvoiceEmail(invoiceId: string, template?: InvoiceTemplate) {
     // Placeholder for email sending logic
-    console.log(`Sending invoice ${invoiceId} with template:`, template?.name)
     // Integration with email service (SendGrid, AWS SES, etc.)
   }
 

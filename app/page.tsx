@@ -11,6 +11,7 @@ import { Icon3D } from "@/components/3d-icons"
 import { getPageContent, getItemsByContentType } from "@/lib/content"
 import type { ContentSection, ContentItem } from "@/lib/content"
 import ClientAnimations from "@/components/client-animations"
+import { generateGradientPlaceholder } from "@/lib/utils/images"
 
 // Type for parsed content data
 interface ParsedContent {
@@ -112,9 +113,9 @@ export default async function HomePage() {
   // Helper functions for blog post data
   const getPostImage = (post: ContentItem | FallbackPost): string => {
     if ('data' in post && post.data && typeof post.data === 'object') {
-      return (post.data as { imageUrl?: string }).imageUrl || "/placeholder.svg"
+      return (post.data as { imageUrl?: string }).imageUrl || generateGradientPlaceholder(400, 200, post.title)
     }
-    return "/placeholder.svg"
+    return generateGradientPlaceholder(400, 200, post.title)
   }
 
   const getPostCategory = (post: ContentItem | FallbackPost): string => {
@@ -480,7 +481,7 @@ export default async function HomePage() {
             <div className="relative scroll-reveal-right">
               <div className="zyphex-3d-card hover-zyphex-lift">
                 <Image
-                  src="/placeholder.svg?height=500&width=500"
+                  src={generateGradientPlaceholder(500, 500, "why-choose-zyphex")}
                   alt="Why Choose Zyphex Tech"
                   width={500}
                   height={500}
@@ -509,7 +510,7 @@ export default async function HomePage() {
                 title: "The Future of Cloud Computing in 2024",
                 data: {
                   excerpt: "Exploring emerging trends in cloud technology and how businesses can leverage them for competitive advantage.",
-                  imageUrl: "/placeholder.svg?height=200&width=400",
+                  imageUrl: generateGradientPlaceholder(400, 200, "cloud-computing"),
                 },
                 publishedAt: new Date("2024-12-15"),
                 categories: ["Cloud Technology"],
@@ -520,7 +521,7 @@ export default async function HomePage() {
                 title: "AI Integration in Business Applications",
                 data: {
                   excerpt: "How artificial intelligence is transforming business processes and creating new opportunities for growth.",
-                  imageUrl: "/placeholder.svg?height=200&width=400",
+                  imageUrl: generateGradientPlaceholder(400, 200, "ai-integration"),
                 },
                 publishedAt: new Date("2024-12-10"),
                 categories: ["Artificial Intelligence"],
@@ -531,7 +532,7 @@ export default async function HomePage() {
                 title: "Cybersecurity Best Practices for SMBs", 
                 data: {
                   excerpt: "Essential security measures every small and medium business should implement to protect their digital assets.",
-                  imageUrl: "/placeholder.svg?height=200&width=400",
+                  imageUrl: generateGradientPlaceholder(400, 200, "cybersecurity"),
                 },
                 publishedAt: new Date("2024-12-05"),
                 categories: ["Security"],

@@ -25,8 +25,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`📧 Email verification requested for: ${email}`);
-
     // Check if user exists
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() }
@@ -67,7 +65,6 @@ export async function POST(req: NextRequest) {
         }
       });
     } catch (dbError) {
-      console.error('Database error creating verification token:', dbError);
       return NextResponse.json(
         { error: 'Failed to generate verification token. Please try again later.' },
         { status: 500 }
@@ -77,8 +74,6 @@ export async function POST(req: NextRequest) {
     // Create verification URL
     const verificationUrl = `${process.env.APP_URL}/verify-email?token=${verificationToken}`;
 
-    console.log(`📧 Sending email verification to: ${email} from: ${process.env.EMAIL_FROM}`);
-
     // Send verification email using the configured email service
     const emailSent = await sendVerificationEmail(
       email,
@@ -87,14 +82,11 @@ export async function POST(req: NextRequest) {
     );
 
     if (!emailSent) {
-      console.error(`❌ Failed to send verification email to: ${email}`);
       return NextResponse.json(
         { error: 'Failed to send verification email. Please try again later.' },
         { status: 500 }
       );
     }
-
-    console.log(`✅ Verification email sent successfully to: ${email}`);
 
     return NextResponse.json({
       success: true,
@@ -103,8 +95,6 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Email verification error:', error);
-    
     return NextResponse.json(
       { error: 'An error occurred while sending verification email. Please try again later.' },
       { status: 500 }
@@ -133,8 +123,6 @@ export async function PUT(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    console.log(`🔄 Email verification resend requested for: ${email}`);
 
     // Check if user exists and is not verified
     const user = await prisma.user.findUnique({
@@ -175,7 +163,6 @@ export async function PUT(req: NextRequest) {
         }
       });
     } catch (dbError) {
-      console.error('Database error creating verification token:', dbError);
       return NextResponse.json(
         { error: 'Failed to generate verification token. Please try again later.' },
         { status: 500 }
@@ -185,8 +172,6 @@ export async function PUT(req: NextRequest) {
     // Create verification URL
     const verificationUrl = `${process.env.APP_URL}/verify-email?token=${verificationToken}`;
 
-    console.log(`📧 Resending email verification to: ${email} from: ${process.env.EMAIL_FROM}`);
-
     // Send verification email using the configured email service
     const emailSent = await sendVerificationEmail(
       email,
@@ -195,14 +180,11 @@ export async function PUT(req: NextRequest) {
     );
 
     if (!emailSent) {
-      console.error(`❌ Failed to resend verification email to: ${email}`);
       return NextResponse.json(
         { error: 'Failed to resend verification email. Please try again later.' },
         { status: 500 }
       );
     }
-
-    console.log(`✅ Verification email resent successfully to: ${email}`);
 
     return NextResponse.json({
       success: true,
@@ -211,8 +193,6 @@ export async function PUT(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Email verification resend error:', error);
-    
     return NextResponse.json(
       { error: 'An error occurred while resending verification email. Please try again later.' },
       { status: 500 }

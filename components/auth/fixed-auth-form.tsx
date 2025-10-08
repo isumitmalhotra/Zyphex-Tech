@@ -115,13 +115,10 @@ export function FixedAuthForm({ mode = 'login', oauthError }: AuthFormProps) {
     setError('')
     
     try {
-      console.log(`Starting ${provider} OAuth flow...`)
-      
       // Use window.location.href for direct redirect to OAuth provider
       window.location.href = `/api/auth/signin/${provider}?callbackUrl=${encodeURIComponent('/dashboard')}`
       
     } catch (error) {
-      console.error(`Error during ${provider} OAuth:`, error)
       setError(`Failed to sign in with ${provider}. Please try again.`)
       setLoadingProvider(null)
     }

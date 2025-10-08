@@ -49,7 +49,7 @@ export default function UserNotifications() {
         setNotifications(data.notifications || [])
       }
     } catch (error) {
-      console.error('Error fetching notifications:', error)
+      // Error fetching notifications - handle silently or show user notification
     } finally {
       setIsLoading(false)
     }
@@ -75,7 +75,7 @@ export default function UserNotifications() {
         )
       }
     } catch (error) {
-      console.error('Error marking notification as read:', error)
+      // Error marking notification as read - handle silently
     }
   }
 
@@ -147,7 +147,7 @@ export default function UserNotifications() {
           .map(notif => markAsRead(notif.id))
       )
     } catch (error) {
-      console.error('Error marking all notifications as read:', error)
+      // Error marking all notifications as read - handle silently
     }
   }
 

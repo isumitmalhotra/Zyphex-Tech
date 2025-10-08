@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
       success: true,
     });
   } catch (error) {
-    console.error("Error fetching users for admin messaging:", error);
     return NextResponse.json(
       {
         error: "Internal server error",

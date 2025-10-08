@@ -89,7 +89,6 @@ export async function verifyEmailToken(token: string): Promise<string | null> {
 
     return verificationToken.identifier; // Returns email
   } catch (error) {
-    console.error('Error verifying email token:', error);
     return null;
   }
 }
@@ -112,7 +111,6 @@ export async function verifyResetToken(token: string): Promise<string | null> {
 
     return resetToken.email;
   } catch (error) {
-    console.error('Error verifying reset token:', error);
     return null;
   }
 }
@@ -126,7 +124,7 @@ export async function deleteResetToken(token: string): Promise<void> {
       where: { token: hashedToken }
     });
   } catch (error) {
-    console.error('Error deleting reset token:', error);
+    // Error deleting reset token
   }
 }
 
@@ -145,9 +143,9 @@ export async function cleanupExpiredTokens(): Promise<void> {
       where: { expires: { lt: now } }
     });
 
-    console.log('Expired tokens cleaned up successfully');
+    // Expired tokens cleaned up successfully
   } catch (error) {
-    console.error('Error cleaning up expired tokens:', error);
+    // Error cleaning up expired tokens
   }
 }
 
@@ -163,7 +161,6 @@ export async function hasPendingVerification(email: string): Promise<boolean> {
     
     return count > 0;
   } catch (error) {
-    console.error('Error checking pending verification:', error);
     return false;
   }
 }
@@ -182,7 +179,6 @@ export async function getVerificationTokenInfo(email: string) {
       }
     });
   } catch (error) {
-    console.error('Error getting verification token info:', error);
     return null;
   }
 }

@@ -138,7 +138,6 @@ export async function GET(
 
     return NextResponse.json({ project: projectStats })
   } catch (error) {
-    console.error("Error fetching project overview:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

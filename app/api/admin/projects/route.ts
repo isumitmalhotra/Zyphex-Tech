@@ -17,7 +17,6 @@ export const GET = withPermissions([Permission.VIEW_PROJECTS])(async (_request) 
 
     return NextResponse.json({ projects });
   } catch (error) {
-    console.error('Error fetching admin projects:', error);
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 });
   }
 })
@@ -82,7 +81,6 @@ export const POST = withPermissions([Permission.CREATE_PROJECT])(async (request)
 
     return NextResponse.json({ project }, { status: 201 });
   } catch (error) {
-    console.error('Error creating project:', error);
     return NextResponse.json(
       { error: 'Failed to create project' },
       { status: 500 }

@@ -30,7 +30,7 @@ export function PSADashboard({ userId, _role }: PSADashboardProps) {
         setDashboardData(data.data);
       }
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      // Error fetching dashboard data
     } finally {
       setLoading(false);
     }
@@ -48,7 +48,7 @@ export function PSADashboard({ userId, _role }: PSADashboardProps) {
         await fetchDashboardData();
       }
     } catch (error) {
-      console.error('Error refreshing metrics:', error);
+      // Error refreshing metrics
     }
   };
 

@@ -60,7 +60,6 @@ export default function SettingsPage() {
         toast.error("Failed to load profile")
       }
     } catch (error) {
-      console.error("Error fetching profile:", error)
       toast.error("Failed to load profile")
     } finally {
       setLoading(false)
@@ -92,7 +91,6 @@ export default function SettingsPage() {
       toast.success("Image uploaded successfully!")
       
     } catch (error) {
-      console.error("Error uploading image:", error)
       toast.error("Failed to upload image")
     } finally {
       setUploading(false)
@@ -135,7 +133,6 @@ export default function SettingsPage() {
         toast.error(error.error || "Failed to update profile")
       }
     } catch (error) {
-      console.error("Error updating profile:", error)
       toast.error("Failed to update profile")
     } finally {
       setSaving(false)

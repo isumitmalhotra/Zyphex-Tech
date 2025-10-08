@@ -259,7 +259,6 @@ export class InvoiceGenerator {
 
       return invoice
     } catch (error) {
-      console.error('Error generating invoice:', error)
       throw error
     }
   }
@@ -370,12 +369,8 @@ export class InvoiceGenerator {
         }
       })
 
-      // Here you would integrate with an email service like SendGrid, Mailgun, etc.
-      console.log(`Invoice ${invoice.invoiceNumber} sent to ${invoice.client.email}`)
-      
       return true
     } catch (error) {
-      console.error('Error sending invoice email:', error)
       return false
     }
   }

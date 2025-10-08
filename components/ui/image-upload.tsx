@@ -115,7 +115,6 @@ export function ImageUpload({
         throw new Error(result.error || 'Upload failed')
       }
     } catch (error) {
-      console.error('Upload error:', error)
       toast({
         title: "Upload Failed",
         description: error instanceof Error ? error.message : "Failed to upload image",

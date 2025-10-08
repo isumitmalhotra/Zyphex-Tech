@@ -22,7 +22,7 @@ export default function DesignersPage() {
     {
       id: 1,
       name: "Carol Davis",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Senior UI/UX Designer",
       specialization: "User Experience, Interface Design",
       experience: "7 years",
@@ -42,7 +42,7 @@ export default function DesignersPage() {
     {
       id: 2,
       name: "Grace Lee",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Graphic Designer",
       specialization: "Brand Identity, Print Design",
       experience: "5 years",
@@ -62,7 +62,7 @@ export default function DesignersPage() {
     {
       id: 3,
       name: "Henry Kim",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Motion Designer",
       specialization: "Animation, Motion Graphics",
       experience: "6 years",
@@ -82,7 +82,7 @@ export default function DesignersPage() {
     {
       id: 4,
       name: "Ivy Chen",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Product Designer",
       specialization: "Product Design, Design Systems",
       experience: "4 years",
@@ -102,7 +102,7 @@ export default function DesignersPage() {
     {
       id: 5,
       name: "Jack Thompson",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Creative Director",
       specialization: "Creative Direction, Strategy",
       experience: "12 years",

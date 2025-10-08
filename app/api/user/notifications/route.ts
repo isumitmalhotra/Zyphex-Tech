@@ -205,7 +205,6 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error("Error fetching notifications:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -248,7 +247,6 @@ export async function PUT(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Error updating notification:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

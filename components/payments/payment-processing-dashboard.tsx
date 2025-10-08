@@ -134,7 +134,7 @@ export default function PaymentProcessingDashboard() {
       ];
       setPayments(mockPayments);
     } catch (error) {
-      console.error('Failed to load payment data:', error);
+      // Failed to load payment data
     }
   };
 
@@ -159,7 +159,7 @@ export default function PaymentProcessingDashboard() {
       ];
       setPendingPayments(mockPendingPayments);
     } catch (error) {
-      console.error('Failed to load pending payments:', error);
+      // Failed to load pending payments
     }
   };
 
@@ -188,7 +188,7 @@ export default function PaymentProcessingDashboard() {
       };
       setAnalytics(mockAnalytics);
     } catch (error) {
-      console.error('Failed to load analytics:', error);
+      // Failed to load analytics
     }
   };
 
@@ -197,7 +197,6 @@ export default function PaymentProcessingDashboard() {
       setLoading(true);
       
       // Mock API call - replace with actual implementation
-      console.log('Creating payment:', paymentForm);
       
       // Reset form
       setPaymentForm({
@@ -220,7 +219,6 @@ export default function PaymentProcessingDashboard() {
       setLoading(true);
       
       // Mock API call - replace with actual implementation
-      console.log('Sending reminder:', reminderForm);
       
       // Reset form
       setReminderForm({
@@ -229,7 +227,7 @@ export default function PaymentProcessingDashboard() {
         customMessage: ''
       });
     } catch (error) {
-      console.error('Failed to send reminder:', error);
+      // Failed to send reminder
     } finally {
       setLoading(false);
     }
@@ -240,12 +238,11 @@ export default function PaymentProcessingDashboard() {
       setLoading(true);
       
       // Mock API call - replace with actual implementation
-      console.log('Approving payment:', paymentId);
       
       await loadPendingPayments();
       await loadPaymentData();
     } catch (error) {
-      console.error('Failed to approve payment:', error);
+      // Failed to approve payment
     } finally {
       setLoading(false);
     }
@@ -256,11 +253,10 @@ export default function PaymentProcessingDashboard() {
       setLoading(true);
       
       // Mock API call - replace with actual implementation
-      console.log('Rejecting payment:', paymentId);
       
       await loadPendingPayments();
     } catch (error) {
-      console.error('Failed to reject payment:', error);
+      // Failed to reject payment
     } finally {
       setLoading(false);
     }

@@ -95,7 +95,6 @@ export class AlternativePaymentService {
       return payment;
 
     } catch (error: unknown) {
-      console.error('Bank transfer recording failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to record bank transfer: ${errorMessage}`);
     }
@@ -142,7 +141,6 @@ export class AlternativePaymentService {
       return payment;
 
     } catch (error: unknown) {
-      console.error('Check payment recording failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to record check payment: ${errorMessage}`);
     }
@@ -194,7 +192,6 @@ export class AlternativePaymentService {
       return updatedPayment;
 
     } catch (error: unknown) {
-      console.error('Payment status update failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to update payment status: ${errorMessage}`);
     }
@@ -225,7 +222,6 @@ export class AlternativePaymentService {
       return pendingPayments;
 
     } catch (error: unknown) {
-      console.error('Failed to get pending payments:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get pending payments: ${errorMessage}`);
     }
@@ -294,7 +290,6 @@ export class AlternativePaymentService {
       return reconciliationResults;
 
     } catch (error: unknown) {
-      console.error('Bank statement reconciliation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to reconcile bank statement: ${errorMessage}`);
     }
@@ -372,7 +367,6 @@ export class AlternativePaymentService {
       return instructions;
 
     } catch (error: unknown) {
-      console.error('Failed to generate payment instructions:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to generate payment instructions: ${errorMessage}`);
     }
@@ -404,7 +398,7 @@ export class AlternativePaymentService {
         });
       }
     } catch (error: unknown) {
-      console.error('Failed to check invoice payment status:', error);
+      // Failed to check invoice payment status
     }
   }
 
@@ -415,7 +409,7 @@ export class AlternativePaymentService {
   private async sendPaymentConfirmationEmail(invoice: any, payment: any, method: string) {
     try {
       // Placeholder for email service integration
-      console.log(`Payment confirmation email sent for ${method} payment of $${payment.amount} on invoice ${invoice.invoiceNumber}`);
+      // Payment confirmation email would be sent here
       
       // TODO: Integrate with email service
       // const emailContent = this.generatePaymentConfirmationTemplate(invoice, payment, method);
@@ -426,7 +420,7 @@ export class AlternativePaymentService {
       // });
 
     } catch (error: unknown) {
-      console.error('Failed to send payment confirmation email:', error);
+      // Failed to send payment confirmation email
     }
   }
 
@@ -436,12 +430,12 @@ export class AlternativePaymentService {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async sendPaymentProcessedEmail(invoice: any, payment: any) {
     try {
-      console.log(`Payment processed email sent for payment of $${payment.amount} on invoice ${invoice.invoiceNumber}`);
+      // Payment processed email would be sent here
       
       // TODO: Integrate with email service
 
     } catch (error: unknown) {
-      console.error('Failed to send payment processed email:', error);
+      // Failed to send payment processed email
     }
   }
 
@@ -451,12 +445,12 @@ export class AlternativePaymentService {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async sendPaymentFailedEmail(invoice: any, payment: any, reason?: string) {
     try {
-      console.log(`Payment failed email sent for payment of $${payment.amount} on invoice ${invoice.invoiceNumber}. Reason: ${reason}`);
+      // Payment failed email would be sent here
       
       // TODO: Integrate with email service
 
     } catch (error: unknown) {
-      console.error('Failed to send payment failed email:', error);
+      // Failed to send payment failed email
     }
   }
 
@@ -492,7 +486,6 @@ export class AlternativePaymentService {
       }
 
     } catch (error: unknown) {
-      console.error('Failed to export payments:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to export payments: ${errorMessage}`);
     }

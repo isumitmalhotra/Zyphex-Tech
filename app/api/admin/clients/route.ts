@@ -20,7 +20,6 @@ export const GET = withPermissions([Permission.VIEW_CLIENTS])(async (_request) =
 
     return NextResponse.json({ clients });
   } catch (error) {
-    console.error('Error fetching clients:', error);
     return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 });
   }
 })
@@ -75,7 +74,6 @@ export const POST = withPermissions([Permission.CREATE_CLIENT])(async (request) 
 
     return NextResponse.json({ client });
   } catch (error) {
-    console.error('Error creating client:', error);
     return NextResponse.json({ error: 'Failed to create client' }, { status: 500 });
   }
 })

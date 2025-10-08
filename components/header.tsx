@@ -98,7 +98,6 @@ export default function Header() {
                     variant="outline" 
                     className="zyphex-button-secondary bg-transparent hover-zyphex-lift focus:ring-2 focus:ring-blue-500"
                     onClick={() => {
-                      console.log('Dropdown trigger clicked!')
                       const dropdown = document.getElementById('user-dropdown')
                       if (dropdown) {
                         const isVisible = dropdown.style.display === 'block'

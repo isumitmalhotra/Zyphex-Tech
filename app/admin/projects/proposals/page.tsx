@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CalendarDays, DollarSign, FileText, TrendingUp, Filter, Plus, Eye, CheckCircle, XCircle } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
+import { generateAvatar } from '@/lib/utils/avatar'
 
 export default function ProposalsPage() {
   const proposals = [
@@ -31,8 +32,8 @@ export default function ProposalsPage() {
       description: "Complete e-commerce solution with inventory management, payment processing, and customer analytics.",
       requirements: ["React Frontend", "Node.js Backend", "Stripe Integration", "Analytics Dashboard"],
       team: [
-        { name: "Alice Johnson", role: "Project Manager", avatar: "/placeholder-user.jpg" },
-        { name: "Bob Smith", role: "Technical Lead", avatar: "/placeholder-user.jpg" },
+        { name: "Alice Johnson", role: "Project Manager", avatar: "" },
+        { name: "Bob Smith", role: "Technical Lead", avatar: "" },
       ],
       category: "E-Commerce",
     },
@@ -48,8 +49,8 @@ export default function ProposalsPage() {
       description: "Cross-platform mobile app for workout tracking, nutrition planning, and community features.",
       requirements: ["React Native", "Firebase", "Health API Integration", "Social Features"],
       team: [
-        { name: "David Wilson", role: "Mobile Developer", avatar: "/placeholder-user.jpg" },
-        { name: "Eva Brown", role: "UI/UX Designer", avatar: "/placeholder-user.jpg" },
+        { name: "David Wilson", role: "Mobile Developer", avatar: "" },
+        { name: "Eva Brown", role: "UI/UX Designer", avatar: "" },
       ],
       category: "Mobile Development",
     },
@@ -65,8 +66,8 @@ export default function ProposalsPage() {
       description: "Modern website redesign with improved UX, SEO optimization, and content management system.",
       requirements: ["Next.js", "CMS Integration", "SEO Optimization", "Responsive Design"],
       team: [
-        { name: "Carol Davis", role: "UI/UX Designer", avatar: "/placeholder-user.jpg" },
-        { name: "Bob Smith", role: "Frontend Developer", avatar: "/placeholder-user.jpg" },
+        { name: "Carol Davis", role: "UI/UX Designer", avatar: "" },
+        { name: "Bob Smith", role: "Frontend Developer", avatar: "" },
       ],
       category: "Web Development",
     },
@@ -82,8 +83,8 @@ export default function ProposalsPage() {
       description: "Comprehensive analytics dashboard for business intelligence and reporting.",
       requirements: ["Python Backend", "Data Visualization", "API Integration", "Real-time Updates"],
       team: [
-        { name: "Henry Taylor", role: "Data Engineer", avatar: "/placeholder-user.jpg" },
-        { name: "Ivy Chen", role: "Data Analyst", avatar: "/placeholder-user.jpg" },
+        { name: "Henry Taylor", role: "Data Engineer", avatar: "" },
+        { name: "Ivy Chen", role: "Data Analyst", avatar: "" },
       ],
       category: "Data Analytics",
     },
@@ -99,8 +100,8 @@ export default function ProposalsPage() {
       description: "Complete brand identity package including logo, marketing materials, and digital assets.",
       requirements: ["Logo Design", "Brand Guidelines", "Marketing Materials", "Digital Assets"],
       team: [
-        { name: "Frank Miller", role: "Creative Director", avatar: "/placeholder-user.jpg" },
-        { name: "Grace Lee", role: "Graphic Designer", avatar: "/placeholder-user.jpg" },
+        { name: "Frank Miller", role: "Creative Director", avatar: "" },
+        { name: "Grace Lee", role: "Graphic Designer", avatar: "" },
       ],
       category: "Design",
     },
@@ -304,8 +305,10 @@ export default function ProposalsPage() {
                     <div className="flex items-center space-x-2">
                       {proposal.team.map((member, index) => (
                         <Avatar key={index} className="h-8 w-8">
-                          <AvatarImage src={member.avatar} alt={member.name} />
-                          <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          <AvatarImage src={member.avatar || generateAvatar(member.name, 32)} alt={member.name} />
+                          <AvatarFallback>
+                            <img src={generateAvatar(member.name, 32)} alt={member.name} />
+                          </AvatarFallback>
                         </Avatar>
                       ))}
                       <span className="text-sm zyphex-subheading ml-2">

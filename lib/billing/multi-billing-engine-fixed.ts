@@ -587,7 +587,7 @@ export class MultiBillingEngine {
           }
         }
       } catch (error) {
-        console.error(`Error processing auto-invoicing for project ${project.id}:`, error)
+        // Silent failure for individual project auto-invoicing
       }
     }
   }

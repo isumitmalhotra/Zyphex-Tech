@@ -38,7 +38,6 @@ async function fetchServices(): Promise<Service[]> {
     
     return await response.json()
   } catch (error) {
-    console.error('Error fetching services:', error)
     return []
   }
 }

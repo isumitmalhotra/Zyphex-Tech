@@ -143,7 +143,6 @@ export class PSADashboard {
 
       return healthMetrics;
     } catch (error) {
-      console.error('Error getting project health:', error);
       throw new Error('Failed to fetch project health metrics');
     }
   }
@@ -236,7 +235,6 @@ export class PSADashboard {
         forecastedUtilization: [] // Would use predictive algorithms
       };
     } catch (error) {
-      console.error('Error getting resource utilization:', error);
       throw new Error('Failed to fetch resource utilization metrics');
     }
   }
@@ -341,7 +339,6 @@ export class PSADashboard {
         revenueByService: [] // Would categorize by service types
       };
     } catch (error) {
-      console.error('Error getting financial summary:', error);
       throw new Error('Failed to fetch financial metrics');
     }
   }
@@ -401,7 +398,6 @@ export class PSADashboard {
         upsellOpportunities: [] // Would identify from client data
       };
     } catch (error) {
-      console.error('Error getting client satisfaction:', error);
       throw new Error('Failed to fetch client metrics');
     }
   }
@@ -480,7 +476,6 @@ export class PSADashboard {
 
       return alerts;
     } catch (error) {
-      console.error('Error getting active alerts:', error);
       throw new Error('Failed to fetch active alerts');
     }
   }
@@ -632,10 +627,8 @@ export class PSADashboard {
       };
       
       // In real implementation, would save to database
-      console.log('Alert created:', newAlert);
       return newAlert;
     } catch (error) {
-      console.error('Error creating alert:', error);
       throw error;
     }
   }
@@ -665,10 +658,8 @@ export class PSADashboard {
       };
       
       // In real implementation, would update in database
-      console.log('Alert updated:', updatedAlert);
       return updatedAlert;
     } catch (error) {
-      console.error('Error updating alert:', error);
       throw error;
     }
   }
@@ -685,7 +676,7 @@ export class PSADashboard {
       const clientSatisfaction = await this.getClientSatisfaction();
       const alerts = await this.getActiveAlerts();
       
-      console.log('All metrics refreshed');
+      // All metrics refreshed
       return {
         projectHealth,
         resourceMetrics,
@@ -695,7 +686,6 @@ export class PSADashboard {
         refreshedAt: new Date()
       };
     } catch (error) {
-      console.error('Error refreshing metrics:', error);
       throw error;
     }
   }

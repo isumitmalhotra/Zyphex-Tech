@@ -149,7 +149,6 @@ export class PaymentProcessingService {
       }
 
     } catch (error: unknown) {
-      console.error('Payment creation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to create payment: ${errorMessage}`);
     }
@@ -176,7 +175,6 @@ export class PaymentProcessingService {
       }
 
     } catch (error: unknown) {
-      console.error('Webhook processing failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to process webhook: ${errorMessage}`);
     }
@@ -233,7 +231,6 @@ export class PaymentProcessingService {
       };
 
     } catch (error: unknown) {
-      console.error('Failed to get payment summary:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get payment summary: ${errorMessage}`);
     }
@@ -258,7 +255,6 @@ export class PaymentProcessingService {
       });
 
     } catch (error: unknown) {
-      console.error('Payment reminder failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to send payment reminder: ${errorMessage}`);
     }
@@ -276,7 +272,6 @@ export class PaymentProcessingService {
       return await this.reminderService.processAutomatedReminders();
 
     } catch (error: unknown) {
-      console.error('Automated reminder processing failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to process automated reminders: ${errorMessage}`);
     }
@@ -297,7 +292,6 @@ export class PaymentProcessingService {
       return { lateFee, applied: lateFee > 0 };
 
     } catch (error: unknown) {
-      console.error('Late fee application failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to apply late fees: ${errorMessage}`);
     }
@@ -318,7 +312,6 @@ export class PaymentProcessingService {
       return payments;
 
     } catch (error: unknown) {
-      console.error('Failed to get invoice payments:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get invoice payments: ${errorMessage}`);
     }
@@ -376,7 +369,6 @@ export class PaymentProcessingService {
       }
 
     } catch (error: unknown) {
-      console.error('Payment refund failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to refund payment: ${errorMessage}`);
     }
@@ -436,7 +428,6 @@ export class PaymentProcessingService {
       return analytics;
 
     } catch (error: unknown) {
-      console.error('Payment analytics failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get payment analytics: ${errorMessage}`);
     }

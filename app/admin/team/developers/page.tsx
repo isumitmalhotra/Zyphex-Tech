@@ -22,7 +22,7 @@ export default function DevelopersPage() {
     {
       id: 1,
       name: "Alice Johnson",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Senior Full-Stack Developer",
       specialization: "React, Node.js, TypeScript",
       experience: "8 years",
@@ -40,7 +40,7 @@ export default function DevelopersPage() {
     {
       id: 2,
       name: "Bob Smith",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Frontend Developer",
       specialization: "React, Vue.js, UI/UX",
       experience: "6 years",
@@ -58,7 +58,7 @@ export default function DevelopersPage() {
     {
       id: 3,
       name: "Carol Davis",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "UI/UX Designer",
       specialization: "User Experience, Interface Design",
       experience: "7 years",
@@ -76,7 +76,7 @@ export default function DevelopersPage() {
     {
       id: 4,
       name: "David Wilson",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Mobile Developer",
       specialization: "React Native, iOS, Android",
       experience: "5 years",
@@ -94,7 +94,7 @@ export default function DevelopersPage() {
     {
       id: 5,
       name: "Eva Brown",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "QA Engineer",
       specialization: "Quality Assurance, Testing",
       experience: "4 years",
@@ -112,7 +112,7 @@ export default function DevelopersPage() {
     {
       id: 6,
       name: "Frank Miller",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       role: "Creative Director",
       specialization: "Brand Strategy, Creative Direction",
       experience: "10 years",

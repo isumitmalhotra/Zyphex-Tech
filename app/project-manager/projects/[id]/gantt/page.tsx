@@ -64,7 +64,6 @@ export default function ProjectGanttPage({ params }: { params: { id: string } })
       const data = await response.json()
       setProject(data.project)
     } catch (error) {
-      console.error('Error fetching project:', error)
       setError('Failed to load project details')
     } finally {
       setLoading(false)

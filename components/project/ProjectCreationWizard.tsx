@@ -134,7 +134,7 @@ export function ProjectCreationWizard({
         setTemplates(data)
       }
     } catch (error) {
-      console.error('Error fetching templates:', error)
+      // Error fetching templates
     }
   }
 

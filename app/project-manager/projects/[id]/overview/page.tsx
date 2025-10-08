@@ -83,7 +83,6 @@ export default function ProjectOverviewPage({ params }: { params: { id: string }
       const data = await response.json()
       setProject(data.project)
     } catch (error) {
-      console.error('Error fetching project overview:', error)
       setError('Failed to load project overview')
     } finally {
       setLoading(false)

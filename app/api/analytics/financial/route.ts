@@ -63,7 +63,6 @@ export async function GET(request: NextRequest) {
               projectName: project.name
             };
           } catch (error) {
-            console.error(`Failed to calculate profitability for project ${project.id}:`, error);
             return null;
           }
         })
@@ -76,7 +75,6 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Financial analytics API error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -117,7 +115,6 @@ export async function POST(request: NextRequest) {
             try {
               return await analyticsEngine.calculateProjectProfitability(id);
             } catch (error) {
-              console.error(`Failed to calculate profitability for project ${id}:`, error);
               return null;
             }
           })
@@ -141,7 +138,6 @@ export async function POST(request: NextRequest) {
             try {
               return await analyticsEngine.calculateClientLifetimeValue(id);
             } catch (error) {
-              console.error(`Failed to calculate LTV for client ${id}:`, error);
               return null;
             }
           })
@@ -191,7 +187,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Financial analytics API error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

@@ -376,7 +376,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(dashboardData)
   } catch (error) {
-    console.error("Dashboard API error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

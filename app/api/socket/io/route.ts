@@ -21,7 +21,6 @@ export async function GET(req: NextRequest) {
       message: 'Socket.io server not found - make sure to run with custom server',
     }, { status: 503 });
   } catch (error) {
-    console.error('Socket.io status check error:', error);
     return Response.json({ 
       error: 'Socket.io status check failed',
       details: error instanceof Error ? error.message : 'Unknown error'

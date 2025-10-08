@@ -16,9 +16,8 @@ export async function revalidateContentTypes(): Promise<void> {
   try {
     revalidateTag(REVALIDATION_TAGS.CONTENT_TYPES)
     revalidateTag(REVALIDATION_TAGS.ADMIN_CONTENT)
-    console.log('Revalidated content types cache')
   } catch (error) {
-    console.error('Error revalidating content types:', error)
+    // Error revalidating content types
   }
 }
 
@@ -39,9 +38,8 @@ export async function revalidateDynamicContent(
       revalidateTag(REVALIDATION_TAGS.CONTENT_ITEM(itemId))
     }
     
-    console.log('Revalidated dynamic content cache', { contentTypeId, itemId })
   } catch (error) {
-    console.error('Error revalidating dynamic content:', error)
+    // Error revalidating dynamic content
   }
 }
 
@@ -52,9 +50,8 @@ export async function revalidateAllContent(): Promise<void> {
     revalidateTag(REVALIDATION_TAGS.DYNAMIC_CONTENT)
     revalidateTag(REVALIDATION_TAGS.ADMIN_CONTENT)
     revalidateTag(REVALIDATION_TAGS.PUBLIC_CONTENT)
-    console.log('Revalidated all content cache')
   } catch (error) {
-    console.error('Error revalidating all content:', error)
+    // Error revalidating all content
   }
 }
 
@@ -68,9 +65,8 @@ export async function revalidateContentPages(): Promise<void> {
     revalidatePath('/blog')
     revalidatePath('/admin/content')
     
-    console.log('Revalidated content pages')
   } catch (error) {
-    console.error('Error revalidating content pages:', error)
+    // Error revalidating content pages
   }
 }
 
@@ -79,9 +75,8 @@ export async function revalidateContentPage(slug: string): Promise<void> {
     revalidatePath(`/${slug}`)
     revalidatePath(`/blog/${slug}`)
     revalidatePath(`/portfolio/${slug}`)
-    console.log(`Revalidated content page: ${slug}`)
   } catch (error) {
-    console.error(`Error revalidating content page ${slug}:`, error)
+    // Error revalidating content page
   }
 }
 

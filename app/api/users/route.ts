@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { hash } from 'bcryptjs';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { cache } from '@/lib/cache';
+import { withCacheStatus } from '@/lib/api/cache-headers';
 
 // GET /api/users - Get all users
 export async function GET() {
@@ -23,6 +25,16 @@ export async function GET() {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
+    // Try to get from cache first
+    const cacheKey = `users:list:${user.role}`;
+    const cached = await cache.get(cacheKey);
+    
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: withCacheStatus(cached, true, 'medium').headers
+      });
+    }
+
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -35,9 +47,13 @@ export async function GET() {
       orderBy: { name: 'asc' }
     });
     
-    return NextResponse.json(users);
+    // Cache for 1 hour
+    await cache.set(cacheKey, users, 3600);
+    
+    return NextResponse.json(users, {
+      headers: withCacheStatus(users, false, 'medium').headers
+    });
   } catch (error) {
-    console.error('Error fetching users:', error);
     return NextResponse.json(
       { error: 'Failed to fetch users' },
       { status: 500 }
@@ -94,7 +110,6 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(user, { status: 201 });
   } catch (error) {
-    console.error('Error creating user:', error);
     return NextResponse.json(
       { error: 'Failed to create user' },
       { status: 500 }

@@ -105,7 +105,6 @@ export class PayPalPaymentService {
       
       return this.accessToken;
     } catch (error: unknown) {
-      console.error('PayPal authentication failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to authenticate with PayPal: ${errorMessage}`);
     }
@@ -206,7 +205,6 @@ export class PayPalPaymentService {
       };
 
     } catch (error: unknown) {
-      console.error('PayPal order creation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to create PayPal order: ${errorMessage}`);
     }
@@ -283,7 +281,6 @@ export class PayPalPaymentService {
       };
 
     } catch (error: unknown) {
-      console.error('PayPal capture failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to capture PayPal payment: ${errorMessage}`);
     }
@@ -365,7 +362,6 @@ export class PayPalPaymentService {
       };
 
     } catch (error: unknown) {
-      console.error('PayPal refund failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to process PayPal refund: ${errorMessage}`);
     }
@@ -392,13 +388,13 @@ export class PayPalPaymentService {
           await this.handlePaymentDenied(body);
           break;
         default:
-          console.log(`Unhandled PayPal event type: ${eventType}`);
+          // Unhandled PayPal event type
+          break;
       }
 
       return { received: true, type: eventType };
 
     } catch (error: unknown) {
-      console.error('PayPal webhook handling failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`PayPal webhook error: ${errorMessage}`);
     }
@@ -424,7 +420,7 @@ export class PayPalPaymentService {
         }
       });
     } catch (error: unknown) {
-      console.error('PayPal order approved handling failed:', error);
+      // PayPal order approved handling failed
     }
   }
 
@@ -440,7 +436,7 @@ export class PayPalPaymentService {
         await this.captureOrder(orderId);
       }
     } catch (error: unknown) {
-      console.error('PayPal payment captured handling failed:', error);
+      // PayPal payment captured handling failed
     }
   }
 
@@ -468,7 +464,7 @@ export class PayPalPaymentService {
         });
       }
     } catch (error: unknown) {
-      console.error('PayPal payment denied handling failed:', error);
+      // PayPal payment denied handling failed
     }
   }
 
@@ -506,7 +502,6 @@ export class PayPalPaymentService {
       };
 
     } catch (error: unknown) {
-      console.error('Failed to get PayPal order details:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to get order details: ${errorMessage}`);
     }

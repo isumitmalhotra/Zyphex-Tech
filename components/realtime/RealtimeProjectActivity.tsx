@@ -200,7 +200,7 @@ export function RealtimeProjectActivity({
           setActivities(data.activities || []);
         }
       } catch (error) {
-        console.error('Error loading project activity:', error);
+        // Error loading project activity
       } finally {
         setIsLoading(false);
       }

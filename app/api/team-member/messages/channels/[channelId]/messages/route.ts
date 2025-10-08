@@ -227,7 +227,6 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error("Error fetching team member channel messages:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

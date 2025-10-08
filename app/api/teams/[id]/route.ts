@@ -26,7 +26,6 @@ export async function GET(
     
     return NextResponse.json(team);
   } catch (error) {
-    console.error('Error fetching team:', error);
     return NextResponse.json(
       { error: 'Failed to fetch team' },
       { status: 500 }
@@ -129,7 +128,6 @@ export async function PUT(
     
     return NextResponse.json(updatedTeam);
   } catch (error) {
-    console.error('Error updating team:', error);
     return NextResponse.json(
       { error: 'Failed to update team' },
       { status: 500 }
@@ -167,7 +165,6 @@ export async function DELETE(
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error deleting team:', error);
     return NextResponse.json(
       { error: 'Failed to delete team' },
       { status: 500 }

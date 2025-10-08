@@ -47,17 +47,14 @@ export function getRedisClient(): Redis | null {
 
       // Handle errors
       redis.on('error', (error: Error) => {
-        console.warn('Redis connection error:', error.message);
         redis = null; // Reset to null on error
       });
 
       // Test connection
       redis.ping().catch(() => {
-        console.warn('Redis ping failed - caching disabled');
         redis = null;
       });
     } catch (error) {
-      console.warn('Failed to initialize Redis:', error);
       redis = null;
     }
   }
@@ -92,7 +89,6 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
     const cached = await client.get(key);
     return cached ? JSON.parse(cached) : null;
   } catch (error) {
-    console.warn('Cache get error:', error);
     return null;
   }
 }
@@ -109,7 +105,6 @@ export async function cacheSet<T>(
     await client.setex(key, ttl, JSON.stringify(value));
     return true;
   } catch (error) {
-    console.warn('Cache set error:', error);
     return false;
   }
 }
@@ -122,7 +117,6 @@ export async function cacheDelete(key: string): Promise<boolean> {
     await client.del(key);
     return true;
   } catch (error) {
-    console.warn('Cache delete error:', error);
     return false;
   }
 }
@@ -138,7 +132,6 @@ export async function cacheDeletePattern(pattern: string): Promise<boolean> {
     }
     return true;
   } catch (error) {
-    console.warn('Cache delete pattern error:', error);
     return false;
   }
 }

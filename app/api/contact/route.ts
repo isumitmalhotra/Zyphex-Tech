@@ -213,7 +213,6 @@ Submission Date: ${new Date().toLocaleString()}
       }
 
     } catch (emailError) {
-      console.error('Email sending error:', emailError);
       // Don't fail the request if email fails, but log it
       // In production, you might want to use a queue system
     }
@@ -235,7 +234,6 @@ Submission Date: ${new Date().toLocaleString()}
       //   },
       // });
     } catch (dbError) {
-      console.error('Database storage error:', dbError);
       // Don't fail if database storage fails
     }
 
@@ -248,7 +246,6 @@ Submission Date: ${new Date().toLocaleString()}
     );
 
   } catch (error) {
-    console.error('Contact form submission error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

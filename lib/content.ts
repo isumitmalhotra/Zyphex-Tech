@@ -259,7 +259,6 @@ export const getPageContent = cache(async (
       metadata
     }
   } catch (error) {
-    console.error(`Error fetching content for page "${pageSlug}":`, error)
     throw new Error(`Failed to fetch page content: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 })
@@ -300,7 +299,6 @@ export const getPageSections = cache(async (
 
     return dbSections.map(transformSection)
   } catch (error) {
-    console.error(`Error fetching sections for page "${pageSlug}":`, error)
     throw new Error(`Failed to fetch page sections: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 })
@@ -332,7 +330,6 @@ export const getSection = cache(async (
 
     return dbSection ? transformSection(dbSection) : null
   } catch (error) {
-    console.error(`Error fetching section "${sectionKey}":`, error)
     throw new Error(`Failed to fetch section: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 })
@@ -421,7 +418,6 @@ export const getItemsByContentType = cache(async (
 
     return dbItems.map(transformItem)
   } catch (error) {
-    console.error(`Error fetching items for content type "${contentTypeName}":`, error)
     throw new Error(`Failed to fetch content items: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 })
@@ -460,7 +456,6 @@ export const getItemBySlug = cache(async (
 
     return dbItem ? transformItem(dbItem) : null
   } catch (error) {
-    console.error(`Error fetching item "${slug}" for content type "${contentTypeName}":`, error)
     throw new Error(`Failed to fetch content item: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 })
@@ -496,7 +491,6 @@ export const getContentTypes = cache(async (activeOnly: boolean = true) => {
       updatedAt: ct.updatedAt
     }))
   } catch (error) {
-    console.error('Error fetching content types:', error)
     throw new Error(`Failed to fetch content types: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 })

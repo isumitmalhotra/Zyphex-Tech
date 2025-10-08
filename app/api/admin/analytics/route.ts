@@ -215,7 +215,6 @@ export const GET = withPermissions([Permission.VIEW_ANALYTICS])(async (_request)
     });
 
   } catch (error) {
-    console.error('Analytics API Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 });

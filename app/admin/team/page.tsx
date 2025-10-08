@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { generateAvatar } from '@/lib/utils/avatar'
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -208,12 +209,9 @@ export default function TeamPage() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-12 w-12 zyphex-blue-glow">
-                      <AvatarImage src={member.avatar || "/placeholder.svg"} alt={member.name} />
+                      <AvatarImage src={member.avatar || generateAvatar(member.name, 48)} alt={member.name} />
                       <AvatarFallback className="zyphex-gradient-primary">
-                        {member.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
+                        <img src={generateAvatar(member.name, 48)} alt={member.name} />
                       </AvatarFallback>
                     </Avatar>
                     <div>

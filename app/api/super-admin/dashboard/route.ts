@@ -245,7 +245,6 @@ export async function GET(_request: Request) {
     });
 
   } catch (error) {
-    console.error('Super Admin dashboard error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch dashboard data' },
       { status: 500 }

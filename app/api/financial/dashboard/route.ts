@@ -271,7 +271,6 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Financial dashboard error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to load financial dashboard" },
       { status: 500 }

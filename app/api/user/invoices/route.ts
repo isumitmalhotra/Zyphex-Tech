@@ -147,7 +147,6 @@ export async function GET(request: NextRequest) {
       summary
     })
   } catch (error) {
-    console.error('Error fetching invoices:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

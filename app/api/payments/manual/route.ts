@@ -125,7 +125,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error: unknown) {
-    console.error('Alternative payment API error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     return NextResponse.json(
@@ -187,7 +186,6 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error: unknown) {
-    console.error('Alternative payment API error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     return NextResponse.json(

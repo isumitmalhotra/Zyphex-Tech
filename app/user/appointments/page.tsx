@@ -88,7 +88,6 @@ export default function AppointmentsPage() {
       toast.success("Appointment scheduled successfully!")
       
     } catch (error) {
-      console.error("Error scheduling appointment:", error)
       toast.error("Failed to schedule appointment")
     } finally {
       setScheduling(false)

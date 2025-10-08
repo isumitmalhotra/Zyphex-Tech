@@ -94,7 +94,6 @@ export const GET = withPermissions([Permission.VIEW_DASHBOARD])(async (_request)
     });
 
   } catch (error) {
-    console.error('Dashboard API Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 })

@@ -31,6 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { generateAvatar } from "@/lib/utils/avatar"
 import {
   Sidebar,
   SidebarContent,
@@ -52,7 +53,7 @@ const data = {
   user: {
     name: "Admin User",
     email: "admin@zyphextech.com",
-    avatar: "/placeholder.svg?height=32&width=32",
+    avatar: "", // Will use generated avatar
   },
   navMain: [
     {
@@ -302,12 +303,9 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground zyphex-card hover-zyphex-glow"
                 >
                   <Avatar className="h-8 w-8 rounded-lg zyphex-blue-glow">
-                    <AvatarImage src={data.user.avatar || "/placeholder.svg"} alt={data.user.name} />
+                    <AvatarImage src={data.user.avatar || generateAvatar(data.user.name, 32)} alt={data.user.name} />
                     <AvatarFallback className="rounded-lg zyphex-gradient-primary">
-                      {data.user.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                      <img src={generateAvatar(data.user.name, 32)} alt={data.user.name} className="h-full w-full" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -326,12 +324,9 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg zyphex-blue-glow">
-                      <AvatarImage src={data.user.avatar || "/placeholder.svg"} alt={data.user.name} />
+                      <AvatarImage src={data.user.avatar || generateAvatar(data.user.name, 32)} alt={data.user.name} />
                       <AvatarFallback className="rounded-lg zyphex-gradient-primary">
-                        {data.user.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
+                        <img src={generateAvatar(data.user.name, 32)} alt={data.user.name} className="h-full w-full" />
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">

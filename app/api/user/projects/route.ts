@@ -129,7 +129,6 @@ export async function POST(req: Request) {
       }
     })
   } catch (error: any) {
-    console.error("Project request error:", error)
     
     // Handle Prisma-specific errors
     if (error.code === 'P2002') {
@@ -286,7 +285,6 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error("Fetch projects error:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

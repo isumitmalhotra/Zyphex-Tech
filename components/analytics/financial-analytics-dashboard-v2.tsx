@@ -191,13 +191,12 @@ export default function FinancialAnalyticsDashboard() {
       try {
         setLoading(true);
         // Mock API call - replace with actual implementation
-        console.log('Loading financial analytics data for:', selectedTimeframe, selectedProject);
         
         // Simulate loading delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         
       } catch (error) {
-        console.error('Failed to load dashboard data:', error);
+        // Failed to load dashboard data - handle silently or show user notification
       } finally {
         setLoading(false);
       }
@@ -207,7 +206,6 @@ export default function FinancialAnalyticsDashboard() {
   }, [selectedTimeframe, selectedProject]);
 
   const exportData = (format: 'csv' | 'pdf') => {
-    console.log(`Exporting financial data as ${format}`);
     // Implementation for data export
   };
 

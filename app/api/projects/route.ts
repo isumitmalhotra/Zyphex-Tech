@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { Prisma, ProjectStatus } from '@prisma/client';
+import { cache } from '@/lib/cache';
+import { withCacheStatus } from '@/lib/api/cache-headers';
 
 // GET /api/projects - Get all projects
 export async function GET(request: NextRequest) {
@@ -74,11 +76,19 @@ export async function GET(request: NextRequest) {
         },
       });
       
-      return NextResponse.json({ projects });
+      return withCacheStatus({ projects }, false, 'short');
     }
 
     // For PROJECT_MANAGER, show projects they manage OR are assigned to
     if (userRole === 'PROJECT_MANAGER') {
+      // Try cache first
+      const cacheKey = `projects:manager:${userId}:${statusParam || 'all'}:${clientId || 'all'}`;
+      const cached = await cache.get<any>(cacheKey);
+      
+      if (cached) {
+        return withCacheStatus(cached, true, 'short');
+      }
+      
       const projects = await prisma.project.findMany({
         where: {
           ...where,
@@ -118,10 +128,21 @@ export async function GET(request: NextRequest) {
         },
       });
       
-      return NextResponse.json({ projects });
+      // Cache for 5 minutes
+      await cache.set(cacheKey, { projects }, 300);
+      
+      return withCacheStatus({ projects }, false, 'short');
     }
     
     // For admin and super admin, show all projects
+    // Try cache first
+    const adminCacheKey = `projects:admin:${statusParam || 'all'}:${clientId || 'all'}`;
+    const cachedAdmin = await cache.get<any>(adminCacheKey);
+    
+    if (cachedAdmin) {
+      return withCacheStatus(cachedAdmin, true, 'short');
+    }
+    
     const projects = await prisma.project.findMany({
       where,
       include: {
@@ -149,9 +170,11 @@ export async function GET(request: NextRequest) {
       },
     });
     
-    return NextResponse.json({ projects });
+    // Cache for 5 minutes
+    await cache.set(adminCacheKey, { projects }, 300);
+    
+    return withCacheStatus({ projects }, false, 'short');
   } catch (error) {
-    console.error('Error fetching projects:', error);
     return NextResponse.json(
       { error: 'Failed to fetch projects' },
       { status: 500 }
@@ -225,7 +248,6 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(project, { status: 201 });
   } catch (error) {
-    console.error('Error creating project:', error);
     return NextResponse.json(
       { error: 'Failed to create project' },
       { status: 500 }

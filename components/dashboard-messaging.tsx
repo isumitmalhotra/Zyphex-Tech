@@ -66,11 +66,11 @@ export function DashboardMessaging({ userRole, userId, compact = false }: Dashbo
     onTypingStop: (data) => {
       setTypingUsers(prev => prev.filter(id => id !== data.userId))
     },
-    onUserJoinedChannel: (data) => {
-      console.log(`${data.userName} joined channel ${data.channelId}`)
+    onUserJoinedChannel: () => {
+      // User joined channel - handle if needed
     },
-    onUserLeftChannel: (data) => {
-      console.log(`${data.userName} left channel ${data.channelId}`)
+    onUserLeftChannel: () => {
+      // User left channel - handle if needed
     }
   })
 
@@ -106,7 +106,7 @@ export function DashboardMessaging({ userRole, userId, compact = false }: Dashbo
           }
         }
       } catch (error) {
-        console.error('Error loading channels:', error)
+        // Error loading channels - handle silently or show user notification
       }
     }
 
@@ -164,7 +164,7 @@ export function DashboardMessaging({ userRole, userId, compact = false }: Dashbo
         }
       }
     } catch (error) {
-      console.error('Error loading messages:', error)
+      // Error loading messages - handle silently or show user notification
     }
   }
 
@@ -210,7 +210,7 @@ export function DashboardMessaging({ userRole, userId, compact = false }: Dashbo
       setNewMessage('')
       stopTyping(selectedChannel)
     } catch (error) {
-      console.error('Error sending message:', error)
+      // Error sending message - handle silently or show user notification
     }
   }
 

@@ -55,15 +55,6 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Log successful registration for audit
-    console.log('✅ New user registered:', {
-      userId: newUser.id,
-      email: newUser.email,
-      role: newUser.role,
-      timestamp: new Date().toISOString(),
-      ip: security.getClientIP()
-    })
-
     return security.createResponse({
       success: true,
       message: 'Account created successfully. Please verify your email.',
@@ -72,8 +63,6 @@ export async function POST(request: NextRequest) {
     }, 201)
 
   } catch (error) {
-    console.error('❌ Registration error:', error)
-    
     return security.createErrorResponse(
       'Failed to create account. Please try again.',
       500

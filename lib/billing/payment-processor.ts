@@ -53,7 +53,6 @@ export class PaymentProcessor {
           throw new Error(`Unsupported payment method: ${paymentDetails.paymentMethod}`)
       }
     } catch (error) {
-      console.error('Payment processing error:', error)
       return {
         success: false,
         amount: paymentDetails.amount,
@@ -92,7 +91,6 @@ export class PaymentProcessor {
         currency: currency
       }
     } catch (error) {
-      console.error('Stripe payment error:', error)
       return {
         success: false,
         amount: amount,
@@ -126,7 +124,6 @@ export class PaymentProcessor {
         currency: _currency
       }
     } catch (error) {
-      console.error('PayPal payment error:', error)
       return {
         success: false,
         amount: _amount,
@@ -160,7 +157,7 @@ export class PaymentProcessor {
   ): Promise<void> {
     // This would typically be handled by the BillingEngine
     // but can be used for direct manual payment recording
-    console.log(`Recording manual payment for invoice ${invoiceId}:`, details)
+    // Recording manual payment for invoice: {invoiceId}, details: {details}
     
     // In a real implementation, you might:
     // 1. Validate the payment details
@@ -204,7 +201,6 @@ export class PaymentProcessor {
         }
       }
     } catch (error) {
-      console.error('Refund error:', error)
       return {
         success: false,
         amount: amount || 0,
@@ -222,7 +218,6 @@ export class PaymentProcessor {
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
       return paymentIntent.status
     } catch (error) {
-      console.error('Error retrieving payment status:', error)
       return 'unknown'
     }
   }
@@ -263,7 +258,6 @@ export class PaymentProcessor {
 
       return paymentLink.url
     } catch (error) {
-      console.error('Error creating payment link:', error)
       return null
     }
   }
@@ -279,7 +273,6 @@ export class PaymentProcessor {
     try {
       return stripe.webhooks.constructEvent(body, signature, endpointSecret)
     } catch (error) {
-      console.error('Webhook signature verification failed:', error)
       return null
     }
   }

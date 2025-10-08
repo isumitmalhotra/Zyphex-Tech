@@ -48,11 +48,9 @@ export default function MessagesPage() {
         const data = await response.json()
         setMessages(data.messages || [])
       } else {
-        console.error("Failed to fetch messages")
         toast.error("Failed to load messages")
       }
     } catch (error) {
-      console.error("Error fetching messages:", error)
       toast.error("Failed to load messages")
     } finally {
       setLoading(false)
@@ -87,7 +85,6 @@ export default function MessagesPage() {
         toast.error(error.error || "Failed to send message")
       }
     } catch (error) {
-      console.error("Error sending message:", error)
       toast.error("Failed to send message")
     } finally {
       setSending(false)

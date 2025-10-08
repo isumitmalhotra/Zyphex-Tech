@@ -24,8 +24,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`🔐 Password reset requested for: ${email}`);
-
     // Check if user exists
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() }
@@ -35,7 +33,6 @@ export async function POST(req: NextRequest) {
     const responseMessage = 'If an account with that email exists, a password reset link has been sent.';
 
     if (!user) {
-      console.log(`⚠️ Password reset requested for non-existent email: ${email}`);
       return NextResponse.json({
         success: true,
         message: responseMessage
@@ -44,7 +41,6 @@ export async function POST(req: NextRequest) {
 
     // Check if user has a password (might be OAuth-only user)
     if (!user.password) {
-      console.log(`⚠️ Password reset requested for OAuth-only user: ${email}`);
       return NextResponse.json({
         success: true,
         message: responseMessage
@@ -70,14 +66,11 @@ export async function POST(req: NextRequest) {
         }
       });
     } catch (dbError) {
-      console.error('Database error creating reset token:', dbError);
       // For now, create the reset URL anyway and try to send the email
     }
 
     // Generate reset URL
     const resetUrl = `${process.env.APP_URL}/reset-password?token=${resetToken}`;
-
-    console.log(`📧 Sending password reset email to: ${email} from: ${process.env.EMAIL_FROM}`);
 
     // Send password reset email using the configured email service
     const emailSent = await sendPasswordResetEmail(
@@ -87,14 +80,11 @@ export async function POST(req: NextRequest) {
     );
 
     if (!emailSent) {
-      console.error(`❌ Failed to send password reset email to: ${email}`);
       return NextResponse.json(
         { error: 'Failed to send password reset email. Please try again later.' },
         { status: 500 }
       );
     }
-
-    console.log(`✅ Password reset email sent successfully to: ${email}`);
 
     return NextResponse.json({
       success: true,
@@ -103,8 +93,6 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Password reset error:', error);
-    
     return NextResponse.json(
       { error: 'An error occurred while processing your request. Please try again later.' },
       { status: 500 }

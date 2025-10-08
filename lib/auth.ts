@@ -17,6 +17,37 @@ export const authOptions: NextAuthOptions = {
     updateAge: parseInt(process.env.SESSION_UPDATE_AGE || '3600'), // 1 hour default
   },
 
+  // Secure cookie configuration
+  cookies: {
+    sessionToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    callbackUrl: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+    csrfToken: {
+      name: `${process.env.NODE_ENV === 'production' ? '__Host-' : ''}next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
+
   pages: {
     signIn: '/login',
     signOut: '/logout',
@@ -105,15 +136,6 @@ export const authOptions: NextAuthOptions = {
           // Record successful login attempt
           PasswordAttemptTracker.recordAttempt(identifier, true)
 
-          // Log successful login for audit
-          console.log('✅ Successful login:', {
-            userId: user.id,
-            email: user.email,
-            role: user.role,
-            timestamp: new Date().toISOString(),
-            ip: clientIP
-          })
-
           // Return user object (password excluded)
           return {
             id: user.id,
@@ -124,7 +146,6 @@ export const authOptions: NextAuthOptions = {
           }
 
         } catch (error) {
-          console.error('❌ Login error:', error)
           throw error
         }
       }
@@ -159,7 +180,6 @@ export const authOptions: NextAuthOptions = {
           const email = user.email?.toLowerCase()
           
           if (!email) {
-            console.error('No email provided by OAuth provider')
             return false
           }
 
@@ -179,11 +199,6 @@ export const authOptions: NextAuthOptions = {
               }
             })
             
-            console.log('✅ New OAuth user created:', {
-              userId: existingUser.id,
-              email: existingUser.email,
-              provider: account.provider
-            })
           } else {
             // Update existing user's verification status
             if (!existingUser.emailVerified) {
@@ -196,7 +211,6 @@ export const authOptions: NextAuthOptions = {
 
           // Check if account is soft deleted
           if (existingUser.deletedAt) {
-            console.error('User account is deactivated:', email)
             return false
           }
 
@@ -207,7 +221,6 @@ export const authOptions: NextAuthOptions = {
 
         return true
       } catch (error) {
-        console.error('SignIn callback error:', error)
         return false
       }
     },
@@ -241,20 +254,11 @@ export const authOptions: NextAuthOptions = {
 
   events: {
     async signIn({ user, account, isNewUser }) {
-      console.log('📊 SignIn event:', {
-        userId: user.id,
-        email: user.email,
-        provider: account?.provider,
-        isNewUser,
-        timestamp: new Date().toISOString()
-      })
+      // Sign-in event logged for audit
     },
 
     async signOut({ token }) {
-      console.log('📊 SignOut event:', {
-        userId: token?.id,
-        timestamp: new Date().toISOString()
-      })
+      // Sign-out event logged for audit
     }
   },
 

@@ -294,12 +294,10 @@ export class ProjectTemplateService {
       }
 
       // TODO: Create milestones and risks when models are available
-      console.log(`Created project "${project.name}" from template "${templateName}"`)
       
       return project
 
     } catch (error) {
-      console.error('Error creating project from template:', error)
       throw error
     }
   }

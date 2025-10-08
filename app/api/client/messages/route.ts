@@ -208,8 +208,6 @@ export async function POST(request: NextRequest) {
         message: messageData,
         timestamp: new Date().toISOString()
       })
-
-      console.log(`📨 Broadcasted message to channel ${channelId}`)
     }
 
     // Send email notifications to ZyphexTech team members in the channel (except sender)
@@ -263,11 +261,11 @@ export async function POST(request: NextRequest) {
               `
             })
           } catch (emailError) {
-            console.error(`Failed to send email notification to ${member.email}:`, emailError)
+            // Silent failure for email notifications
           }
         })
       ).catch(error => {
-        console.error("Error sending email notifications:", error)
+        // Silent failure for batch email notifications
       })
     }
 
@@ -312,8 +310,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error: any) {
-    console.error("Error sending client message:", error)
-    
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

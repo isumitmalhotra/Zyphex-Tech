@@ -164,7 +164,7 @@ export function RealtimeNotifications({ className }: RealtimeNotificationsProps)
           setUnreadCount(data.notifications?.filter((n: Notification) => !n.read).length || 0);
         }
       } catch (error) {
-        console.error('Error loading notifications:', error);
+        // Error loading notifications
       }
     };
 
@@ -208,7 +208,7 @@ export function RealtimeNotifications({ className }: RealtimeNotificationsProps)
         method: 'POST'
       });
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      // Error marking notification as read
     }
   };
 
@@ -222,7 +222,7 @@ export function RealtimeNotifications({ className }: RealtimeNotificationsProps)
         method: 'POST'
       });
     } catch (error) {
-      console.error('Error marking all notifications as read:', error);
+      // Error marking all notifications as read
     }
   };
 

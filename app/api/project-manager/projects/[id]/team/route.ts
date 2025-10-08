@@ -104,7 +104,6 @@ export async function POST(
       project: updatedProject 
     })
   } catch (error) {
-    console.error("Error adding team member:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -202,7 +201,6 @@ export async function DELETE(
       project: updatedProject 
     })
   } catch (error) {
-    console.error("Error removing team member:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

@@ -38,7 +38,6 @@ export function PasswordResetForm({ token = '' }: PasswordResetFormProps) {
         setMessage('Error resetting password')
       }
     } catch (error: unknown) {
-      console.error('Password reset error:', error)
       setMessage('Error resetting password')
     }
 

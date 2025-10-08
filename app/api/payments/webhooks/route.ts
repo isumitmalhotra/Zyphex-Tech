@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: unknown) {
-    console.error('Webhook processing error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     // For webhooks, we should return 200 even on errors to avoid retries
@@ -97,7 +96,6 @@ export async function GET(request: NextRequest) {
     );
 
   } catch (error: unknown) {
-    console.error('Webhook verification error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     
     return NextResponse.json(

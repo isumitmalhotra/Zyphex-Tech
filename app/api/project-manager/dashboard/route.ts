@@ -179,7 +179,6 @@ export const GET = withPermissions([Permission.VIEW_DASHBOARD])(async (request) 
       }
     });
   } catch (error) {
-    console.error('Project Manager dashboard error:', error);
     return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 });
   }
 });

@@ -165,7 +165,6 @@ export class BillingEngine {
       })
 
     } catch (error) {
-      console.error('Error generating invoice:', error)
       throw error
     }
   }
@@ -227,7 +226,6 @@ export class BillingEngine {
 
       return result
     } catch (error) {
-      console.error('Error processing payment:', error)
       return {
         success: false,
         amount: 0,
@@ -301,7 +299,6 @@ export class BillingEngine {
         billingEfficiency
       }
     } catch (error) {
-      console.error('Error calculating project profitability:', error)
       throw error
     }
   }
@@ -329,7 +326,6 @@ export class BillingEngine {
 
       return invoices
     } catch (error) {
-      console.error('Error generating recurring invoices:', error)
       throw error
     }
   }

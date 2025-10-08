@@ -236,7 +236,6 @@ export const GET = withPermissions([Permission.VIEW_DASHBOARD, Permission.VIEW_P
     });
 
   } catch (error) {
-    console.error('Client dashboard error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch dashboard data' },
       { status: 500 }

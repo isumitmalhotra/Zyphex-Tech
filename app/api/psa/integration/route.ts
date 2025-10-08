@@ -54,7 +54,6 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Integration GET Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -120,7 +119,6 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Integration POST Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -153,7 +151,6 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Webhook Processing Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -193,7 +190,6 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Integration DELETE Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

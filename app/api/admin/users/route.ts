@@ -142,7 +142,6 @@ export const GET = withPermissions([Permission.VIEW_USERS])(async (request) => {
     });
 
   } catch (error) {
-    console.error('Error fetching users:', error);
     return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 });
   }
 });
@@ -222,7 +221,6 @@ export const POST = withPermissions([Permission.CREATE_USER])(async (request) =>
     });
 
   } catch (error) {
-    console.error('Error creating user:', error);
     return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
   }
 });
@@ -298,7 +296,6 @@ export const PUT = withPermissions([Permission.UPDATE_USER])(async (request) => 
     });
 
   } catch (error) {
-    console.error('Error updating user:', error);
     return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
   }
 });
@@ -343,7 +340,6 @@ export const DELETE = withPermissions([Permission.DELETE_USER])(async (request) 
     });
 
   } catch (error) {
-    console.error('Error deleting user:', error);
     return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
   }
 });

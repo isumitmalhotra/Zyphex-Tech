@@ -42,7 +42,6 @@ export default function UserProfilePage() {
       })
     } catch (error) {
       toast.error('Failed to load profile')
-      console.error(error)
     }
   }
 
@@ -68,7 +67,6 @@ export default function UserProfilePage() {
       router.refresh()
     } catch (error) {
       toast.error('Failed to update profile')
-      console.error(error)
     } finally {
       setLoading(false)
     }

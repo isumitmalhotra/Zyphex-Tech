@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString()
       })
 
-      console.log(`📨 Broadcasted message to channel ${channelId}`)
+      // Broadcasted message to channel
     }
 
     // Send email notifications to channel members (except sender)
@@ -269,11 +269,11 @@ export async function POST(request: NextRequest) {
               `
             })
           } catch (emailError) {
-            console.error(`Failed to send email notification to ${member.email}:`, emailError)
+            // Failed to send email notification
           }
         })
       ).catch(error => {
-        console.error("Error sending email notifications:", error)
+        // Error sending email notifications
       })
     }
 
@@ -317,7 +317,6 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error: any) {
-    console.error("Error sending team member message:", error)
     
     return NextResponse.json(
       { error: "Internal server error" },

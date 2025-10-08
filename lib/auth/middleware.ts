@@ -55,7 +55,6 @@ export function requirePermissions(permissions: Permission[]) {
       // Call the actual handler
       return handler(authenticatedRequest)
     } catch (error) {
-      console.error('Permission middleware error:', error)
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -87,7 +86,6 @@ export function requireAuth() {
 
       return handler(authenticatedRequest)
     } catch (error) {
-      console.error('Auth middleware error:', error)
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -158,12 +156,10 @@ export async function logAction(
       timestamp: new Date().toISOString()
     }
 
-    console.log('AUDIT LOG:', auditEntry)
-
     // TODO: Save to database audit log table
     // await prisma.auditLog.create({ data: auditEntry })
   } catch (error) {
-    console.error('Failed to log audit entry:', error)
+    // Audit logging failed
   }
 }
 

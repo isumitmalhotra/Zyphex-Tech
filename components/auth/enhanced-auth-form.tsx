@@ -189,7 +189,6 @@ export function EnhancedAuthForm({ mode = 'signin' }: EnhancedAuthFormProps) {
         }
       }
     } catch (error) {
-      console.error('Auth error:', error)
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setIsLoading(false)
@@ -204,7 +203,6 @@ export function EnhancedAuthForm({ mode = 'signin' }: EnhancedAuthFormProps) {
       const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
       await signIn(provider, { callbackUrl })
     } catch (error) {
-      console.error(`${provider} sign-in error:`, error)
       setError(`${provider} sign-in failed. Please try again.`)
       setLoadingProvider(null)
     }

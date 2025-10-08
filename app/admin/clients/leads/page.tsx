@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CalendarDays, DollarSign, Phone, Mail, MapPin, Target, TrendingUp, Filter, Plus, UserPlus } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
+import { generateAvatar } from "@/lib/utils/avatar"
 
 export default function LeadsPage() {
   const leads = [
@@ -23,7 +24,7 @@ export default function LeadsPage() {
       id: 1,
       name: "GreenEnergy Solutions",
       company: "GreenEnergy Solutions LLC",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       status: "Qualified",
       source: "Website Contact",
       estimatedValue: 75000,
@@ -41,7 +42,7 @@ export default function LeadsPage() {
       id: 2,
       name: "HealthTrack Pro",
       company: "HealthTrack Pro Inc",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       status: "Contacted",
       source: "LinkedIn",
       estimatedValue: 45000,
@@ -59,7 +60,7 @@ export default function LeadsPage() {
       id: 3,
       name: "RetailPlus",
       company: "RetailPlus Corporation",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       status: "Qualified",
       source: "Referral",
       estimatedValue: 55000,
@@ -77,7 +78,7 @@ export default function LeadsPage() {
       id: 4,
       name: "EduTech Innovations",
       company: "EduTech Innovations Ltd",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       status: "New",
       source: "Trade Show",
       estimatedValue: 35000,
@@ -95,7 +96,7 @@ export default function LeadsPage() {
       id: 5,
       name: "LogisticsPro",
       company: "LogisticsPro Systems",
-      avatar: "/placeholder-user.jpg",
+      avatar: "",
       status: "Qualified",
       source: "Cold Outreach",
       estimatedValue: 65000,
@@ -255,8 +256,10 @@ export default function LeadsPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={lead.avatar} alt={lead.name} />
-                      <AvatarFallback>{lead.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                      <AvatarImage src={lead.avatar || generateAvatar(lead.contactPerson, 48)} alt={lead.name} />
+                      <AvatarFallback>
+                        <img src={generateAvatar(lead.contactPerson, 48)} alt={lead.contactPerson} className="h-full w-full" />
+                      </AvatarFallback>
                     </Avatar>
                     <div>
                       <CardTitle className="zyphex-heading">{lead.company}</CardTitle>

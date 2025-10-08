@@ -98,14 +98,9 @@ export function SimpleAuthForm({ mode = 'signin' }: SimpleAuthFormProps) {
   }
 
   const handleOAuthSignIn = async (provider: string) => {
-    console.log('OAuth button clicked:', provider)
-    console.log('Current loading states:', { isLoading, oauthLoading })
-    
     try {
       setOauthLoading(provider)
       setError('')
-      
-      console.log('About to call signIn with provider:', provider)
       
       // For OAuth providers, we should let NextAuth handle the redirect
       const result = await signIn(provider, { 
@@ -113,10 +108,13 @@ export function SimpleAuthForm({ mode = 'signin' }: SimpleAuthFormProps) {
         redirect: true // Let NextAuth handle the redirect
       })
       
-      console.log('SignIn completed with result:', result)
+      // SignIn will redirect, so this code may not execute
+      if (result?.error) {
+        setError(`Failed to sign in with ${provider}. Please try again or contact support.`)
+        setOauthLoading(null)
+      }
       
     } catch (error) {
-      console.error('OAuth error:', error)
       setError(`Failed to sign in with ${provider}. Please try again or contact support.`)
       setOauthLoading(null)
     }

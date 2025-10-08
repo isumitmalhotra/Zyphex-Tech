@@ -143,7 +143,6 @@ export class InvoiceGeneratorService {
       return invoice
 
     } catch (error) {
-      console.error('Error generating time-based invoice:', error)
       throw error
     }
   }
@@ -215,7 +214,6 @@ export class InvoiceGeneratorService {
       return invoice
 
     } catch (error) {
-      console.error('Error generating milestone invoice:', error)
       throw error
     }
   }
@@ -271,7 +269,6 @@ export class InvoiceGeneratorService {
       return invoice
 
     } catch (error) {
-      console.error('Error generating retainer invoice:', error)
       throw error
     }
   }
@@ -348,14 +345,6 @@ export class InvoiceGeneratorService {
         throw new Error(`Invoice ${invoiceId} not found`)
       }
 
-      // Email sending logic (placeholder)
-      console.log('Sending invoice email:', {
-        to: invoice.client.email,
-        invoiceNumber: invoice.invoiceNumber,
-        amount: invoice.total,
-        companyName: template?.companyName || 'Zyphex Technologies'
-      })
-
       // Update invoice status
       await this.prisma.invoice.update({
         where: { id: invoiceId },
@@ -365,7 +354,6 @@ export class InvoiceGeneratorService {
       return true
 
     } catch (error) {
-      console.error('Error sending invoice email:', error)
       throw error
     }
   }

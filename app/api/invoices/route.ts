@@ -4,6 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { PrismaClient } from "@prisma/client"
 import { hasPermission, Permission } from "@/lib/auth/permissions"
 import { BillingEngine } from "@/lib/billing/engine"
+import { cache } from '@/lib/cache'
+import { withCacheStatus } from '@/lib/api/cache-headers'
 
 // Define types for better type safety
 interface InvoiceWhereInput {
@@ -52,6 +54,16 @@ export async function GET(request: NextRequest) {
       where.projectId = projectId
     }
 
+    // Try to get from cache first
+    const cacheKey = `invoices:list:${user.role}:${page}:${limit}:${status || 'all'}:${clientId || 'all'}:${projectId || 'all'}`;
+    const cached = await cache.get(cacheKey);
+    
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: withCacheStatus(cached, true, 'short').headers
+      });
+    }
+
     const [invoices, total] = await Promise.all([
       prisma.invoice.findMany({
         // @ts-expect-error - Simplified type casting for where clause
@@ -88,7 +100,7 @@ export async function GET(request: NextRequest) {
       isPaid: invoice.status === 'PAID'
     }))
 
-    return NextResponse.json({
+    const response = {
       success: true,
       invoices: enrichedInvoices,
       pagination: {
@@ -97,10 +109,16 @@ export async function GET(request: NextRequest) {
         total,
         pages: Math.ceil(total / limit)
       }
-    })
+    };
+    
+    // Cache for 5 minutes
+    await cache.set(cacheKey, response, 300);
+
+    return NextResponse.json(response, {
+      headers: withCacheStatus(response, false, 'short').headers
+    });
 
   } catch (error) {
-    console.error("Invoice fetch error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch invoices" },
       { status: 500 }
@@ -188,7 +206,6 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Invoice creation error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create invoice" },
       { status: 500 }
@@ -235,7 +252,6 @@ export async function PUT(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Invoice update error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update invoice" },
       { status: 500 }
@@ -297,7 +313,6 @@ export async function DELETE(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error("Invoice deletion error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete invoice" },
       { status: 500 }
