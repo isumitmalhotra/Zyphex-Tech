@@ -24,6 +24,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: 🚀 Deploy to VPS
         env:
@@ -31,7 +32,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
-          ssh -p ${VPS_PORT} ${VPS_USER}@${VPS_HOST} << 'ENDSSH'
+          ssh -o StrictHostKeyChecking=accept-new -p ${VPS_PORT} ${VPS_USER}@${VPS_HOST} << 'ENDSSH'
             set -e
             
             echo "🔄 Starting deployment..."
