@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { hashPassword } from '@/lib/auth/password'
-import { registerSchema } from '@/lib/validation/schemas'
+import { z } from 'zod'
+import crypto from 'crypto'
+import { generateVerificationEmail, generateWelcomeEmail } from '@/lib/email/templates'
+import { sendEmail } from '@/lib/email'
 import { secureApiRoute } from '@/lib/auth/security-middleware'
 
 const prisma = new PrismaClient()
+
+const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  role: z.enum(['USER', 'ADMIN']).optional(),
+})
 
 export async function POST(request: NextRequest) {
   // Apply security middleware with rate limiting and validation
@@ -37,6 +47,10 @@ export async function POST(request: NextRequest) {
     // Hash password with enhanced security
     const hashedPassword = await hashPassword(password)
 
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex')
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
     // Create new user
     const newUser = await prisma.user.create({
       data: {
@@ -55,9 +69,46 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Create verification token in the database
+    await prisma.verificationToken.create({
+      data: {
+        identifier: newUser.email,
+        token: verificationToken,
+        expires
+      }
+    })
+
+    // Generate verification URL
+    const appUrl = process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000'
+    const verificationUrl = `${appUrl}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(newUser.email)}`
+
+    // Send verification email
+    try {
+      const verificationEmailTemplate = generateVerificationEmail({
+        recipientName: newUser.name || 'there',
+        verificationUrl,
+        expiryHours: 24,
+        appName: process.env.APP_NAME || 'Zyphex Tech',
+        appUrl,
+        supportEmail: process.env.SUPPORT_EMAIL || 'support@zyphextech.com'
+      })
+
+      await sendEmail({
+        to: newUser.email,
+        subject: verificationEmailTemplate.subject,
+        html: verificationEmailTemplate.html,
+        text: verificationEmailTemplate.text
+      })
+
+      console.log(`✅ Verification email sent to ${newUser.email}`)
+    } catch (emailError) {
+      console.error('❌ Failed to send verification email:', emailError)
+      // Don't fail registration if email fails, user can request resend
+    }
+
     return security.createResponse({
       success: true,
-      message: 'Account created successfully. Please verify your email.',
+      message: 'Account created successfully. Please check your email to verify your account.',
       user: newUser,
       requiresEmailVerification: true
     }, 201)

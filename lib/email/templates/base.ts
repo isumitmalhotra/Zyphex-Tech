@@ -77,21 +77,41 @@ export function generateBaseHTML(
     
     /* Header */
     .email-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      padding: 40px 30px;
+      background: linear-gradient(135deg, #00bfff 0%, #0080ff 50%, #0066cc 100%);
+      padding: 48px 30px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .email-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+      pointer-events: none;
     }
     
     .email-header h1 {
       margin: 0;
       color: #ffffff;
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 700;
-      line-height: 1.3;
+      line-height: 1.2;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      position: relative;
+      z-index: 1;
     }
     
     .logo {
       margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
     }
     
     /* Content */
@@ -136,62 +156,69 @@ export function generateBaseHTML(
     /* Button */
     .button {
       display: inline-block;
-      padding: 14px 32px;
-      margin: 24px 0;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 16px 40px;
+      margin: 28px 0;
+      background: linear-gradient(135deg, #00bfff 0%, #0080ff 50%, #0066cc 100%);
       color: #ffffff !important;
       text-decoration: none;
-      border-radius: 6px;
+      border-radius: 8px;
       font-size: 16px;
       font-weight: 600;
       text-align: center;
-      transition: transform 0.2s;
+      box-shadow: 0 4px 14px rgba(0, 191, 255, 0.3);
+      transition: all 0.3s ease;
     }
     
     .button:hover {
       transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 191, 255, 0.4);
     }
     
     /* Info boxes */
     .info-box {
-      background-color: #f8f9fa;
-      border-left: 4px solid #667eea;
-      padding: 16px 20px;
-      margin: 20px 0;
-      border-radius: 4px;
+      background: linear-gradient(135deg, rgba(0, 191, 255, 0.05) 0%, rgba(0, 128, 255, 0.05) 100%);
+      border-left: 4px solid #00bfff;
+      padding: 18px 24px;
+      margin: 24px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 191, 255, 0.1);
     }
     
     .info-box p {
       margin: 0;
-      color: #495057;
+      color: #1a1a1a;
       font-size: 14px;
+      line-height: 1.6;
     }
     
     .success-box {
-      background-color: #d4edda;
-      border-left: 4px solid #28a745;
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(22, 163, 74, 0.05) 100%);
+      border-left: 4px solid #22c55e;
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.1);
     }
     
     .success-box p {
-      color: #155724;
+      color: #166534;
     }
     
     .warning-box {
-      background-color: #fff3cd;
-      border-left: 4px solid #ffc107;
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.05) 0%, rgba(245, 158, 11, 0.05) 100%);
+      border-left: 4px solid #fbbf24;
+      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.1);
     }
     
     .warning-box p {
-      color: #856404;
+      color: #92400e;
     }
     
     .error-box {
-      background-color: #f8d7da;
-      border-left: 4px solid #dc3545;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(220, 38, 38, 0.05) 100%);
+      border-left: 4px solid #ef4444;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
     }
     
     .error-box p {
-      color: #721c24;
+      color: #991b1b;
     }
     
     /* Details table */
@@ -325,7 +352,7 @@ export function generatePlainText(html: string): string {
  * Format a URL for email display
  */
 export function formatUrl(url: string, text?: string): string {
-  return `<a href="${url}" style="color: #667eea; text-decoration: none; font-weight: 600;">${text || url}</a>`
+  return `<a href="${url}" style="color: #0080ff; text-decoration: none; font-weight: 600;">${text || url}</a>`
 }
 
 /**
@@ -333,10 +360,10 @@ export function formatUrl(url: string, text?: string): string {
  */
 export function createButton(url: string, text: string): string {
   return `
-    <table role="presentation" style="margin: 24px 0;">
+    <table role="presentation" style="margin: 28px 0;">
       <tr>
         <td align="center">
-          <a href="${url}" class="button" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 6px; display: inline-block; font-weight: 600;">
+          <a href="${url}" class="button" style="background: linear-gradient(135deg, #00bfff 0%, #0080ff 50%, #0066cc 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; display: inline-block; font-weight: 600; box-shadow: 0 4px 14px rgba(0, 191, 255, 0.3);">
             ${text}
           </a>
         </td>
