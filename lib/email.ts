@@ -69,8 +69,11 @@ function createTransporter() {
 // Enhanced send email utility with better error handling and logging
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
+    console.log('📧 Attempting to send email to:', options.to)
+    console.log('📧 Email subject:', options.subject)
+    
     if (!process.env.EMAIL_SERVER_USER || !process.env.EMAIL_SERVER_PASSWORD) {
-      // Email credentials not configured, skipping email send
+      console.error('❌ Email credentials not configured')
       return false;
     }
 
@@ -84,22 +87,38 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       text: options.text || options.html.replace(/<[^>]*>/g, '') // Strip HTML for text version
     };
 
-    // Sending email
+    console.log('📧 Sending email with config:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      host: process.env.EMAIL_SERVER_HOST,
+      port: process.env.EMAIL_SERVER_PORT,
+      user: process.env.EMAIL_SERVER_USER
+    })
 
     const result = await transporter.sendMail(mailOptions);
-    // Email sent successfully
+    console.log('✅ Email sent successfully:', {
+      messageId: result.messageId,
+      accepted: result.accepted,
+      rejected: result.rejected
+    })
     return true;
   } catch (error) {
-    // Failed to send email
+    console.error('❌ Failed to send email:', error)
     
     // Provide specific error messages for common issues
     if (error instanceof Error) {
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      })
+      
       if (error.message.includes('Invalid login')) {
-        // Tip: Check your email credentials. For Gmail, you may need an app-specific password.
+        console.error('💡 Tip: Check your email credentials. For Gmail, you may need an app-specific password.')
       } else if (error.message.includes('Connection timeout')) {
-        // Tip: Check your SMTP server settings and firewall configuration.
+        console.error('💡 Tip: Check your SMTP server settings and firewall configuration.')
       } else if (error.message.includes('self signed certificate')) {
-        // Tip: Your SMTP server uses a self-signed certificate. Consider updating TLS settings.
+        console.error('💡 Tip: Your SMTP server uses a self-signed certificate. Consider updating TLS settings.')
       }
     }
     

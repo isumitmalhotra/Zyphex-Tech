@@ -17,6 +17,8 @@ const registerSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  console.log('📝 Registration request received')
+  
   // Apply security middleware with rate limiting and validation
   const { security, data, error } = await secureApiRoute(
     request,
@@ -25,26 +27,33 @@ export async function POST(request: NextRequest) {
   )
   
   if (error) {
+    console.log('❌ Security middleware rejected request')
     return error
   }
 
   if (!data) {
+    console.log('❌ No data received from security middleware')
     return security.createErrorResponse('Invalid request data', 400)
   }
 
+  console.log('✅ Validation passed, creating user:', { email: data.email, name: data.name })
+  
   const { name, email, password, role } = data
 
   try {
     // Check if user already exists
+    console.log('🔍 Checking if user exists:', email.toLowerCase())
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() }
     })
 
     if (existingUser) {
+      console.log('❌ User already exists:', email.toLowerCase())
       return security.createErrorResponse('User already exists with this email', 409)
     }
 
     // Hash password with enhanced security
+    console.log('🔐 Hashing password...')
     const hashedPassword = await hashPassword(password)
 
     // Generate verification token
@@ -52,6 +61,7 @@ export async function POST(request: NextRequest) {
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
     // Create new user
+    console.log('👤 Creating user in database...')
     const newUser = await prisma.user.create({
       data: {
         name,
@@ -68,8 +78,10 @@ export async function POST(request: NextRequest) {
         createdAt: true
       }
     })
+    console.log('✅ User created successfully:', newUser.id)
 
     // Create verification token in the database
+    console.log('🎫 Creating verification token...')
     await prisma.verificationToken.create({
       data: {
         identifier: newUser.email,
@@ -77,6 +89,7 @@ export async function POST(request: NextRequest) {
         expires
       }
     })
+    console.log('✅ Verification token created')
 
     // Generate verification URL
     const appUrl = process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000'
