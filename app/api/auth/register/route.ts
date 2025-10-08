@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { hashPassword } from '@/lib/auth/password'
 import { z } from 'zod'
-import crypto from 'crypto'
+import { createVerificationToken } from '@/lib/tokens'
 import { generateVerificationEmail, generateWelcomeEmail } from '@/lib/email/templates'
 import { sendEmail } from '@/lib/email'
 import { secureApiRoute } from '@/lib/auth/security-middleware'
@@ -56,10 +56,6 @@ export async function POST(request: NextRequest) {
     console.log('🔐 Hashing password...')
     const hashedPassword = await hashPassword(password)
 
-    // Generate verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex')
-    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
     // Create new user
     console.log('👤 Creating user in database...')
     const newUser = await prisma.user.create({
@@ -80,15 +76,9 @@ export async function POST(request: NextRequest) {
     })
     console.log('✅ User created successfully:', newUser.id)
 
-    // Create verification token in the database
+    // Create verification token (hashed and stored in database)
     console.log('🎫 Creating verification token...')
-    await prisma.verificationToken.create({
-      data: {
-        identifier: newUser.email,
-        token: verificationToken,
-        expires
-      }
-    })
+    const verificationToken = await createVerificationToken(newUser.email)
     console.log('✅ Verification token created')
 
     // Generate verification URL
