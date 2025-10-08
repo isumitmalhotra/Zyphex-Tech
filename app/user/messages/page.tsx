@@ -72,7 +72,8 @@ export default function MessagesPage() {
         },
         body: JSON.stringify({
           content: newMessage,
-          recipientId: selectedRecipient,
+          recipientEmail: selectedRecipient,
+          subject: "Message from User Dashboard"
         }),
       })
 

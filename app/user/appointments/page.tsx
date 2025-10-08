@@ -48,12 +48,25 @@ export default function AppointmentsPage() {
   })
 
   useEffect(() => {
-    // For now, simulate loading appointments
-    setTimeout(() => {
-      setAppointments([])
-      setLoading(false)
-    }, 1000)
+    fetchAppointments()
   }, [])
+
+  const fetchAppointments = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch("/api/user/appointments")
+      if (response.ok) {
+        const data = await response.json()
+        setAppointments(data.appointments || [])
+      } else {
+        toast.error("Failed to load appointments")
+      }
+    } catch (error) {
+      toast.error("Failed to load appointments")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const scheduleAppointment = async () => {
     if (!newAppointment.title.trim() || !newAppointment.date || !newAppointment.time) {
@@ -64,28 +77,28 @@ export default function AppointmentsPage() {
     try {
       setScheduling(true)
       
-      // Simulate API call - in real app would call /api/user/appointments
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      const appointment: Appointment = {
-        id: Date.now().toString(),
-        ...newAppointment,
-        status: "scheduled",
-        createdAt: new Date().toISOString(),
-        with: "Team Member"
-      }
-      
-      setAppointments(prev => [...prev, appointment])
-      setNewAppointment({
-        title: "",
-        description: "",
-        date: "",
-        time: "",
-        type: "meeting",
-        duration: "30"
+      const response = await fetch("/api/user/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newAppointment)
       })
       
-      toast.success("Appointment scheduled successfully!")
+      if (response.ok) {
+        const data = await response.json()
+        toast.success("Appointment scheduled successfully!")
+        setNewAppointment({
+          title: "",
+          description: "",
+          date: "",
+          time: "",
+          type: "meeting",
+          duration: "30"
+        })
+        fetchAppointments() // Refresh the list
+      } else {
+        const error = await response.json()
+        toast.error(error.error || "Failed to schedule appointment")
+      }
       
     } catch (error) {
       toast.error("Failed to schedule appointment")

@@ -125,11 +125,21 @@ export default function ProjectsPage() {
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => window.location.href = `/user/projects/${project.id}`}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => window.location.href = `/user/messages?projectId=${project.id}`}
+                    title="Send message about this project"
+                  >
                     <MessageSquare className="h-4 w-4" />
                   </Button>
                 </div>

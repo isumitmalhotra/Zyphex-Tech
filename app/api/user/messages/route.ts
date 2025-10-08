@@ -7,8 +7,9 @@ import { z } from "zod"
 // Validation schema for message creation
 const createMessageSchema = z.object({
   content: z.string().min(1, "Message content is required").max(2000, "Message too long"),
-  recipientId: z.string().uuid("Invalid recipient ID").optional(),
-  projectId: z.string().uuid("Invalid project ID").optional(),
+  recipientId: z.string().optional(), // Can be UUID or email
+  recipientEmail: z.string().email().optional(),
+  projectId: z.string().optional(),
   subject: z.string().max(255, "Subject too long").optional(),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional()
 })
@@ -186,7 +187,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    const { content, recipientId, projectId, subject, priority } = validationResult.data
+    const { content, recipientId, recipientEmail, projectId, subject, priority } = validationResult.data
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
@@ -196,17 +197,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Validate recipient exists (if specified)
-    if (recipientId) {
+    // Find recipient by ID or email
+    let recipientUserId = recipientId
+    
+    if (!recipientUserId && recipientEmail) {
       const recipient = await prisma.user.findUnique({
-        where: { id: recipientId }
+        where: { email: recipientEmail }
       })
-      
-      if (!recipient) {
-        return NextResponse.json({ 
-          error: "Recipient not found" 
-        }, { status: 404 })
-      }
+      recipientUserId = recipient?.id
+    }
+    
+    // If still no recipient and it's not a support message, find admin
+    if (!recipientUserId && (!recipientEmail || recipientEmail.includes('support@zyphextech.com'))) {
+      const admin = await prisma.user.findFirst({
+        where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } }
+      })
+      recipientUserId = admin?.id
     }
 
     // Validate project exists and user has access (if specified)
@@ -233,10 +239,10 @@ export async function POST(request: NextRequest) {
       data: {
         content,
         senderId: user.id,
-        receiverId: recipientId || null,
+        receiverId: recipientUserId || null,
         projectId: projectId || null,
-        subject: subject || null,
-        messageType: recipientId ? 'DIRECT' : 'BROADCAST',
+        subject: subject || `Message from ${user.name || user.email}`,
+        messageType: recipientUserId ? 'DIRECT' : 'BROADCAST',
         priority: priority || 'MEDIUM'
       },
       include: {

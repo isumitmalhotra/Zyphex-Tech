@@ -196,19 +196,31 @@ export const authOptions: NextAuthOptions = {
               data: {
                 email,
                 name: user.name || '',
+                image: user.image || null, // Save profile picture from OAuth
                 role: 'USER',
                 emailVerified: new Date(), // OAuth emails are considered verified
               }
             })
             
-          } else {
-            // Update existing user's verification status
-            if (!existingUser.emailVerified) {
-              await prisma.user.update({
-                where: { id: existingUser.id },
-                data: { emailVerified: new Date() }
-              })
+            // Send welcome email for new OAuth users
+            try {
+              const { sendWelcomeEmail } = await import('./email')
+              await sendWelcomeEmail(email, user.name || undefined)
+            } catch (emailError) {
+              console.error('Failed to send welcome email to OAuth user:', emailError)
+              // Don't fail the sign-in if email fails
             }
+            
+          } else {
+            // Update existing user's verification status and profile picture
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: { 
+                emailVerified: existingUser.emailVerified || new Date(),
+                image: user.image || existingUser.image, // Update profile picture if not set
+                name: user.name || existingUser.name // Update name if not set
+              }
+            })
           }
 
           // Check if account is soft deleted
@@ -233,6 +245,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role
         token.id = user.id
         token.emailVerified = user.emailVerified
+        token.picture = user.image || undefined // Include profile picture
       }
 
       // Add security timestamp
@@ -248,6 +261,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string
         session.user.role = token.role as string
         session.user.emailVerified = token.emailVerified as Date | null
+        session.user.image = (token.picture as string) || null // Include profile picture in session
       }
 
       return session
