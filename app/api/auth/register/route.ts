@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     // Generate verification URL
     const appUrl = process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000'
-    const verificationUrl = `${appUrl}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(newUser.email)}`
+    const verificationUrl = `${appUrl}/api/auth/verify-email?token=${verificationToken}`
 
     // Send verification email
     try {
