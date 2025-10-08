@@ -155,13 +155,13 @@ export class SecurityMiddleware {
   }
   
   // Validate request body
-  validateBody<T>(schema: z.ZodSchema<T>): {
+  async validateBody<T>(schema: z.ZodSchema<T>): Promise<{
     success: boolean
     data?: T
     errors?: Array<{ field: string; message: string; code: string }>
-  } {
+  }> {
     try {
-      const body = this.request.json ? this.request.json() : {}
+      const body = await this.request.json()
       const result = validateSchema(schema, body)
       
       if (!result.success && result.errors) {
@@ -176,6 +176,7 @@ export class SecurityMiddleware {
         data: result.data
       }
     } catch (error) {
+      console.error('❌ Body validation error:', error)
       return {
         success: false,
         errors: [{ field: 'body', message: 'Invalid JSON format', code: 'invalid_json' }]
@@ -307,8 +308,9 @@ export async function secureApiRoute(
   
   // Validate request body if schema provided
   if (validationSchema && (request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH')) {
-    const validation = security.validateBody(validationSchema)
+    const validation = await security.validateBody(validationSchema)
     if (!validation.success) {
+      console.error('❌ Validation failed:', validation.errors)
       return {
         security,
         error: security.createErrorResponse('Validation failed', 400, validation.errors)
