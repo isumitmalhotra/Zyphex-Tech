@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,6 +28,8 @@ export function SimpleAuthForm({ mode = 'signin' }: SimpleAuthFormProps) {
   const [success, setSuccess] = useState('')
 
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get('redirect') || searchParams.get('callbackUrl') || '/dashboard'
 
   const isSignUp = mode === 'signup'
   const isForgotPassword = mode === 'forgot-password'
@@ -57,7 +59,7 @@ export function SimpleAuthForm({ mode = 'signin' }: SimpleAuthFormProps) {
 
         if (response.ok) {
           setSuccess('Account created successfully! Please sign in.')
-          setTimeout(() => router.push('/login'), 2000)
+          setTimeout(() => router.push('/login' + (redirectUrl !== '/dashboard' ? `?redirect=${encodeURIComponent(redirectUrl)}` : '')), 2000)
         } else {
           setError(data.error || 'Failed to create account')
         }
@@ -87,7 +89,7 @@ export function SimpleAuthForm({ mode = 'signin' }: SimpleAuthFormProps) {
         if (result?.error) {
           setError('Invalid email or password')
         } else {
-          router.push('/dashboard')
+          router.push(redirectUrl)
         }
       }
     } catch (error) {
@@ -104,7 +106,7 @@ export function SimpleAuthForm({ mode = 'signin' }: SimpleAuthFormProps) {
       
       // For OAuth providers, we should let NextAuth handle the redirect
       const result = await signIn(provider, { 
-        callbackUrl: '/dashboard',
+        callbackUrl: redirectUrl,
         redirect: true // Let NextAuth handle the redirect
       })
       
@@ -303,7 +305,10 @@ export function SimpleAuthForm({ mode = 'signin' }: SimpleAuthFormProps) {
                 <>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Don&apos;t have an account?{' '}
-                    <Link href="/register" className="text-blue-600 hover:underline">
+                    <Link 
+                      href={`/register${redirectUrl !== '/dashboard' ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}
+                      className="text-blue-600 hover:underline"
+                    >
                       Sign up
                     </Link>
                   </p>
@@ -317,7 +322,10 @@ export function SimpleAuthForm({ mode = 'signin' }: SimpleAuthFormProps) {
               {mode === 'signup' && (
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   Already have an account?{' '}
-                  <Link href="/login" className="text-blue-600 hover:underline">
+                  <Link 
+                    href={`/login${redirectUrl !== '/dashboard' ? `?redirect=${encodeURIComponent(redirectUrl)}` : ''}`}
+                    className="text-blue-600 hover:underline"
+                  >
                     Sign in
                   </Link>
                 </p>

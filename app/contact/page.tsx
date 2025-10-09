@@ -404,7 +404,7 @@ export default function ContactPage() {
                     className="w-full justify-start zyphex-button-secondary bg-transparent hover-zyphex-lift"
                     asChild
                   >
-                    <Link href="/services">
+                    <Link href="/auth/login?redirect=/user/messages">
                       <MessageSquare className="mr-2 h-4 w-4" />
                       Live Chat Support
                     </Link>
@@ -414,7 +414,7 @@ export default function ContactPage() {
                     className="w-full justify-start zyphex-button-secondary bg-transparent hover-zyphex-lift"
                     asChild
                   >
-                    <Link href="/services">
+                    <Link href="/auth/login?redirect=/user/appointments">
                       <Calendar className="mr-2 h-4 w-4" />
                       Schedule a Call
                     </Link>
@@ -424,7 +424,7 @@ export default function ContactPage() {
                     className="w-full justify-start zyphex-button-secondary bg-transparent hover-zyphex-lift"
                     asChild
                   >
-                    <Link href="/about">
+                    <Link href="/about#team">
                       <Users className="mr-2 h-4 w-4" />
                       Meet Our Team
                     </Link>

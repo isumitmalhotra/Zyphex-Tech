@@ -165,21 +165,21 @@ export default function InteractiveShowcase() {
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="font-medium">Remote Team Dashboard</span>
+                      <span className="font-medium text-gray-900">Remote Team Dashboard</span>
                     </div>
                     <Badge variant="secondary">In Progress</Badge>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse delay-200"></div>
-                      <span className="font-medium">Cloud Migration Platform</span>
+                      <span className="font-medium text-gray-900">Cloud Migration Platform</span>
                     </div>
                     <Badge>Planning</Badge>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors duration-200">
                     <div className="flex items-center gap-3">
                       <div className="w-3 h-3 bg-yellow-500 rounded-full animate-pulse delay-400"></div>
-                      <span className="font-medium">Mobile App Prototype</span>
+                      <span className="font-medium text-gray-900">Mobile App Prototype</span>
                     </div>
                     <Badge variant="outline">Review</Badge>
                   </div>

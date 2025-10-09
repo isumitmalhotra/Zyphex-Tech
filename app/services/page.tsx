@@ -374,10 +374,10 @@ export default async function ServicesPage() {
               className="border-2 border-blue-500 zyphex-card relative hover-zyphex-lift scroll-reveal-scale"
               style={{ animationDelay: "200ms" }}
             >
-              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 zyphex-gradient-primary animate-zyphex-glow">
+              <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0 shadow-lg px-4 py-1 font-semibold animate-zyphex-glow">
                 Most Popular
               </Badge>
-              <CardHeader className="text-center pb-4">
+              <CardHeader className="text-center pb-4 pt-6">
                 <CardTitle className="text-2xl zyphex-accent-text">Dedicated Teams</CardTitle>
                 <CardDescription className="zyphex-subheading">
                   Ideal for long-term projects requiring ongoing development
