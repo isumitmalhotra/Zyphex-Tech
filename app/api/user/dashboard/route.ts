@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Helper function to calculate project progress based on status
 function calculateProjectProgress(status: string): number {
   switch (status) {
