@@ -372,6 +372,56 @@ export function useMessaging() {
     }
   }, [fetchChannels])
 
+  // Add members to channel
+  const addChannelMembers = useCallback(async (channelId: string, memberIds: string[]) => {
+    try {
+      const response = await fetch(`/api/messaging/channels/${channelId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberIds })
+      })
+
+      if (response.ok) {
+        await fetchChannels()
+        if (selectedChannel?.id === channelId) {
+          await fetchChannelMessages(channelId)
+        }
+        toast.success('Members added successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to add members')
+      }
+    } catch (error) {
+      console.error('Error adding members:', error)
+      toast.error('Failed to add members')
+    }
+  }, [fetchChannels, selectedChannel, fetchChannelMessages])
+
+  // Remove members from channel
+  const removeChannelMembers = useCallback(async (channelId: string, memberIds: string[]) => {
+    try {
+      const response = await fetch(`/api/messaging/channels/${channelId}/members`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberIds })
+      })
+
+      if (response.ok) {
+        await fetchChannels()
+        if (selectedChannel?.id === channelId) {
+          await fetchChannelMessages(channelId)
+        }
+        toast.success('Members removed successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to remove members')
+      }
+    } catch (error) {
+      console.error('Error removing members:', error)
+      toast.error('Failed to remove members')
+    }
+  }, [fetchChannels, selectedChannel, fetchChannelMessages])
+
   // Initial load
   useEffect(() => {
     const loadData = async () => {
@@ -416,6 +466,8 @@ export function useMessaging() {
     createChannel,
     deleteChannel,
     togglePinChannel,
+    addChannelMembers,
+    removeChannelMembers,
     
     // Refresh
     refreshChannels: fetchChannels,

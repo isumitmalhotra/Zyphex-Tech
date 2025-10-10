@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -71,6 +72,8 @@ interface ChannelListProps {
   onChannelCreate?: (data: { name: string; type: string; description?: string; isPrivate: boolean }) => Promise<void>
   onChannelDelete?: (channelId: string) => Promise<void>
   onChannelPin?: (channelId: string) => Promise<void>
+  onAddMembers?: (channelId: string, memberIds: string[]) => Promise<void>
+  onRemoveMembers?: (channelId: string, memberIds: string[]) => Promise<void>
 }
 
 export function ChannelList({
@@ -85,7 +88,9 @@ export function ChannelList({
   onSearchChange,
   onChannelCreate,
   onChannelDelete,
-  onChannelPin
+  onChannelPin,
+  onAddMembers,
+  onRemoveMembers
 }: ChannelListProps) {
   const { data: session } = useSession()
   const [expandedSections, setExpandedSections] = useState({
@@ -99,15 +104,25 @@ export function ChannelList({
   })
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [manageMembersOpen, setManageMembersOpen] = useState(false)
+  const [selectedManageChannel, setSelectedManageChannel] = useState<Channel | null>(null)
   const [newChannelData, setNewChannelData] = useState({
     name: '',
     type: 'GENERAL',
     description: '',
     isPrivate: false
   })
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([])
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
+  }
+  
+  // Handle opening member management dialog
+  const handleManageMembers = (channel: Channel) => {
+    setSelectedManageChannel(channel)
+    setSelectedMemberIds(channel.members?.map(m => m.id) || [])
+    setManageMembersOpen(true)
   }
 
   // Separate channels from direct messages
@@ -166,6 +181,46 @@ export function ChannelList({
     } catch (error) {
       toast.error('Failed to pin channel')
     }
+  }
+
+  const handleSaveMembers = async () => {
+    if (!selectedManageChannel || !onAddMembers || !onRemoveMembers) return
+    
+    const currentMemberIds = selectedManageChannel.members?.map(m => m.id) || []
+    const toAdd = selectedMemberIds.filter(id => !currentMemberIds.includes(id))
+    const toRemove = currentMemberIds.filter(id => !selectedMemberIds.includes(id))
+    
+    try {
+      if (toAdd.length > 0) {
+        await onAddMembers(selectedManageChannel.id, toAdd)
+      }
+      if (toRemove.length > 0) {
+        await onRemoveMembers(selectedManageChannel.id, toRemove)
+      }
+      setManageMembersOpen(false)
+      setSelectedManageChannel(null)
+      toast.success('Members updated successfully')
+    } catch (error) {
+      toast.error('Failed to update members')
+    }
+  }
+
+  const toggleMemberSelection = (userId: string) => {
+    setSelectedMemberIds(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    )
+  }
+
+  // Get all users for member selection
+  const getAllUsers = () => {
+    return [
+      ...users.admins,
+      ...users.projectManagers,
+      ...users.teamMembers,
+      ...users.clients
+    ]
   }
 
   const renderChannelIcon = (channel: Channel) => {
@@ -239,6 +294,10 @@ export function ChannelList({
                   Pin Channel
                 </>
               )}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleManageMembers(channel)}>
+              <Users className="mr-2 h-4 w-4" />
+              Manage Members
             </DropdownMenuItem>
             <DropdownMenuItem>
               <Edit className="mr-2 h-4 w-4" />
@@ -644,6 +703,45 @@ export function ChannelList({
           </div>
         )}
       </div>
+
+      {/* Member Management Dialog */}
+      <Dialog open={manageMembersOpen} onOpenChange={setManageMembersOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Channel Members</DialogTitle>
+            <DialogDescription>
+              Add or remove members from {selectedManageChannel?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[400px] space-y-2 overflow-y-auto py-4">
+            {getAllUsers().map((user) => (
+              <div key={user.id} className="flex items-center space-x-3 rounded-lg p-2 hover:bg-muted">
+                <Checkbox
+                  id={`user-${user.id}`}
+                  checked={selectedMemberIds.includes(user.id)}
+                  onCheckedChange={() => toggleMemberSelection(user.id)}
+                />
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={user.image || generateAvatar(user.name || user.email)} />
+                  <AvatarFallback>{user.name?.[0] || user.email?.[0] || '?'}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="text-sm font-medium">{user.name || user.email}</div>
+                  <div className="text-xs text-muted-foreground">{user.role}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManageMembersOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveMembers}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

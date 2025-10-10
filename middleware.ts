@@ -15,8 +15,8 @@ const securityHeaders = {
     "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
-    "font-src 'self' data:",
-    "connect-src 'self' https://zyphextech.com wss://zyphextech.com ws://localhost:* http://localhost:*",
+    "font-src 'self' data: https://r2cdn.perplexity.ai",
+    "connect-src 'self' https://zyphextech.com https://www.zyphextech.com wss://zyphextech.com wss://www.zyphextech.com ws://localhost:* http://localhost:* https://r2cdn.perplexity.ai",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'"

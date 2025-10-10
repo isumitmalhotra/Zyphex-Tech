@@ -70,7 +70,9 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
     refreshChannels,
     createChannel,
     deleteChannel,
-    togglePinChannel
+    togglePinChannel,
+    addChannelMembers,
+    removeChannelMembers
   } = useMessaging()
 
   // Handle search query changes
@@ -145,6 +147,8 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
             onChannelCreate={createChannel}
             onChannelDelete={deleteChannel}
             onChannelPin={togglePinChannel}
+            onAddMembers={addChannelMembers}
+            onRemoveMembers={removeChannelMembers}
           />
         </div>
 
@@ -270,6 +274,8 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
             onChannelCreate={createChannel}
             onChannelDelete={deleteChannel}
             onChannelPin={togglePinChannel}
+            onAddMembers={addChannelMembers}
+            onRemoveMembers={removeChannelMembers}
           />
         </div>
 
