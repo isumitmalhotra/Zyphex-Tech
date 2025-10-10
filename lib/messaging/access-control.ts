@@ -207,8 +207,15 @@ export function getVisibleChannels(
 
     case "ADMIN":
     case "SUPER_ADMIN":
-      // Admins can see all channels
-      return allChannels
+      // Admins can see all channels EXCEPT direct messages they're not part of
+      return allChannels.filter(channel => {
+        // DIRECT messages are PRIVATE - even admins can only see their own DMs
+        if (channel.type === "DIRECT") {
+          return channel.members?.some(m => m.id === currentUser.id)
+        }
+        // All other channel types are visible to admins
+        return true
+      })
 
     default:
       return []
@@ -226,13 +233,19 @@ export function canAccessChannel(
   user: UserWithProjects,
   channel: ChannelWithMembers
 ): boolean {
-  // Admins can access everything
-  if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
+  // CRITICAL: DIRECT messages are PRIVATE - only participants can access
+  // Even admins cannot access DMs they're not part of
+  if (channel.type === "DIRECT") {
+    return channel.members?.some(m => m.id === user.id) || false
+  }
+
+  // For non-DM channels, check if user is a member first
+  if (channel.members?.some(m => m.id === user.id)) {
     return true
   }
 
-  // Check if user is a member of the channel
-  if (channel.members?.some(m => m.id === user.id)) {
+  // Admins can access all NON-DIRECT channels
+  if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
     return true
   }
 

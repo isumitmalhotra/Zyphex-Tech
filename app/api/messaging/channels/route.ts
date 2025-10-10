@@ -114,6 +114,7 @@ export async function GET(request: NextRequest) {
           description: channel.description,
           type: channel.type,
           isPrivate: channel.isPrivate,
+          isPinned: channel.isPinned,
           projectId: channel.projectId,
           project: channel.project,
           members: channel.members,

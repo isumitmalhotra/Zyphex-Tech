@@ -302,7 +302,7 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Users className="h-4 w-4" />
-                  <span>{selectedChannel.memberCount} members</span>
+                  <span>{selectedChannel.memberCount || selectedChannel.members?.length || 0} members</span>
                 </div>
               </div>
 

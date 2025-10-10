@@ -19,6 +19,7 @@ import {
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { usePermission, useUser } from "@/hooks/use-permissions"
 import { Permission } from "@/lib/auth/permissions"
 import { Badge } from "@/components/ui/badge"
@@ -67,97 +68,45 @@ const data = {
     },
     {
       title: "Analytics",
-      url: "/super-admin/analytics",
+      url: "/admin/analytics",
       icon: BarChart3,
       items: [
         {
           title: "Overview",
-          url: "/super-admin/analytics",
-        },
-        {
-          title: "Traffic",
-          url: "/super-admin/analytics/traffic",
-        },
-        {
-          title: "Conversions",
-          url: "/super-admin/analytics/conversions",
-        },
-        {
-          title: "Performance",
-          url: "/super-admin/analytics/performance",
+          url: "/admin/analytics",
         },
       ],
     },
     {
       title: "Projects",
-      url: "/super-admin/projects",
+      url: "/admin/projects",
       icon: Briefcase,
       items: [
         {
           title: "All Projects",
-          url: "/super-admin/projects",
-        },
-        {
-          title: "Active Projects",
-          url: "/super-admin/projects/active",
-        },
-        {
-          title: "Completed",
-          url: "/super-admin/projects/completed",
-        },
-        {
-          title: "Proposals",
-          url: "/super-admin/projects/proposals",
+          url: "/admin/projects",
         },
       ],
     },
     {
       title: "Clients",
-      url: "/super-admin/clients",
+      url: "/admin/clients",
       icon: Users,
       items: [
         {
           title: "All Clients",
-          url: "/super-admin/clients",
-        },
-        {
-          title: "Active Clients",
-          url: "/super-admin/clients/active",
-        },
-        {
-          title: "Leads",
-          url: "/super-admin/clients/leads",
-        },
-        {
-          title: "Client Portal",
-          url: "/super-admin/clients/portal",
+          url: "/admin/clients",
         },
       ],
     },
     {
       title: "Content Management",
-      url: "/super-admin/content",
+      url: "/admin/content",
       icon: FileText,
       items: [
         {
-          title: "Page Content",
-          url: "/super-admin/content/manage",
-        },
-        {
-          title: "Pages Management",
-          url: "/super-admin/content/pages",
-        },
-        {
-          title: "Content Types",
-          url: "/super-admin/content/content-types",
-        },
-        {
-          title: "Media Library",
-          url: "/super-admin/content/media",
-        },
-        {
           title: "Dynamic Content",
-          url: "/super-admin/content",
+          url: "/admin/content",
         },
       ],
     },
@@ -179,6 +128,7 @@ const data = {
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const user = useUser()
+  const { data: session } = useSession()
   const [notificationCount, setNotificationCount] = useState(0)
   const [messageCount, setMessageCount] = useState(0)
   
@@ -369,14 +319,14 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground zyphex-card hover-zyphex-glow"
                 >
                   <Avatar className="h-8 w-8 rounded-lg zyphex-blue-glow">
-                    <AvatarImage src={data.user.avatar || generateAvatar(data.user.name, 32)} alt={data.user.name} />
+                    <AvatarImage src={(session?.user as any)?.image || generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} />
                     <AvatarFallback className="rounded-lg zyphex-gradient-primary">
-                      <img src={generateAvatar(data.user.name, 32)} alt={data.user.name} className="h-full w-full" />
+                      <img src={generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} className="h-full w-full" />
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold zyphex-heading">{data.user.name}</span>
-                    <span className="truncate text-xs zyphex-subheading">{data.user.email}</span>
+                    <span className="truncate font-semibold zyphex-heading">{user?.name || user?.email?.split('@')[0] || 'User'}</span>
+                    <span className="truncate text-xs zyphex-subheading">{user?.email || ''}</span>
                   </div>
                   <ChevronUp className="ml-auto size-4" />
                 </SidebarMenuButton>
@@ -390,14 +340,14 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg zyphex-blue-glow">
-                      <AvatarImage src={data.user.avatar || generateAvatar(data.user.name, 32)} alt={data.user.name} />
+                      <AvatarImage src={(session?.user as any)?.image || generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} />
                       <AvatarFallback className="rounded-lg zyphex-gradient-primary">
-                        <img src={generateAvatar(data.user.name, 32)} alt={data.user.name} className="h-full w-full" />
+                        <img src={generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} className="h-full w-full" />
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold zyphex-heading">{data.user.name}</span>
-                      <span className="truncate text-xs zyphex-subheading">{data.user.email}</span>
+                      <span className="truncate font-semibold zyphex-heading">{user?.name || user?.email?.split('@')[0] || 'User'}</span>
+                      <span className="truncate text-xs zyphex-subheading">{user?.email || ''}</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
