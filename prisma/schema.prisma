@@ -612,6 +612,7 @@ model Channel {
   description String?
   type        ChannelType @default(TEAM)
   isPrivate   Boolean     @default(false)
+  isPinned    Boolean     @default(false)
   projectId   String?
   createdById String
   createdAt   DateTime    @default(now())

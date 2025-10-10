@@ -6,7 +6,6 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Message, Channel } from './types'
 import { generateAvatar } from '@/lib/utils/avatar'
@@ -85,7 +84,7 @@ export function MessageThread({
   }
 
   return (
-    <ScrollArea className="flex-1 p-4">
+    <div className="flex-1 overflow-y-auto p-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
       <div className="space-y-4">
         {messages.map((message, index) => {
           const showDateSeparator = shouldShowDateSeparator(message, messages[index - 1])
@@ -197,6 +196,6 @@ export function MessageThread({
 
         <div ref={messagesEndRef} />
       </div>
-    </ScrollArea>
+    </div>
   )
 }

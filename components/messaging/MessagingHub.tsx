@@ -67,7 +67,10 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
     openDirectMessage,
     search,
     handleTyping,
-    refreshChannels
+    refreshChannels,
+    createChannel,
+    deleteChannel,
+    togglePinChannel
   } = useMessaging()
 
   // Handle search query changes
@@ -139,6 +142,9 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
             onUserSelect={handleUserSelect}
             onViewModeChange={setViewMode}
             onSearchChange={setSearchQuery}
+            onChannelCreate={createChannel}
+            onChannelDelete={deleteChannel}
+            onChannelPin={togglePinChannel}
           />
         </div>
 
@@ -261,6 +267,9 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
             onUserSelect={handleUserSelect}
             onViewModeChange={setViewMode}
             onSearchChange={setSearchQuery}
+            onChannelCreate={createChannel}
+            onChannelDelete={deleteChannel}
+            onChannelPin={togglePinChannel}
           />
         </div>
 

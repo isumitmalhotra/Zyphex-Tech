@@ -1,39 +1,16 @@
 /**
- * Enhanced ChannelList Component
- * Properly separates Channels from Direct Messages
- * Includes channel creation, deletion, and pinning features
+ * ChannelList Component
+ * Displays channels and direct messages with unread badges
  */
 
 "use client"
 
 import { useState } from 'react'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import {
   Hash,
   MessageCircle,
@@ -44,19 +21,12 @@ import {
   Shield,
   Briefcase,
   User as UserIcon,
-  Lock,
-  Plus,
-  MoreVertical,
-  Pin,
-  Trash2,
-  Edit,
-  PinOff
+  Lock
 } from 'lucide-react'
 import { Channel, GroupedUsers, ViewMode } from './types'
 import { cn } from '@/lib/utils'
 import { generateAvatar } from '@/lib/utils/avatar'
-import { useSession } from 'next-auth/react'
-import { toast } from 'sonner'
+import { formatDistanceToNow } from 'date-fns'
 
 interface ChannelListProps {
   channels: Channel[]
@@ -68,9 +38,6 @@ interface ChannelListProps {
   onUserSelect: (userId: string, userName: string) => void
   onViewModeChange: (mode: ViewMode) => void
   onSearchChange: (query: string) => void
-  onChannelCreate?: (data: { name: string; type: string; description?: string; isPrivate: boolean }) => Promise<void>
-  onChannelDelete?: (channelId: string) => Promise<void>
-  onChannelPin?: (channelId: string) => Promise<void>
 }
 
 export function ChannelList({
@@ -82,41 +49,28 @@ export function ChannelList({
   onChannelSelect,
   onUserSelect,
   onViewModeChange,
-  onSearchChange,
-  onChannelCreate,
-  onChannelDelete,
-  onChannelPin
+  onSearchChange
 }: ChannelListProps) {
-  const { data: session } = useSession()
   const [expandedSections, setExpandedSections] = useState({
-    pinned: true,
-    channels: true,
-    directMessages: true,
+    direct: true,
+    projects: true,
+    teams: true,
+    general: true,
     admins: true,
-    projectManagers: true,
+    pms: true,
     teamMembers: true,
     clients: true
-  })
-
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [newChannelData, setNewChannelData] = useState({
-    name: '',
-    type: 'GENERAL',
-    description: '',
-    isPrivate: false
   })
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }))
   }
 
-  // Separate channels from direct messages
-  const actualChannels = channels.filter(c => c.type !== 'DIRECT')
-  const directMessages = channels.filter(c => c.type === 'DIRECT')
-  
-  // Separate pinned channels
-  const pinnedChannels = actualChannels.filter(c => c.isPinned)
-  const unpinnedChannels = actualChannels.filter(c => !c.isPinned)
+  // Group channels by type
+  const directChannels = channels.filter(c => c.type === 'DIRECT')
+  const projectChannels = channels.filter(c => c.type === 'PROJECT')
+  const teamChannels = channels.filter(c => c.type === 'TEAM')
+  const generalChannels = channels.filter(c => c.type === 'GENERAL' || c.type === 'ADMIN')
 
   // Filter based on search
   const filterItems = (items: any[], searchField: string) => {
@@ -124,48 +78,6 @@ export function ChannelList({
     return items.filter(item =>
       item[searchField]?.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  }
-
-  const handleCreateChannel = async () => {
-    if (!newChannelData.name.trim()) {
-      toast.error('Channel name is required')
-      return
-    }
-
-    try {
-      if (onChannelCreate) {
-        await onChannelCreate(newChannelData)
-        setCreateDialogOpen(false)
-        setNewChannelData({ name: '', type: 'GENERAL', description: '', isPrivate: false })
-        toast.success('Channel created successfully')
-      }
-    } catch (error) {
-      toast.error('Failed to create channel')
-    }
-  }
-
-  const handleDeleteChannel = async (channelId: string) => {
-    if (!confirm('Are you sure you want to delete this channel?')) return
-    
-    try {
-      if (onChannelDelete) {
-        await onChannelDelete(channelId)
-        toast.success('Channel deleted successfully')
-      }
-    } catch (error) {
-      toast.error('Failed to delete channel')
-    }
-  }
-
-  const handlePinChannel = async (channelId: string) => {
-    try {
-      if (onChannelPin) {
-        await onChannelPin(channelId)
-        toast.success('Channel pinned/unpinned')
-      }
-    } catch (error) {
-      toast.error('Failed to pin channel')
-    }
   }
 
   const renderChannelIcon = (channel: Channel) => {
@@ -196,68 +108,6 @@ export function ChannelList({
     }
   }
 
-  const renderChannelItem = (channel: Channel) => (
-    <div key={channel.id} className="group relative flex items-center">
-      <Button
-        variant={selectedChannelId === channel.id ? 'secondary' : 'ghost'}
-        size="sm"
-        className="w-full justify-start px-3 pr-10"
-        onClick={() => onChannelSelect(channel)}
-      >
-        {renderChannelIcon(channel)}
-        <span className="ml-2 flex-1 truncate text-left">
-          {channel.name}
-        </span>
-        {channel.unreadCount > 0 && (
-          <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] text-xs">
-            {channel.unreadCount}
-          </Badge>
-        )}
-      </Button>
-
-      {channel.type !== 'DIRECT' && (session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'ADMIN') && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-1 h-7 w-7 p-0 opacity-0 group-hover:opacity-100"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handlePinChannel(channel.id)}>
-              {channel.isPinned ? (
-                <>
-                  <PinOff className="mr-2 h-4 w-4" />
-                  Unpin Channel
-                </>
-              ) : (
-                <>
-                  <Pin className="mr-2 h-4 w-4" />
-                  Pin Channel
-                </>
-              )}
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Channel
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={() => handleDeleteChannel(channel.id)}
-              className="text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Channel
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </div>
-  )
-
   return (
     <div className="flex h-full flex-col border-r bg-muted/10">
       {/* Search Bar */}
@@ -265,7 +115,7 @@ export function ChannelList({
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search messages..."
+            placeholder="Search messages, channels, users..."
             className="pl-8"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -281,7 +131,7 @@ export function ChannelList({
           className="flex-1 rounded-none"
           onClick={() => onViewModeChange('channels')}
         >
-          <Hash className="mr-2 h-4 w-4" />
+          <MessageCircle className="mr-2 h-4 w-4" />
           Channels
         </Button>
         <Button
@@ -295,171 +145,198 @@ export function ChannelList({
         </Button>
       </div>
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <ScrollArea className="flex-1">
         {viewMode === 'channels' ? (
-          <div className="space-y-4">
-            {/* Pinned Channels */}
-            {pinnedChannels.length > 0 && (
-              <div>
+          <div className="p-2">
+            {/* Direct Messages */}
+            {directChannels.length > 0 && (
+              <div className="mb-4">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="mb-1 w-full justify-start px-2"
-                  onClick={() => toggleSection('pinned')}
+                  onClick={() => toggleSection('direct')}
                 >
-                  {expandedSections.pinned ? (
+                  {expandedSections.direct ? (
                     <ChevronDown className="mr-1 h-4 w-4" />
                   ) : (
                     <ChevronRight className="mr-1 h-4 w-4" />
                   )}
-                  <Pin className="mr-2 h-4 w-4" />
-                  Pinned
+                  <MessageCircle className="mr-2 h-4 w-4" />
+                  Direct Messages
                   <Badge variant="secondary" className="ml-auto">
-                    {pinnedChannels.length}
+                    {directChannels.length}
                   </Badge>
                 </Button>
-                {expandedSections.pinned && (
+                {expandedSections.direct && (
                   <div className="space-y-1">
-                    {filterItems(pinnedChannels, 'name').map(renderChannelItem)}
+                    {filterItems(directChannels, 'name').map(channel => (
+                      <Button
+                        key={channel.id}
+                        variant={selectedChannelId === channel.id ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="w-full justify-start px-3"
+                        onClick={() => onChannelSelect(channel)}
+                      >
+                        {renderChannelIcon(channel)}
+                        <span className="ml-2 flex-1 truncate text-left">
+                          {channel.name}
+                        </span>
+                        {channel.unreadCount > 0 && (
+                          <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] text-xs">
+                            {channel.unreadCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    ))}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Channels Section */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
+            {/* Project Channels */}
+            {projectChannels.length > 0 && (
+              <div className="mb-4">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="flex-1 justify-start px-2"
-                  onClick={() => toggleSection('channels')}
+                  className="mb-1 w-full justify-start px-2"
+                  onClick={() => toggleSection('projects')}
                 >
-                  {expandedSections.channels ? (
+                  {expandedSections.projects ? (
+                    <ChevronDown className="mr-1 h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="mr-1 h-4 w-4" />
+                  )}
+                  <Briefcase className="mr-2 h-4 w-4" />
+                  Projects
+                  <Badge variant="secondary" className="ml-auto">
+                    {projectChannels.length}
+                  </Badge>
+                </Button>
+                {expandedSections.projects && (
+                  <div className="space-y-1">
+                    {filterItems(projectChannels, 'name').map(channel => (
+                      <Button
+                        key={channel.id}
+                        variant={selectedChannelId === channel.id ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="w-full justify-start px-3"
+                        onClick={() => onChannelSelect(channel)}
+                      >
+                        {renderChannelIcon(channel)}
+                        <span className="ml-2 flex-1 truncate text-left">
+                          {channel.name}
+                        </span>
+                        {channel.unreadCount > 0 && (
+                          <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] text-xs">
+                            {channel.unreadCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Team Channels */}
+            {teamChannels.length > 0 && (
+              <div className="mb-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mb-1 w-full justify-start px-2"
+                  onClick={() => toggleSection('teams')}
+                >
+                  {expandedSections.teams ? (
+                    <ChevronDown className="mr-1 h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="mr-1 h-4 w-4" />
+                  )}
+                  <Users className="mr-2 h-4 w-4" />
+                  Teams
+                  <Badge variant="secondary" className="ml-auto">
+                    {teamChannels.length}
+                  </Badge>
+                </Button>
+                {expandedSections.teams && (
+                  <div className="space-y-1">
+                    {filterItems(teamChannels, 'name').map(channel => (
+                      <Button
+                        key={channel.id}
+                        variant={selectedChannelId === channel.id ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="w-full justify-start px-3"
+                        onClick={() => onChannelSelect(channel)}
+                      >
+                        {renderChannelIcon(channel)}
+                        <span className="ml-2 flex-1 truncate text-left">
+                          {channel.name}
+                        </span>
+                        {channel.unreadCount > 0 && (
+                          <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] text-xs">
+                            {channel.unreadCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* General Channels */}
+            {generalChannels.length > 0 && (
+              <div className="mb-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mb-1 w-full justify-start px-2"
+                  onClick={() => toggleSection('general')}
+                >
+                  {expandedSections.general ? (
                     <ChevronDown className="mr-1 h-4 w-4" />
                   ) : (
                     <ChevronRight className="mr-1 h-4 w-4" />
                   )}
                   <Hash className="mr-2 h-4 w-4" />
-                  Channels
+                  General
                   <Badge variant="secondary" className="ml-auto">
-                    {unpinnedChannels.length}
+                    {generalChannels.length}
                   </Badge>
                 </Button>
-                
-                {(session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'ADMIN') && (
-                  <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                        <Plus className="h-4 w-4" />
+                {expandedSections.general && (
+                  <div className="space-y-1">
+                    {filterItems(generalChannels, 'name').map(channel => (
+                      <Button
+                        key={channel.id}
+                        variant={selectedChannelId === channel.id ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="w-full justify-start px-3"
+                        onClick={() => onChannelSelect(channel)}
+                      >
+                        {renderChannelIcon(channel)}
+                        <span className="ml-2 flex-1 truncate text-left">
+                          {channel.name}
+                        </span>
+                        {channel.unreadCount > 0 && (
+                          <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] text-xs">
+                            {channel.unreadCount}
+                          </Badge>
+                        )}
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Create New Channel</DialogTitle>
-                        <DialogDescription>
-                          Create a new channel for team collaboration
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Channel Name</label>
-                          <Input
-                            placeholder="e.g., general, project-updates"
-                            value={newChannelData.name}
-                            onChange={(e) => setNewChannelData(prev => ({ ...prev, name: e.target.value }))}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Channel Type</label>
-                          <Select
-                            value={newChannelData.type}
-                            onValueChange={(value) => setNewChannelData(prev => ({ ...prev, type: value }))}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="GENERAL">General</SelectItem>
-                              <SelectItem value="TEAM">Team</SelectItem>
-                              <SelectItem value="PROJECT">Project</SelectItem>
-                              <SelectItem value="ADMIN">Admin Only</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Description (Optional)</label>
-                          <Input
-                            placeholder="What's this channel about?"
-                            value={newChannelData.description}
-                            onChange={(e) => setNewChannelData(prev => ({ ...prev, description: e.target.value }))}
-                          />
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id="private"
-                            checked={newChannelData.isPrivate}
-                            onChange={(e) => setNewChannelData(prev => ({ ...prev, isPrivate: e.target.checked }))}
-                            className="h-4 w-4"
-                          />
-                          <label htmlFor="private" className="text-sm font-medium cursor-pointer">
-                            Make this channel private
-                          </label>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleCreateChannel}>
-                          Create Channel
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                    ))}
+                  </div>
                 )}
               </div>
-              {expandedSections.channels && (
-                <div className="space-y-1">
-                  {filterItems(unpinnedChannels, 'name').map(renderChannelItem)}
-                </div>
-              )}
-            </div>
-
-            {/* Direct Messages Section */}
-            <div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mb-1 w-full justify-start px-2"
-                onClick={() => toggleSection('directMessages')}
-              >
-                {expandedSections.directMessages ? (
-                  <ChevronDown className="mr-1 h-4 w-4" />
-                ) : (
-                  <ChevronRight className="mr-1 h-4 w-4" />
-                )}
-                <MessageCircle className="mr-2 h-4 w-4" />
-                Direct Messages
-                <Badge variant="secondary" className="ml-auto">
-                  {directMessages.length}
-                </Badge>
-              </Button>
-              {expandedSections.directMessages && (
-                <div className="space-y-1">
-                  {filterItems(directMessages, 'name').map(renderChannelItem)}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         ) : (
-          /* People View */
-          <div className="space-y-4">
+          <div className="p-2">
             {/* Admins */}
             {users.admins.length > 0 && (
-              <div>
+              <div className="mb-4">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -494,9 +371,11 @@ export function ChannelList({
                         <span className="ml-2 flex-1 truncate text-left">
                           {user.name || user.email}
                         </span>
-                        <Badge variant="destructive" className="ml-2 h-5 text-xs">
-                          Admin
-                        </Badge>
+                        {user.unreadCount > 0 && (
+                          <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] text-xs">
+                            {user.unreadCount}
+                          </Badge>
+                        )}
                       </Button>
                     ))}
                   </div>
@@ -506,14 +385,14 @@ export function ChannelList({
 
             {/* Project Managers */}
             {users.projectManagers.length > 0 && (
-              <div>
+              <div className="mb-4">
                 <Button
                   variant="ghost"
                   size="sm"
                   className="mb-1 w-full justify-start px-2"
-                  onClick={() => toggleSection('projectManagers')}
+                  onClick={() => toggleSection('pms')}
                 >
-                  {expandedSections.projectManagers ? (
+                  {expandedSections.pms ? (
                     <ChevronDown className="mr-1 h-4 w-4" />
                   ) : (
                     <ChevronRight className="mr-1 h-4 w-4" />
@@ -524,7 +403,7 @@ export function ChannelList({
                     {users.projectManagers.length}
                   </Badge>
                 </Button>
-                {expandedSections.projectManagers && (
+                {expandedSections.pms && (
                   <div className="space-y-1">
                     {filterItems(users.projectManagers, 'name').map(user => (
                       <Button
@@ -541,9 +420,11 @@ export function ChannelList({
                         <span className="ml-2 flex-1 truncate text-left">
                           {user.name || user.email}
                         </span>
-                        <Badge variant="default" className="ml-2 h-5 text-xs">
-                          PM
-                        </Badge>
+                        {user.unreadCount > 0 && (
+                          <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] text-xs">
+                            {user.unreadCount}
+                          </Badge>
+                        )}
                       </Button>
                     ))}
                   </div>
@@ -553,7 +434,7 @@ export function ChannelList({
 
             {/* Team Members */}
             {users.teamMembers.length > 0 && (
-              <div>
+              <div className="mb-4">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -588,6 +469,11 @@ export function ChannelList({
                         <span className="ml-2 flex-1 truncate text-left">
                           {user.name || user.email}
                         </span>
+                        {user.unreadCount > 0 && (
+                          <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] text-xs">
+                            {user.unreadCount}
+                          </Badge>
+                        )}
                       </Button>
                     ))}
                   </div>
@@ -597,7 +483,7 @@ export function ChannelList({
 
             {/* Clients */}
             {users.clients.length > 0 && (
-              <div>
+              <div className="mb-4">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -632,9 +518,11 @@ export function ChannelList({
                         <span className="ml-2 flex-1 truncate text-left">
                           {user.name || user.email}
                         </span>
-                        <Badge variant="outline" className="ml-2 h-5 text-xs">
-                          Client
-                        </Badge>
+                        {user.unreadCount > 0 && (
+                          <Badge variant="destructive" className="ml-auto h-5 min-w-[20px] text-xs">
+                            {user.unreadCount}
+                          </Badge>
+                        )}
                       </Button>
                     ))}
                   </div>
@@ -643,7 +531,7 @@ export function ChannelList({
             )}
           </div>
         )}
-      </div>
+      </ScrollArea>
     </div>
   )
 }

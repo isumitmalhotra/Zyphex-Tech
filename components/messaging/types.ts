@@ -38,6 +38,7 @@ export interface Channel {
   description?: string | null
   type: 'TEAM' | 'PROJECT' | 'DIRECT' | 'GENERAL' | 'ADMIN' | 'CLIENT'
   isPrivate: boolean
+  isPinned?: boolean
   projectId?: string | null
   project?: {
     id: string

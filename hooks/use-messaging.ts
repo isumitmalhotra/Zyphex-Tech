@@ -301,6 +301,77 @@ export function useMessaging() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
 
+  // Create channel
+  const createChannel = useCallback(async (data: {
+    name: string
+    type: string
+    description?: string
+    isPrivate: boolean
+  }) => {
+    try {
+      const response = await fetch('/api/messaging/channels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+
+      if (response.ok) {
+        await fetchChannels()
+        toast.success('Channel created successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to create channel')
+      }
+    } catch (error) {
+      console.error('Error creating channel:', error)
+      toast.error('Failed to create channel')
+    }
+  }, [fetchChannels])
+
+  // Delete channel
+  const deleteChannel = useCallback(async (channelId: string) => {
+    try {
+      const response = await fetch(`/api/messaging/channels/${channelId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        if (selectedChannel?.id === channelId) {
+          setSelectedChannel(null)
+          setMessages([])
+        }
+        await fetchChannels()
+        toast.success('Channel deleted successfully')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to delete channel')
+      }
+    } catch (error) {
+      console.error('Error deleting channel:', error)
+      toast.error('Failed to delete channel')
+    }
+  }, [selectedChannel, fetchChannels])
+
+  // Pin/Unpin channel
+  const togglePinChannel = useCallback(async (channelId: string) => {
+    try {
+      const response = await fetch(`/api/messaging/channels/${channelId}/pin`, {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        await fetchChannels()
+        toast.success('Channel updated')
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Failed to update channel')
+      }
+    } catch (error) {
+      console.error('Error toggling pin:', error)
+      toast.error('Failed to update channel')
+    }
+  }, [fetchChannels])
+
   // Initial load
   useEffect(() => {
     const loadData = async () => {
@@ -340,6 +411,11 @@ export function useMessaging() {
     markAsRead,
     handleTyping,
     scrollToBottom,
+    
+    // Channel Management
+    createChannel,
+    deleteChannel,
+    togglePinChannel,
     
     // Refresh
     refreshChannels: fetchChannels,
