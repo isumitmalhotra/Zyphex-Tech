@@ -68,45 +68,97 @@ const data = {
     },
     {
       title: "Analytics",
-      url: "/admin/analytics",
+      url: "/super-admin/analytics",
       icon: BarChart3,
       items: [
         {
           title: "Overview",
-          url: "/admin/analytics",
+          url: "/super-admin/analytics",
+        },
+        {
+          title: "Traffic",
+          url: "/super-admin/analytics/traffic",
+        },
+        {
+          title: "Conversions",
+          url: "/super-admin/analytics/conversions",
+        },
+        {
+          title: "Performance",
+          url: "/super-admin/analytics/performance",
         },
       ],
     },
     {
       title: "Projects",
-      url: "/admin/projects",
+      url: "/super-admin/projects",
       icon: Briefcase,
       items: [
         {
           title: "All Projects",
-          url: "/admin/projects",
+          url: "/super-admin/projects",
+        },
+        {
+          title: "Active Projects",
+          url: "/super-admin/projects/active",
+        },
+        {
+          title: "Completed",
+          url: "/super-admin/projects/completed",
+        },
+        {
+          title: "Proposals",
+          url: "/super-admin/projects/proposals",
         },
       ],
     },
     {
       title: "Clients",
-      url: "/admin/clients",
+      url: "/super-admin/clients",
       icon: Users,
       items: [
         {
           title: "All Clients",
-          url: "/admin/clients",
+          url: "/super-admin/clients",
+        },
+        {
+          title: "Active Clients",
+          url: "/super-admin/clients/active",
+        },
+        {
+          title: "Leads",
+          url: "/super-admin/clients/leads",
+        },
+        {
+          title: "Client Portal",
+          url: "/super-admin/clients/portal",
         },
       ],
     },
     {
       title: "Content Management",
-      url: "/admin/content",
+      url: "/super-admin/content",
       icon: FileText,
       items: [
         {
+          title: "Page Content",
+          url: "/super-admin/content/manage",
+        },
+        {
+          title: "Pages Management",
+          url: "/super-admin/content/pages",
+        },
+        {
+          title: "Content Types",
+          url: "/super-admin/content/content-types",
+        },
+        {
+          title: "Media Library",
+          url: "/super-admin/content/media",
+        },
+        {
           title: "Dynamic Content",
-          url: "/admin/content",
+          url: "/super-admin/content",
         },
       ],
     },
