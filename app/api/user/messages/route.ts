@@ -147,6 +147,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       messages,
       threads: messageThreads,
+      unreadCount: unreadCount,
       stats: {
         total: messages.length,
         received: receivedMessages.length,

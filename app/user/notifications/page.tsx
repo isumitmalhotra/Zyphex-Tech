@@ -20,18 +20,23 @@ import {
   VolumeX,
 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 interface Notification {
   id: string
   type: string
   title: string
+  message?: string
   description: string
   timestamp: string
   read: boolean
   priority: string
+  actionUrl?: string
+  createdAt?: string
 }
 
 export default function UserNotifications() {
+  const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -52,6 +57,15 @@ export default function UserNotifications() {
       // Error fetching notifications - handle silently or show user notification
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.read) {
+      markAsRead(notification.id)
+    }
+    if (notification.actionUrl) {
+      router.push(notification.actionUrl)
     }
   }
 
@@ -260,9 +274,10 @@ export default function UserNotifications() {
               {notifications.map((notification) => (
                 <Card
                   key={notification.id}
-                  className={`zyphex-card hover-zyphex-lift transition-all duration-200 ${
+                  className={`zyphex-card hover-zyphex-lift transition-all duration-200 cursor-pointer ${
                     !notification.read ? "border-blue-500/30 bg-blue-500/5" : ""
                   }`}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
@@ -279,17 +294,20 @@ export default function UserNotifications() {
                             <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                           )}
                         </div>
-                        <p className="text-sm zyphex-subheading mb-3">{notification.description}</p>
+                        <p className="text-sm zyphex-subheading mb-3">{notification.message || notification.description}</p>
                         <div className="flex items-center justify-between">
                           <span className="text-xs zyphex-subheading">
-                            {new Date(notification.timestamp).toLocaleString()}
+                            {new Date(notification.createdAt || notification.timestamp).toLocaleString()}
                           </span>
                           <div className="flex gap-2">
                             {!notification.read && (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => markAsRead(notification.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  markAsRead(notification.id)
+                                }}
                                 className="zyphex-button-secondary"
                               >
                                 <CheckCircle className="h-4 w-4" />
@@ -298,7 +316,10 @@ export default function UserNotifications() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => deleteNotification(notification.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteNotification(notification.id)
+                              }}
                               className="zyphex-button-secondary text-red-400"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -318,7 +339,11 @@ export default function UserNotifications() {
           <ScrollArea className="h-[600px]">
             <div className="space-y-4">
               {notifications.filter(n => !n.read).map((notification) => (
-                <Card key={notification.id} className="zyphex-card hover-zyphex-lift border-blue-500/30 bg-blue-500/5">
+                <Card 
+                  key={notification.id} 
+                  className="zyphex-card hover-zyphex-lift border-blue-500/30 bg-blue-500/5 cursor-pointer"
+                  onClick={() => handleNotificationClick(notification)}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <div className="p-2 rounded-lg bg-gray-500/20">
@@ -332,16 +357,19 @@ export default function UserNotifications() {
                           </Badge>
                           <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                         </div>
-                        <p className="text-sm zyphex-subheading mb-3">{notification.description}</p>
+                        <p className="text-sm zyphex-subheading mb-3">{notification.message || notification.description}</p>
                         <div className="flex items-center justify-between">
                           <span className="text-xs zyphex-subheading">
-                            {new Date(notification.timestamp).toLocaleString()}
+                            {new Date(notification.createdAt || notification.timestamp).toLocaleString()}
                           </span>
                           <div className="flex gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => markAsRead(notification.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                markAsRead(notification.id)
+                              }}
                               className="zyphex-button-secondary"
                             >
                               <CheckCircle className="h-4 w-4" />
@@ -349,7 +377,10 @@ export default function UserNotifications() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => deleteNotification(notification.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteNotification(notification.id)
+                              }}
                               className="zyphex-button-secondary text-red-400"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -369,7 +400,11 @@ export default function UserNotifications() {
           <ScrollArea className="h-[600px]">
             <div className="space-y-4">
               {notifications.filter(n => n.priority === "high").map((notification) => (
-                <Card key={notification.id} className="zyphex-card hover-zyphex-lift border-red-500/30">
+                <Card 
+                  key={notification.id} 
+                  className="zyphex-card hover-zyphex-lift border-red-500/30 cursor-pointer"
+                  onClick={() => handleNotificationClick(notification)}
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
                       <div className="p-2 rounded-lg bg-red-500/20">
@@ -385,17 +420,20 @@ export default function UserNotifications() {
                             <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                           )}
                         </div>
-                        <p className="text-sm zyphex-subheading mb-3">{notification.description}</p>
+                        <p className="text-sm zyphex-subheading mb-3">{notification.message || notification.description}</p>
                         <div className="flex items-center justify-between">
                           <span className="text-xs zyphex-subheading">
-                            {new Date(notification.timestamp).toLocaleString()}
+                            {new Date(notification.createdAt || notification.timestamp).toLocaleString()}
                           </span>
                           <div className="flex gap-2">
                             {!notification.read && (
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => markAsRead(notification.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  markAsRead(notification.id)
+                                }}
                                 className="zyphex-button-secondary"
                               >
                                 <CheckCircle className="h-4 w-4" />
@@ -404,7 +442,10 @@ export default function UserNotifications() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => deleteNotification(notification.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                deleteNotification(notification.id)
+                              }}
                               className="zyphex-button-secondary text-red-400"
                             >
                               <Trash2 className="h-4 w-4" />

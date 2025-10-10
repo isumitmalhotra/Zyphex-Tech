@@ -1,6 +1,7 @@
 "use client"
 
 import type * as React from "react"
+import { useState, useEffect } from "react"
 import {
   BarChart3,
   ChevronUp,
@@ -13,12 +14,14 @@ import {
   Briefcase,
   FileText,
   MessageSquare,
+  Bell,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { usePermission, useUser } from "@/hooks/use-permissions"
 import { Permission } from "@/lib/auth/permissions"
+import { Badge } from "@/components/ui/badge"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
@@ -58,110 +61,117 @@ const data = {
   navMain: [
     {
       title: "Dashboard",
-      url: "/admin",
+      url: "/super-admin",
       icon: Home,
       isActive: true,
     },
     {
       title: "Analytics",
-      url: "/admin/analytics",
+      url: "/super-admin/analytics",
       icon: BarChart3,
       items: [
         {
           title: "Overview",
-          url: "/admin/analytics",
+          url: "/super-admin/analytics",
         },
         {
           title: "Traffic",
-          url: "/admin/analytics/traffic",
+          url: "/super-admin/analytics/traffic",
         },
         {
           title: "Conversions",
-          url: "/admin/analytics/conversions",
+          url: "/super-admin/analytics/conversions",
         },
         {
           title: "Performance",
-          url: "/admin/analytics/performance",
+          url: "/super-admin/analytics/performance",
         },
       ],
     },
     {
       title: "Projects",
-      url: "/admin/projects",
+      url: "/super-admin/projects",
       icon: Briefcase,
       items: [
         {
           title: "All Projects",
-          url: "/admin/projects",
+          url: "/super-admin/projects",
         },
         {
           title: "Active Projects",
-          url: "/admin/projects/active",
+          url: "/super-admin/projects/active",
         },
         {
           title: "Completed",
-          url: "/admin/projects/completed",
+          url: "/super-admin/projects/completed",
         },
         {
           title: "Proposals",
-          url: "/admin/projects/proposals",
+          url: "/super-admin/projects/proposals",
         },
       ],
     },
     {
       title: "Clients",
-      url: "/admin/clients",
+      url: "/super-admin/clients",
       icon: Users,
       items: [
         {
           title: "All Clients",
-          url: "/admin/clients",
+          url: "/super-admin/clients",
         },
         {
           title: "Active Clients",
-          url: "/admin/clients/active",
+          url: "/super-admin/clients/active",
         },
         {
           title: "Leads",
-          url: "/admin/clients/leads",
+          url: "/super-admin/clients/leads",
         },
         {
           title: "Client Portal",
-          url: "/admin/clients/portal",
+          url: "/super-admin/clients/portal",
         },
       ],
     },
     {
       title: "Content Management",
-      url: "/admin/content",
+      url: "/super-admin/content",
       icon: FileText,
       items: [
         {
           title: "Page Content",
-          url: "/admin/content/manage",
+          url: "/super-admin/content/manage",
         },
         {
           title: "Pages Management",
-          url: "/admin/content/pages",
+          url: "/super-admin/content/pages",
         },
         {
           title: "Content Types",
-          url: "/admin/content/content-types",
+          url: "/super-admin/content/content-types",
         },
         {
           title: "Media Library",
-          url: "/admin/content/media",
+          url: "/super-admin/content/media",
         },
         {
           title: "Dynamic Content",
-          url: "/admin/content",
+          url: "/super-admin/content",
         },
       ],
     },
     {
       title: "Messages",
-      url: "/admin/messages",
+      url: "/super-admin/messages",
       icon: MessageSquare,
+      badge: true, // Will show message count
+    },
+    {
+      title: "Notifications",
+      url: "/super-admin/notifications",
+      icon: Bell,
+      badge: true, // Will show notification count
     },
   ],
 }
@@ -169,6 +179,42 @@ const data = {
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
   const user = useUser()
+  const [notificationCount, setNotificationCount] = useState(0)
+  const [messageCount, setMessageCount] = useState(0)
+  
+  // Fetch notification and message counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [notifResponse, msgResponse] = await Promise.all([
+          fetch('/api/super-admin/notifications'),
+          fetch('/api/messaging/channels')
+        ])
+        
+        if (notifResponse.ok) {
+          const data = await notifResponse.json()
+          setNotificationCount(data.unreadCount || 0)
+        }
+        
+        if (msgResponse.ok) {
+          const data = await msgResponse.json()
+          // Count unread messages from all channels
+          const unread = data.channels?.reduce((total: number, channel: any) => {
+            return total + (channel.unreadCount || 0)
+          }, 0) || 0
+          setMessageCount(unread)
+        }
+      } catch (error) {
+        console.error('Error fetching counts:', error)
+      }
+    }
+
+    fetchCounts()
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchCounts, 30000)
+    return () => clearInterval(interval)
+  }, [])
   
   // Permission-based navigation filtering
   const hasViewDashboard = usePermission(Permission.VIEW_DASHBOARD)
@@ -233,6 +279,26 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                         <Link href={item.url}>
                           {item.icon && <item.icon className="animate-pulse-3d" />}
                           <span className="zyphex-heading">{item.title}</span>
+                          {item.badge && (
+                            <>
+                              {item.title === "Messages" && messageCount > 0 && (
+                                <Badge 
+                                  variant="destructive" 
+                                  className="ml-auto h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                                >
+                                  {messageCount > 99 ? '99+' : messageCount}
+                                </Badge>
+                              )}
+                              {item.title === "Notifications" && notificationCount > 0 && (
+                                <Badge 
+                                  variant="destructive" 
+                                  className="ml-auto h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                                >
+                                  {notificationCount > 99 ? '99+' : notificationCount}
+                                </Badge>
+                              )}
+                            </>
+                          )}
                         </Link>
                       )}
                     </SidebarMenuButton>
@@ -272,7 +338,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             {hasManageSettings && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Settings" className="zyphex-button-secondary hover-zyphex-glow">
-                  <Link href="/admin/settings">
+                  <Link href="/super-admin/settings">
                     <Settings className="animate-pulse-3d" />
                     <span className="zyphex-heading">Settings</span>
                   </Link>
@@ -282,7 +348,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Security" className="zyphex-button-secondary hover-zyphex-glow">
-                  <Link href="/admin/security">
+                  <Link href="/super-admin/security">
                     <Shield className="animate-pulse-3d" />
                     <span className="zyphex-heading">Security</span>
                   </Link>

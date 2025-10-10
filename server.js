@@ -143,6 +143,7 @@ app.prepare().then(() => {
       const typingData = {
         userId: socket.userId,
         userName: socket.userName,
+        channelId: channelId,
         timestamp: new Date().toISOString()
       };
 
@@ -159,6 +160,7 @@ app.prepare().then(() => {
       const typingData = {
         userId: socket.userId,
         userName: socket.userName,
+        channelId: channelId,
         timestamp: new Date().toISOString()
       };
 
