@@ -99,11 +99,26 @@ function checkRateLimit(req: NextRequestWithAuth): boolean {
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
   
-  // More generous rate limits for development and production
+  // Very generous rate limits for production with multiple concurrent users
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const maxRequests = req.nextUrl.pathname.startsWith('/api/') 
-    ? (isDevelopment ? 1000 : 500) // API: 1000 dev, 500 prod (increased from 100)
-    : (isDevelopment ? 5000 : 2000); // Pages: 5000 dev, 2000 prod (increased from 1000)
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  // Determine max requests based on endpoint type and environment
+  let maxRequests: number;
+  
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    // API endpoints - higher limits for real-time features
+    if (req.nextUrl.pathname.includes('/socket') || req.nextUrl.pathname.includes('/messaging')) {
+      // Real-time endpoints need very high limits
+      maxRequests = isProduction ? 10000 : 20000; // 10k prod, 20k dev per 15 min
+    } else {
+      // Regular API endpoints
+      maxRequests = isProduction ? 5000 : 10000; // 5k prod, 10k dev per 15 min
+    }
+  } else {
+    // Page requests
+    maxRequests = isProduction ? 3000 : 10000; // 3k prod, 10k dev per 15 min
+  }
   
   const record = requestCounts.get(key);
   
@@ -124,21 +139,36 @@ function checkRateLimit(req: NextRequestWithAuth): boolean {
 export default async function middleware(req: NextRequestWithAuth) {
   const path = req.nextUrl.pathname;
   
-  // Skip rate limiting for NextAuth.js internal endpoints
-  const isNextAuthInternal = path.startsWith('/api/auth/') && (
-    path.includes('/_log') ||
-    path.includes('/session') ||
-    path.includes('/providers') ||
-    path.includes('/error') ||
-    path.includes('/csrf')
-  );
+  // Skip rate limiting for critical endpoints
+  const skipRateLimiting = 
+    // NextAuth.js internal endpoints
+    (path.startsWith('/api/auth/') && (
+      path.includes('/_log') ||
+      path.includes('/session') ||
+      path.includes('/providers') ||
+      path.includes('/error') ||
+      path.includes('/csrf')
+    )) ||
+    // Real-time messaging and WebSocket endpoints
+    path.startsWith('/api/socket') ||
+    path.includes('/api/messaging/') ||
+    path.includes('/api/notifications') ||
+    // Health checks and monitoring
+    path.includes('/api/health') ||
+    path.includes('/api/status') ||
+    // Static assets and Next.js internal
+    path.startsWith('/_next/') ||
+    path.startsWith('/static/') ||
+    path.match(/\.(ico|png|jpg|jpeg|gif|svg|css|js|woff|woff2|ttf|eot)$/);
   
-  // Apply rate limiting (except for NextAuth internal endpoints)
-  if (!isNextAuthInternal && !checkRateLimit(req)) {
-    return new NextResponse('Too Many Requests', {
+  // Apply rate limiting (except for exempted endpoints)
+  if (!skipRateLimiting && !checkRateLimit(req)) {
+    return new NextResponse('Too Many Requests - Please slow down', {
       status: 429,
       headers: {
-        'Retry-After': '900', // 15 minutes
+        'Retry-After': '60', // Reduced to 1 minute for better UX
+        'X-RateLimit-Limit': '5000',
+        'X-RateLimit-Window': '900',
         ...securityHeaders
       }
     });

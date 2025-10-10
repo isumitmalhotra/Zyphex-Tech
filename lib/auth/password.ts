@@ -153,6 +153,8 @@ export function generateSecurePassword(length: number = 16): string {
 // Rate limiting for password attempts
 export class PasswordAttemptTracker {
   private static attempts: Map<string, { count: number; lastAttempt: number }> = new Map()
+  private static MAX_ATTEMPTS = 20 // Increased from 5 to 20 for production with multiple users
+  private static WINDOW_MS = 15 * 60 * 1000 // 15 minutes
   
   static canAttempt(identifier: string): boolean {
     const now = Date.now()
@@ -160,14 +162,14 @@ export class PasswordAttemptTracker {
     
     if (!record) return true
     
-    // Reset if 15 minutes have passed
-    if (now - record.lastAttempt > 15 * 60 * 1000) {
+    // Reset if window time has passed
+    if (now - record.lastAttempt > this.WINDOW_MS) {
       this.attempts.delete(identifier)
       return true
     }
     
-    // Allow up to 5 attempts per 15 minutes
-    return record.count < 5
+    // Allow up to MAX_ATTEMPTS per window
+    return record.count < this.MAX_ATTEMPTS
   }
   
   static recordAttempt(identifier: string, success: boolean): void {
@@ -187,13 +189,23 @@ export class PasswordAttemptTracker {
   
   static getRemainingAttempts(identifier: string): number {
     const record = this.attempts.get(identifier)
-    if (!record) return 5
+    if (!record) return this.MAX_ATTEMPTS
     
     const now = Date.now()
-    if (now - record.lastAttempt > 15 * 60 * 1000) {
-      return 5
+    if (now - record.lastAttempt > this.WINDOW_MS) {
+      return this.MAX_ATTEMPTS
     }
     
-    return Math.max(0, 5 - record.count)
+    return Math.max(0, this.MAX_ATTEMPTS - record.count)
+  }
+  
+  // Cleanup old records periodically
+  static cleanup(): void {
+    const now = Date.now()
+    for (const [key, record] of this.attempts.entries()) {
+      if (now - record.lastAttempt > this.WINDOW_MS) {
+        this.attempts.delete(key)
+      }
+    }
   }
 }
