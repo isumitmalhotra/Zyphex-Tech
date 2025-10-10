@@ -32,7 +32,12 @@ app.prepare().then(() => {
     transports: ['websocket', 'polling'],
     allowEIO3: true,
     cors: {
-      origin: process.env.NEXTAUTH_URL || `http://localhost:${port}`,
+      origin: [
+        process.env.NEXTAUTH_URL || `http://localhost:${port}`,
+        'https://zyphextech.com',
+        'https://www.zyphextech.com',
+        `http://localhost:${port}`
+      ],
       methods: ['GET', 'POST'],
       credentials: true
     },
