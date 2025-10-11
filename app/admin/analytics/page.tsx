@@ -13,8 +13,10 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { BarChart3, TrendingUp, TrendingDown, Users, Globe, Clock, Target, Download, Calendar } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BarChart3, TrendingUp, TrendingDown, Users, Globe, Clock, Target, Download, Calendar, AlertTriangle, Activity } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
+import { ErrorAnalyticsDashboard } from "@/components/analytics/ErrorAnalyticsDashboard"
 
 export default function AnalyticsPage() {
   const metrics = [
@@ -110,84 +112,106 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {metrics.map((metric, index) => (
-            <Card key={index} className="zyphex-card hover-zyphex-lift">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium zyphex-heading">{metric.title}</CardTitle>
-                <metric.icon className="h-4 w-4 zyphex-accent-text animate-pulse-3d" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold zyphex-heading">{metric.value}</div>
-                <div className="flex items-center space-x-2 text-xs">
-                  {metric.trend === "up" ? (
-                    <TrendingUp className="h-3 w-3 text-green-500" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 text-red-500" />
-                  )}
-                  <span className={`font-medium ${metric.trend === "up" ? "text-green-500" : "text-red-500"}`}>
-                    {metric.change}
-                  </span>
-                  <span className="zyphex-subheading">{metric.period}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Analytics Tabs */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview" className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4" />
+              <span>Website Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="errors" className="flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4" />
+              <span>Error Analytics</span>
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Traffic Sources */}
-          <Card className="zyphex-card hover-zyphex-lift">
-            <CardHeader>
-              <CardTitle className="zyphex-heading">Traffic Sources</CardTitle>
-              <CardDescription className="zyphex-subheading">Where your visitors are coming from</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {trafficSources.map((source, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${source.color} animate-zyphex-glow`}></div>
-                      <span className="text-sm font-medium zyphex-heading">{source.source}</span>
+          {/* Website Analytics Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Key Metrics */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {metrics.map((metric, index) => (
+                <Card key={index} className="zyphex-card hover-zyphex-lift">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium zyphex-heading">{metric.title}</CardTitle>
+                    <metric.icon className="h-4 w-4 zyphex-accent-text animate-pulse-3d" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold zyphex-heading">{metric.value}</div>
+                    <div className="flex items-center space-x-2 text-xs">
+                      {metric.trend === "up" ? (
+                        <TrendingUp className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3 text-red-500" />
+                      )}
+                      <span className={`font-medium ${metric.trend === "up" ? "text-green-500" : "text-red-500"}`}>
+                        {metric.change}
+                      </span>
+                      <span className="zyphex-subheading">{metric.period}</span>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <span className="text-sm zyphex-subheading">{source.visitors.toLocaleString()}</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {source.percentage}%
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-          {/* Top Pages */}
-          <Card className="zyphex-card hover-zyphex-lift">
-            <CardHeader>
-              <CardTitle className="zyphex-heading">Top Pages</CardTitle>
-              <CardDescription className="zyphex-subheading">Most visited pages on your website</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {topPages.map((page, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 rounded-lg zyphex-glass-effect">
-                    <div className="space-y-1">
-                      <span className="text-sm font-medium zyphex-heading">{page.page}</span>
-                      <div className="flex items-center space-x-4 text-xs zyphex-subheading">
-                        <span>{page.views.toLocaleString()} views</span>
-                        <span>Bounce: {page.bounce}</span>
-                        <span>Avg: {page.duration}</span>
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Traffic Sources */}
+              <Card className="zyphex-card hover-zyphex-lift">
+                <CardHeader>
+                  <CardTitle className="zyphex-heading">Traffic Sources</CardTitle>
+                  <CardDescription className="zyphex-subheading">Where your visitors are coming from</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {trafficSources.map((source, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-3 h-3 rounded-full ${source.color} animate-zyphex-glow`}></div>
+                          <span className="text-sm font-medium zyphex-heading">{source.source}</span>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm zyphex-subheading">{source.visitors.toLocaleString()}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {source.percentage}%
+                          </Badge>
+                        </div>
                       </div>
-                    </div>
-                    <BarChart3 className="h-4 w-4 zyphex-accent-text" />
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+
+              {/* Top Pages */}
+              <Card className="zyphex-card hover-zyphex-lift">
+                <CardHeader>
+                  <CardTitle className="zyphex-heading">Top Pages</CardTitle>
+                  <CardDescription className="zyphex-subheading">Most visited pages on your website</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {topPages.map((page, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg zyphex-glass-effect">
+                        <div className="space-y-1">
+                          <span className="text-sm font-medium zyphex-heading">{page.page}</span>
+                          <div className="flex items-center space-x-4 text-xs zyphex-subheading">
+                            <span>{page.views.toLocaleString()} views</span>
+                            <span>Bounce: {page.bounce}</span>
+                            <span>Avg: {page.duration}</span>
+                          </div>
+                        </div>
+                        <BarChart3 className="h-4 w-4 zyphex-accent-text" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Error Analytics Tab */}
+          <TabsContent value="errors" className="space-y-6">
+            <ErrorAnalyticsDashboard />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )
