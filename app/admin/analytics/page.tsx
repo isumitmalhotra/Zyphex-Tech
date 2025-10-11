@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BarChart3, TrendingUp, TrendingDown, Users, Globe, Clock, Target, Download, Calendar, AlertTriangle, Activity } from "lucide-react"
+import { BarChart3, TrendingUp, TrendingDown, Users, Globe, Clock, Target, Download, Calendar, AlertTriangle } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 import { ErrorAnalyticsDashboard } from "@/components/analytics/ErrorAnalyticsDashboard"
 
