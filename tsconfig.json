@@ -2,7 +2,7 @@
   "compilerOptions": {
     "lib": [
       "dom",
-      "dom.iterable",
+      "dom.iterable", 
       "esnext"
     ],
     "allowJs": true,
@@ -30,7 +30,8 @@
   },
   "include": [
     "next-env.d.ts",
-    "**/*.ts",
+    "types/**/*.d.ts",
+    "**/*.ts", 
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
