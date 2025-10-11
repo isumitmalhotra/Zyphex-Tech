@@ -1,7 +1,9 @@
 'use client'
 
+import * as React from 'react'
 import * as Sentry from '@sentry/nextjs'
 import { useEffect } from 'react'
+import Link from 'next/link'
 
 /**
  * Global Error Handler for Next.js App Router
@@ -219,7 +221,7 @@ export default function GlobalError({
               Try Again
             </button>
             
-            <a 
+            <Link 
               href="/" 
               className="secondary"
             >
@@ -236,7 +238,7 @@ export default function GlobalError({
                 <polyline points="9 22 9 12 15 12 15 22"/>
               </svg>
               Go to Homepage
-            </a>
+            </Link>
           </div>
 
           {error.digest && (
@@ -248,7 +250,7 @@ export default function GlobalError({
 
           <p className="info">
             If this problem persists, please contact our support team at{' '}
-            <a href="/contact" style={{ color: '#7c3aed' }}>support</a>
+            <Link href="/contact" style={{ color: '#7c3aed' }}>support</Link>
           </p>
         </div>
       </body>
