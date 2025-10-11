@@ -25,7 +25,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { ErrorMetric, ErrorTrend, PerformanceCorrelation } from '@/lib/analytics/error-analytics';
+import { ErrorTrend, PerformanceCorrelation } from '@/lib/analytics/error-analytics';
 import { NotificationHistory, SystemStatusUpdate } from '@/lib/analytics/notification-engine';
 
 interface DashboardData {
@@ -280,16 +280,18 @@ export function ErrorAnalyticsDashboard({ className }: ErrorAnalyticsDashboardPr
             <div className="text-2xl font-bold">
               {dashboardData.performanceImpact.systemHealthScore.toFixed(1)}/10
             </div>
-            <Progress 
-              value={dashboardData.performanceImpact.systemHealthScore * 10} 
-              className="mt-2" 
-            />
+            <div className="mt-2">
+              <Progress 
+                value={dashboardData.performanceImpact.systemHealthScore * 10} 
+              />
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Main Dashboard Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <div className="space-y-4">
+        <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="trends">Trends</TabsTrigger>
@@ -299,7 +301,8 @@ export function ErrorAnalyticsDashboard({ className }: ErrorAnalyticsDashboardPr
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+        <TabsContent value="overview">
+          <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top Issues */}
             <Card>
@@ -389,10 +392,12 @@ export function ErrorAnalyticsDashboard({ className }: ErrorAnalyticsDashboardPr
               </CardContent>
             </Card>
           </div>
+          </div>
         </TabsContent>
 
         {/* Trends Tab */}
-        <TabsContent value="trends" className="space-y-6">
+        <TabsContent value="trends">
+          <div className="space-y-6">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -439,10 +444,12 @@ export function ErrorAnalyticsDashboard({ className }: ErrorAnalyticsDashboardPr
               </div>
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
 
         {/* Notifications Tab */}
-        <TabsContent value="notifications" className="space-y-6">
+        <TabsContent value="notifications">
+          <div className="space-y-6">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -485,10 +492,12 @@ export function ErrorAnalyticsDashboard({ className }: ErrorAnalyticsDashboardPr
               </div>
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
 
         {/* Performance Tab */}
-        <TabsContent value="performance" className="space-y-6">
+        <TabsContent value="performance">
+          <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
@@ -530,10 +539,12 @@ export function ErrorAnalyticsDashboard({ className }: ErrorAnalyticsDashboardPr
               </CardContent>
             </Card>
           </div>
+          </div>
         </TabsContent>
 
         {/* System Status Tab */}
-        <TabsContent value="status" className="space-y-6">
+        <TabsContent value="status">
+          <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>System Status History</CardTitle>
@@ -569,8 +580,10 @@ export function ErrorAnalyticsDashboard({ className }: ErrorAnalyticsDashboardPr
               </div>
             </CardContent>
           </Card>
+          </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
