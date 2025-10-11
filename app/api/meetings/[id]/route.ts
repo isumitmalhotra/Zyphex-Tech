@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { MeetingType, MeetingStatus } from '@prisma/client';
+import logger from '@/lib/logger';
 
 // Validation schema for update
 const updateMeetingSchema = z.object({
@@ -133,7 +134,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error fetching meeting:', error);
+    logger.error('Error fetching meeting:', { error, meetingId: params.id });
     return NextResponse.json(
       { error: 'Failed to fetch meeting' },
       { status: 500 }
@@ -275,7 +276,7 @@ export async function PUT(
       );
     }
 
-    console.error('Error updating meeting:', error);
+    logger.error('Error updating meeting:', { error, meetingId: params.id });
     return NextResponse.json(
       { error: 'Failed to update meeting' },
       { status: 500 }
@@ -348,7 +349,7 @@ export async function DELETE(
       meeting: cancelledMeeting,
     });
   } catch (error) {
-    console.error('Error cancelling meeting:', error);
+    logger.error('Error cancelling meeting:', { error, meetingId: params.id });
     return NextResponse.json(
       { error: 'Failed to cancel meeting' },
       { status: 500 }

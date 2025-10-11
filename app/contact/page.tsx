@@ -73,7 +73,10 @@ export default function ContactPage() {
         toast.error(data.error || 'Failed to send message. Please try again.')
       }
     } catch (error) {
-      console.error('Form submission error:', error)
+      // Log error without importing logger (client-side)
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Form submission error:', error)
+      }
       toast.error('Network error. Please check your connection and try again.')
     } finally {
       setIsSubmitting(false)

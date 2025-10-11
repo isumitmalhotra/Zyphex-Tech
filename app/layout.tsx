@@ -8,6 +8,7 @@ import { ScrollProgressBar, ZyphexParticles } from "@/components/scroll-animatio
 import AuthProvider from "@/providers/AuthProvider"
 import { ReactQueryProvider } from "@/providers/ReactQueryProvider"
 import { Toaster } from "sonner"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -155,20 +156,22 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/zyphex-logo.png" />
       </head>
       <body className={`${inter.className} dark`}>
-        <AuthProvider>
-          <ReactQueryProvider>
-            <Toaster position="top-right" theme="dark" />
-            <ScrollProgressBar />
-            <div className="min-h-screen relative flex flex-col">
-              <ZyphexParticles />
-              <div className="relative z-10 flex flex-col min-h-screen">
-                <Header />
-                <main className="relative flex-1">{children}</main>
-                <ConditionalFooter />
+        <ErrorBoundary>
+          <AuthProvider>
+            <ReactQueryProvider>
+              <Toaster position="top-right" theme="dark" />
+              <ScrollProgressBar />
+              <div className="min-h-screen relative flex flex-col">
+                <ZyphexParticles />
+                <div className="relative z-10 flex flex-col min-h-screen">
+                  <Header />
+                  <main className="relative flex-1">{children}</main>
+                  <ConditionalFooter />
+                </div>
               </div>
-            </div>
-          </ReactQueryProvider>
-        </AuthProvider>
+            </ReactQueryProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

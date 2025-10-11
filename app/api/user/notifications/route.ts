@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import logger from "@/lib/logger"
 
 // Mark as dynamic route
 export const dynamic = 'force-dynamic'
@@ -86,7 +87,7 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('Error fetching notifications:', error)
+    logger.error('Error fetching notifications:', { error, userId: session?.user?.email })
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -326,7 +327,7 @@ export async function PUT(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error updating notification:', error)
+    logger.error('Error updating notification:', { error })
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

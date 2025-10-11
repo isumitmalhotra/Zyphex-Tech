@@ -41,5 +41,10 @@ coverage/
 test-results/
 playwright-report/
 .playwright/
+
+# logs
+logs/
+*.log
+
 # Sentry Config File
 .env.sentry-build-plugin

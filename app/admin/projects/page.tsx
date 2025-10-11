@@ -79,7 +79,10 @@ export default function ProjectsPage() {
       // Refresh the projects list
       mutate()
     } catch (error) {
-      console.error('Error deleting project:', error)
+      // Error logged by API endpoint
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error deleting project:', error)
+      }
       toast({
         title: "Error",
         description: "Failed to delete project. Please try again.",
