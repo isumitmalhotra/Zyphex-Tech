@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import * as React from 'react'
 import { ErrorTemplate } from '@/components/error/ErrorTemplate'
 import { useErrorContext } from '@/lib/error/error-context'
 import { getErrorConfig, getErrorMessage, generateErrorCode } from '@/lib/error/error-config'
@@ -139,7 +139,7 @@ export default function DashboardError({ error, reset }: DashboardErrorProps) {
             </h4>
             <p className="text-sm text-blue-700 dark:text-blue-300">
               Your dashboard preferences, filters, and view settings have been automatically saved. 
-              Click "Restore Dashboard" to return to your previous state.
+              Click &ldquo;Restore Dashboard&rdquo; to return to your previous state.
             </p>
             <div className="flex flex-wrap gap-2 text-xs text-blue-600 dark:text-blue-400">
               <span className="bg-blue-100 dark:bg-blue-900/50 px-2 py-1 rounded">
