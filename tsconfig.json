@@ -3,8 +3,10 @@
     "lib": [
       "dom",
       "dom.iterable", 
-      "esnext"
+      "esnext",
+      "es6"
     ],
+    "types": ["react", "react-dom"],
     "allowJs": true,
     "target": "ES6",
     "skipLibCheck": true,
