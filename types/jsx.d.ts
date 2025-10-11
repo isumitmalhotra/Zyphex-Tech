@@ -11,6 +11,7 @@ declare global {
   namespace JSX {
     // Use React's built-in JSX namespace
     interface IntrinsicElements {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       [elemName: string]: any;
     }
   }
