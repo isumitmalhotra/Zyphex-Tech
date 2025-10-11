@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
+import React, { useEffect } from 'react'
 import * as Sentry from '@sentry/nextjs'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
@@ -126,10 +127,10 @@ export default function Error({ error, reset }: ErrorProps) {
             size="lg" 
             className="min-w-[160px]"
           >
-            <a href="/">
+            <Link href="/">
               <Home className="mr-2 h-4 w-4" />
               Go Home
-            </a>
+            </Link>
           </Button>
         </div>
 
