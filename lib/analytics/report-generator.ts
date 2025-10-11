@@ -1,9 +1,9 @@
 // Advanced Error Analytics Reporting System
 // Generates comprehensive reports, executive summaries, and predictive analytics
 
-import { ErrorMetric, ErrorTrend, errorAnalytics } from './error-analytics';
-import { NotificationHistory, notificationEngine } from './notification-engine';
-import { PerformanceMetric, PerformanceAlert, performanceMonitor } from './performance-monitor';
+import { ErrorTrend, errorAnalytics } from './error-analytics';
+import { notificationEngine } from './notification-engine';
+import { performanceMonitor } from './performance-monitor';
 
 export interface ExecutiveReport {
   id: string;
@@ -322,7 +322,7 @@ export class ReportGenerator {
     type: 'executive' | 'detailed' | 'predictive',
     schedule: 'daily' | 'weekly' | 'monthly',
     recipients: string[],
-    options?: Partial<ReportExportOptions>
+    _options?: Partial<ReportExportOptions>
   ): string {
     const scheduleId = `schedule_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -354,7 +354,7 @@ export class ReportGenerator {
   }
 
   // Private helper methods
-  private calculateAvailability(performanceData: any): number {
+  private calculateAvailability(performanceData: { currentMetrics: { errorRate?: number } }): number {
     // Simplified availability calculation
     const errorRate = performanceData.currentMetrics.errorRate || 0;
     return Math.max(95, 100 - (errorRate * 100));
@@ -376,7 +376,7 @@ export class ReportGenerator {
     return 'stable';
   }
 
-  private analyzePerformanceTrend(trends: any[]): 'improving' | 'stable' | 'degrading' {
+  private analyzePerformanceTrend(trends: Array<{ averageResponseTime?: number }>): 'improving' | 'stable' | 'degrading' {
     // Simplified performance trend analysis
     if (trends.length < 2) return 'stable';
     
@@ -393,7 +393,7 @@ export class ReportGenerator {
     return 'stable';
   }
 
-  private analyzeUserImpactTrend(userImpact: any): 'improving' | 'stable' | 'degrading' {
+  private analyzeUserImpactTrend(userImpact: { criticalErrorsAffectingUsers?: number; uniqueUsersAffected?: number }): 'improving' | 'stable' | 'degrading' {
     // Simplified user impact trend analysis
     const criticalErrors = userImpact.criticalErrorsAffectingUsers || 0;
     const totalUsers = userImpact.uniqueUsersAffected || 0;
@@ -404,9 +404,9 @@ export class ReportGenerator {
   }
 
   private async generateKeyInsights(
-    dashboardData: any,
-    performanceData: any,
-    notificationData: any
+    dashboardData: { realTime: { criticalErrors: number; errorsLastHour: number }; userImpact: { uniqueUsersAffected: number } },
+    performanceData: { currentMetrics: { avgResponseTime: number } },
+    notificationData: { successRate: number }
   ): Promise<string[]> {
     const insights: string[] = [];
     
@@ -439,8 +439,8 @@ export class ReportGenerator {
   }
 
   private async generateRecommendations(
-    dashboardData: any,
-    performanceData: any
+    dashboardData: { realTime: { criticalErrors: number }; userImpact: { uniqueUsersAffected: number } },
+    performanceData: { currentMetrics: { avgResponseTime: number } }
   ): Promise<string[]> {
     const recommendations: string[] = [];
     
@@ -472,8 +472,8 @@ export class ReportGenerator {
   }
 
   private async assessRisk(
-    dashboardData: any,
-    performanceData: any
+    dashboardData: { realTime: { criticalErrors: number; errorsLastHour: number }; userImpact: { uniqueUsersAffected: number } },
+    performanceData: { currentMetrics: { avgResponseTime: number } }
   ): Promise<ExecutiveReport['riskAssessment']> {
     const riskFactors: string[] = [];
     let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
@@ -525,9 +525,9 @@ export class ReportGenerator {
   }
 
   private async generateDetailedRecommendations(
-    dashboardData: any,
-    performanceData: any,
-    notificationData: any
+    dashboardData: { realTime: { criticalErrors: number }; userImpact: { uniqueUsersAffected: number } },
+    performanceData: { currentMetrics: { avgResponseTime: number } },
+    notificationData: { successRate: number }
   ): Promise<DetailedReport['recommendations']> {
     const recommendations: DetailedReport['recommendations'] = [];
     
@@ -583,15 +583,15 @@ export class ReportGenerator {
   }
 
   private async forecastErrors(
-    dashboardData: any,
-    forecastDays: number
+    dashboardData: { realTime: { errorsLastHour: number } },
+    _forecastDays: number
   ): Promise<PredictiveAnalysis['errorForecast']> {
     // Simplified error forecasting
     const currentRate = dashboardData.realTime.errorsLastHour;
     const trendMultiplier = 1.1; // Assume 10% increase trend
     
     return {
-      predictedErrorCount: Math.floor(currentRate * 24 * forecastDays * trendMultiplier),
+      predictedErrorCount: Math.floor(currentRate * 24 * _forecastDays * trendMultiplier),
       confidenceLevel: 0.75,
       riskFactors: [
         'Increased user activity during business hours',
@@ -607,8 +607,8 @@ export class ReportGenerator {
   }
 
   private async forecastPerformance(
-    performanceData: any,
-    forecastDays: number
+    performanceData: { currentMetrics: { avgResponseTime: number; totalThroughput: number } },
+    _forecastDays: number
   ): Promise<PredictiveAnalysis['performanceForecast']> {
     // Simplified performance forecasting
     const currentResponseTime = performanceData.currentMetrics.avgResponseTime;
@@ -626,7 +626,7 @@ export class ReportGenerator {
   }
 
   private async forecastUserImpact(
-    dashboardData: any,
+    dashboardData: { userImpact: { uniqueUsersAffected: number } },
     forecastDays: number
   ): Promise<PredictiveAnalysis['userImpactForecast']> {
     const currentUsersAffected = dashboardData.userImpact.uniqueUsersAffected;
@@ -639,8 +639,8 @@ export class ReportGenerator {
   }
 
   private async generateActionableInsights(
-    dashboardData: any,
-    performanceData: any
+    _dashboardData: { realTime: { criticalErrors: number }; userImpact: { uniqueUsersAffected: number } },
+    _performanceData: { currentMetrics: { avgResponseTime: number } }
   ): Promise<PredictiveAnalysis['actionableInsights']> {
     return [
       {
@@ -695,23 +695,23 @@ export class ReportGenerator {
     return aggregated;
   }
 
-  private calculateImpactLevel(issue: any): string {
+  private calculateImpactLevel(issue: { severity: string; totalImpactedUsers: number }): string {
     if (issue.severity === 'critical' || issue.totalImpactedUsers > 50) return 'High';
     if (issue.severity === 'high' || issue.totalImpactedUsers > 20) return 'Medium';
     return 'Low';
   }
 
-  private calculateP95ResponseTime(trends: any[]): number {
+  private calculateP95ResponseTime(trends: Array<{ p95ResponseTime?: number; averageResponseTime?: number }>): number {
     // Simplified P95 calculation
-    return trends.reduce((sum, t) => sum + (t.p95ResponseTime || t.averageResponseTime * 1.5 || 0), 0) / trends.length || 0;
+    return trends.reduce((sum, t) => sum + (t.p95ResponseTime || (t.averageResponseTime || 0) * 1.5), 0) / trends.length || 0;
   }
 
-  private calculateP99ResponseTime(trends: any[]): number {
+  private calculateP99ResponseTime(trends: Array<{ p99ResponseTime?: number; averageResponseTime?: number }>): number {
     // Simplified P99 calculation
-    return trends.reduce((sum, t) => sum + (t.p99ResponseTime || t.averageResponseTime * 2 || 0), 0) / trends.length || 0;
+    return trends.reduce((sum, t) => sum + (t.p99ResponseTime || (t.averageResponseTime || 0) * 2), 0) / trends.length || 0;
   }
 
-  private extractThroughputTrends(trends: any[]): Array<{ period: string; value: number }> {
+  private extractThroughputTrends(trends: Array<{ period: string; totalThroughput?: number }>): Array<{ period: string; value: number }> {
     return trends.map(trend => ({
       period: trend.period,
       value: trend.totalThroughput || 0,
@@ -728,7 +728,7 @@ export class ReportGenerator {
     };
   }
 
-  private async analyzeTimeDistribution(startDate: Date, endDate: Date): Promise<Record<string, number>> {
+  private async analyzeTimeDistribution(_startDate: Date, _endDate: Date): Promise<Record<string, number>> {
     // Mock time distribution
     return {
       '00:00-06:00': 5,
@@ -766,7 +766,7 @@ export class ReportGenerator {
 
   private async generatePDF(
     report: ExecutiveReport | DetailedReport | PredictiveAnalysis,
-    options: ReportExportOptions
+    _options: ReportExportOptions
   ): Promise<Buffer> {
     // Mock PDF generation - in reality would use libraries like puppeteer, jsPDF, etc.
     const content = `PDF Report Generated at ${new Date().toISOString()}\n\nReport ID: ${report.id}\nGenerated: ${report.generatedAt.toISOString()}`;
@@ -775,7 +775,7 @@ export class ReportGenerator {
 
   private async generateExcel(
     report: ExecutiveReport | DetailedReport | PredictiveAnalysis,
-    options: ReportExportOptions
+    _options: ReportExportOptions
   ): Promise<Buffer> {
     // Mock Excel generation - in reality would use libraries like exceljs, xlsx, etc.
     const content = `Excel Report Generated at ${new Date().toISOString()}\n\nReport ID: ${report.id}\nGenerated: ${report.generatedAt.toISOString()}`;
