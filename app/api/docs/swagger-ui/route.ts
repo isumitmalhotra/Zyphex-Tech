@@ -10,6 +10,9 @@
 import { NextResponse } from 'next/server';
 import { generateSwaggerHTML } from '@/lib/api/openapi/swagger-config';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/docs/swagger-ui
  * 

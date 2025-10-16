@@ -12,6 +12,9 @@ import { prisma } from "@/lib/prisma"
 import { canAccessChannel, canMessageUser } from "@/lib/messaging/access-control"
 import { getSocketManager } from "@/lib/socket/server"
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/messaging/messages
  * Search or filter messages

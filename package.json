@@ -11,6 +11,7 @@
     "start:next": "next start",
     "type-check": "tsc --noEmit",
     "db:seed": "node prisma/seed.js",
+    "generate-types": "tsx scripts/generate-api-types.ts",
     "test:email": "tsx scripts/test-email.ts",
     "test": "jest --passWithNoTests",
     "test:ci": "jest --ci --coverage --passWithNoTests",

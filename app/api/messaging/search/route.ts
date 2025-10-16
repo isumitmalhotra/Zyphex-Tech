@@ -10,6 +10,9 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getVisibleChannels, getVisibleUsers } from "@/lib/messaging/access-control"
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/messaging/search
  * Search across messages, channels, and users

@@ -11,6 +11,9 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getVisibleChannels, canAccessChannel } from "@/lib/messaging/access-control"
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/messaging/channels
  * Returns all channels the user has access to based on their role

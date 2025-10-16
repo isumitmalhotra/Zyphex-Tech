@@ -15,6 +15,9 @@ const nextConfig = {
     cpus: 1,
   },
 
+  // Increase static page generation timeout to 180 seconds
+  staticPageGenerationTimeout: 180,
+
   // Compiler optimizations
   compiler: {
     // Remove console.log in production (keep error and warn)
