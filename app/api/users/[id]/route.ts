@@ -1,14 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hash } from 'bcryptjs';
+import { createResponseFormatter } from '@/lib/api/response-formatter';
 
 // GET /api/users/[id] - Get user by ID
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const formatter = createResponseFormatter(request);
+  
   try {
     const { id } = params;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return formatter.validationError([
+        {
+          field: 'id',
+          message: 'Invalid user ID format',
+          code: 'VAL_012'
+        }
+      ]);
+    }
     
     const user = await prisma.user.findUnique({
       where: { id },
@@ -25,18 +40,13 @@ export async function GET(
     });
     
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return formatter.notFound('User', id);
     }
     
-    return NextResponse.json(user);
+    return formatter.success(user);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch user' },
-      { status: 500 }
-    );
+    console.error('Error fetching user:', error);
+    return formatter.internalError(error as Error);
   }
 }
 
@@ -45,10 +55,53 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const formatter = createResponseFormatter(request);
+  
   try {
     const { id } = params;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return formatter.validationError([
+        {
+          field: 'id',
+          message: 'Invalid user ID format',
+          code: 'VAL_012'
+        }
+      ]);
+    }
+    
     const body = await request.json();
     const { email, name, password, role } = body;
+    
+    // Validate input
+    const validationErrors = [];
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      validationErrors.push({
+        field: 'email',
+        message: 'Invalid email format',
+        code: 'VAL_007'
+      });
+    }
+    if (name !== undefined && name.length < 2) {
+      validationErrors.push({
+        field: 'name',
+        message: 'Name must be at least 2 characters',
+        code: 'VAL_004'
+      });
+    }
+    if (password && password.length < 8) {
+      validationErrors.push({
+        field: 'password',
+        message: 'Password must be at least 8 characters',
+        code: 'VAL_004'
+      });
+    }
+    
+    if (validationErrors.length > 0) {
+      return formatter.validationError(validationErrors);
+    }
     
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -56,10 +109,7 @@ export async function PUT(
     });
     
     if (!existingUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return formatter.notFound('User', id);
     }
     
     // Prepare update data
@@ -84,12 +134,17 @@ export async function PUT(
       },
     });
     
-    return NextResponse.json(updatedUser);
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to update user' },
-      { status: 500 }
-    );
+    return formatter.success(updatedUser);
+  } catch (_error) {
+    const error = _error as Error;
+    console.error('Error updating user:', error);
+    
+    // Handle Prisma errors
+    if (error.message.includes('Unique constraint')) {
+      return formatter.conflict('User', 'Email already exists');
+    }
+    
+    return formatter.internalError(error);
   }
 }
 
@@ -98,8 +153,22 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const formatter = createResponseFormatter(request);
+  
   try {
     const { id } = params;
+    
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return formatter.validationError([
+        {
+          field: 'id',
+          message: 'Invalid user ID format',
+          code: 'VAL_012'
+        }
+      ]);
+    }
     
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -107,10 +176,7 @@ export async function DELETE(
     });
     
     if (!existingUser) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return formatter.notFound('User', id);
     }
     
     // Delete user
@@ -118,14 +184,19 @@ export async function DELETE(
       where: { id },
     });
     
-    return NextResponse.json(
-      { message: 'User deleted successfully' },
-      { status: 200 }
+    return formatter.success(
+      { message: 'User deleted successfully', id },
+      204
     );
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to delete user' },
-      { status: 500 }
-    );
+  } catch (_error) {
+    const error = _error as Error;
+    console.error('Error deleting user:', error);
+    
+    // Handle Prisma errors for related records
+    if (error.message.includes('Foreign key constraint')) {
+      return formatter.conflict('User', 'Cannot delete user with existing related records');
+    }
+    
+    return formatter.internalError(error);
   }
 }
