@@ -6,3 +6,4 @@
 
 export * from './zod-to-openapi';
 export * from './generator';
+export * from './swagger-config';

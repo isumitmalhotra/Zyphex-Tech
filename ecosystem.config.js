@@ -32,12 +32,16 @@ module.exports = {
       // Auto restart configuration
       autorestart: true,
       watch: false,  // Don't watch files (we use git pull)
-      max_memory_restart: '1G',  // Restart if memory exceeds 1GB
+      max_memory_restart: '1500M',  // Restart if memory exceeds 1.5GB
+      
+      // Node.js options for memory optimization
+      node_args: '--max-old-space-size=1536 --optimize-for-size --gc-interval=100',
       
       // Environment variables
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
+        NODE_OPTIONS: '--max-old-space-size=1536',
       },
       
       // Load environment from file

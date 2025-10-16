@@ -3,6 +3,18 @@ const nextConfig = {
   // Enable SWC minification for faster builds
   swcMinify: true,
 
+  // Optimize build performance and reduce memory usage
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'date-fns',
+    ],
+    // Reduce memory usage during build
+    workerThreads: false,
+    cpus: 1,
+  },
+
   // Compiler optimizations
   compiler: {
     // Remove console.log in production (keep error and warn)
@@ -107,13 +119,13 @@ const nextConfig = {
   // Enable compression
   compress: true,
 
-  // Optimize package imports
-  experimental: {
-    optimizePackageImports: [
-      'lucide-react',
-      '@radix-ui/react-icons',
-      'date-fns',
-    ],
+  // Production optimization
+  productionBrowserSourceMaps: false, // Disable source maps in production to save memory
+  
+  // Reduce memory usage
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
 }
 
@@ -134,8 +146,12 @@ export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
-  widenClientFileUpload: true,
+  // Disable source map upload to save memory during build
+  widenClientFileUpload: false,
+  
+  // Disable automatic upload in CI/CD - can be done separately
+  disableClientWebpackPlugin: true,
+  disableServerWebpackPlugin: true,
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
