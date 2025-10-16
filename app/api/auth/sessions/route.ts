@@ -17,6 +17,9 @@ import { RefreshTokenManager } from '@/lib/auth/token-management'
  * GET /api/auth/sessions
  * Get all active sessions for the current user
  */
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

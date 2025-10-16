@@ -65,6 +65,9 @@ interface ScheduledTaskPayload {
  * Webhook endpoint for external integrations
  * Handles incoming webhooks and triggers appropriate workflows
  */
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

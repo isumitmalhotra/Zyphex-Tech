@@ -53,6 +53,8 @@ function parseFeatures(features: string[] | string | null): string[] {
   }
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function ServicesPage() {
   const apiServices = await fetchServices()
 

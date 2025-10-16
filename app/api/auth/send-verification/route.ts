@@ -4,6 +4,9 @@ import { sendVerificationEmail } from '@/lib/email';
 import { randomBytes } from 'crypto';
 
 // Send verification email
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();

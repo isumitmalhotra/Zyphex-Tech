@@ -34,6 +34,9 @@ const saveNotesSchema = z.object({
  * GET /api/meetings/[id]/notes
  * Get meeting notes and action items
  */
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

@@ -309,6 +309,9 @@ function generateReceiptHTML(invoice: any, payment: any): string {
   `
 }
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

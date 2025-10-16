@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { PSADashboard } from '@/lib/psa/dashboard';
 import { hasPermission, Permission, ExtendedUser } from '@/lib/auth/permissions';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

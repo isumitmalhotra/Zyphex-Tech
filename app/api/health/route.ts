@@ -14,6 +14,9 @@ import { SystemResourceMonitor } from '@/lib/health/system-resources';
 import { Logger } from '@/lib/logger';
 import type { HealthReport, HealthStatus, ServiceHealthCheck } from '@/lib/health/types';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
 const ENVIRONMENT = process.env.NODE_ENV || 'development';
 

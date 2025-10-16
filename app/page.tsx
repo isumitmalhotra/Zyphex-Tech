@@ -59,6 +59,8 @@ function getSectionByKey(sections: ContentSection[], key: string): ContentSectio
   return sections.find(section => section.sectionKey === key || section.sectionKey === `home-${key}`) || null
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function HomePage() {
   // Fetch content from CMS
   let pageContent

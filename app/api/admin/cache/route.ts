@@ -9,6 +9,9 @@ import { cacheKeys } from '@/lib/cache/redis'
  * GET /api/admin/cache
  * Get cache status and statistics
  */
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Check authentication

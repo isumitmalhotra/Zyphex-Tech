@@ -6,6 +6,9 @@ import { createResponseFormatter, validatePaginationParams, calculateOffset } fr
 import { HTTP_STATUS } from '@/lib/api/http-status';
 
 // GET /api/teams - Get all teams with pagination
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   const formatter = createResponseFormatter(request);
   

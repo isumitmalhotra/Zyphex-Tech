@@ -16,6 +16,9 @@ const updateIntegrationSchema = z.object({
 })
 
 // GET /api/integrations/[id] - Get integration by ID
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }

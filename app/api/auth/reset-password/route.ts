@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { verifyResetToken, deleteResetToken } from '@/lib/tokens';
 import bcrypt from 'bcryptjs';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     const { token, password } = await req.json();

@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma"
 import { TaskStatus } from "@prisma/client"
 import { differenceInDays } from "date-fns"
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

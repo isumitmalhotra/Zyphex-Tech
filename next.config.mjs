@@ -3,7 +3,8 @@ const nextConfig = {
   // Enable SWC minification for faster builds
   swcMinify: true,
 
-  // Optimize build performance and reduce memory usage
+  // CRITICAL: Disable ALL static optimization
+  // This app requires dynamic rendering for all pages
   experimental: {
     optimizePackageImports: [
       'lucide-react',
@@ -15,8 +16,8 @@ const nextConfig = {
     cpus: 1,
   },
 
-  // Increase static page generation timeout to 180 seconds
-  staticPageGenerationTimeout: 180,
+  // Increase static page generation timeout to 5 minutes
+  staticPageGenerationTimeout: 300,
 
   // Compiler optimizations
   compiler: {
@@ -26,6 +27,7 @@ const nextConfig = {
     } : false,
   },
 
+  // DISABLE type checking and linting during build
   eslint: {
     ignoreDuringBuilds: true,
   },

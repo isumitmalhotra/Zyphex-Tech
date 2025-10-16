@@ -39,6 +39,9 @@ const createScheduleSchema = z.object({
 const updateScheduleSchema = createScheduleSchema.partial().omit({ templateId: true })
 
 // GET - List all schedules
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

@@ -9,8 +9,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { emailService } from '@/lib/email/service'
+// Lazy load email service to prevent build-time initialization
+// import { emailService } from '@/lib/email/service'
 import { validateEmailConfig } from '@/lib/email/config'
+
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+// Prevent static optimization
+export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,6 +52,9 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    // Lazy load email service (prevents build-time initialization)
+    const { emailService } = await import('@/lib/email/service')
 
     // Test connection
     const connectionTest = await emailService.testConnection()
@@ -152,6 +161,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Lazy load email service (prevents build-time initialization)
+    const { emailService } = await import('@/lib/email/service')
 
     // Send test email
     const result = await emailService.sendTestEmail(to)

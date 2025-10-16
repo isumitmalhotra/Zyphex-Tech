@@ -1,6 +1,8 @@
 import { CacheManagement } from '@/components/admin/cache-management'
 import { PerformanceMonitoring } from '@/components/admin/performance-monitoring'
 
+export const dynamic = 'force-dynamic';
+
 export default function CacheManagementPage() {
   return (
     <div className="space-y-6">

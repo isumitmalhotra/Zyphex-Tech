@@ -98,6 +98,8 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   }
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const result = await fetchBlogPost(params.slug)
 

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
-import { emailService } from '@/lib/services/email-service'
-import { pdfGenerator } from '@/lib/services/pdf-generator'
+// Lazy load to prevent build-time initialization
+// import { emailService } from '@/lib/services/email-service'
+// import { pdfGenerator } from '@/lib/services/pdf-generator'
 
 // This would be your Stripe webhook secret
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || ''
@@ -157,6 +158,9 @@ function generateReceiptHTML(invoice: any, payment: any): string {
  * 
  * Called after payment success/failure to send email notifications
  */
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -218,6 +222,10 @@ export async function POST(request: NextRequest) {
         )
       }
 
+      // Lazy load services
+      const { emailService } = await import('@/lib/services/email-service')
+      const { pdfGenerator } = await import('@/lib/services/pdf-generator')
+
       // Generate receipt PDF
       let receiptPDF: Buffer | undefined
       try {
@@ -260,6 +268,9 @@ export async function POST(request: NextRequest) {
 
     // Handle payment failure
     if (status === 'failed' || status === 'FAILED') {
+      // Lazy load email service
+      const { emailService } = await import('@/lib/services/email-service')
+      
       const emailResult = await emailService.sendPaymentFailure({
         invoiceNumber: invoice.invoiceNumber,
         amount: invoice.total,

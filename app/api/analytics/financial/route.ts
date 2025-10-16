@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { FinancialAnalyticsEngine } from '@/lib/analytics/financial-analytics-engine';
 import { prisma } from '@/lib/prisma';
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

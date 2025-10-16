@@ -7,6 +7,9 @@ import { cache } from '@/lib/cache';
 import { withCacheStatus } from '@/lib/api/cache-headers';
 
 // GET /api/projects - Get all projects
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

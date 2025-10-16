@@ -7,6 +7,9 @@ import { ProjectTemplateService } from '@/lib/services/project-templates'
 const prisma = new PrismaClient()
 const templateService = new ProjectTemplateService()
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

@@ -6,6 +6,9 @@ type UserWithAccounts = User & {
   accounts: Account[]
 }
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Get recent OAuth users (created in last 24 hours)

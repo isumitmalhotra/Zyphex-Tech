@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth'
 import { createResponseFormatter } from '@/lib/api/response-formatter'
 
 // GET /api/users/me - Get current user profile
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   const formatter = createResponseFormatter(request)
   

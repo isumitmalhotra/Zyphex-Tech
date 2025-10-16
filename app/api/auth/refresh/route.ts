@@ -12,6 +12,9 @@ import { prisma } from '@/lib/prisma'
  * - Detects token theft attempts
  * - Device tracking
  */
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

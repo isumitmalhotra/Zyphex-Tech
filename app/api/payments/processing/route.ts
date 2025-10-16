@@ -20,6 +20,9 @@ const paymentService = new PaymentProcessingService({
   }
 });
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

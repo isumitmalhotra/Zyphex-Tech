@@ -4,6 +4,9 @@ import { hash } from 'bcryptjs';
 import { createResponseFormatter } from '@/lib/api/response-formatter';
 
 // GET /api/users/[id] - Get user by ID
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

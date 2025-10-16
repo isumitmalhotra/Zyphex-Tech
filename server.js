@@ -1,11 +1,18 @@
+// Load environment variables first
+require('dotenv').config();
+
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
 const { Server } = require('socket.io');
 
+// Default to development mode unless explicitly set to production
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
 const port = process.env.PORT || 3000;
+
+console.log(`🚀 Starting server in ${dev ? 'DEVELOPMENT' : 'PRODUCTION'} mode`);
+console.log(`📍 Server will run at: http://${hostname}:${port}`);
 
 // When using middleware `hostname` and `port` must be provided below
 const app = next({ dev, hostname, port });

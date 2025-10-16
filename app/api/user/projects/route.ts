@@ -16,6 +16,9 @@ const createProjectSchema = z.object({
 })
 
 // Create a new project request
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions)

@@ -44,6 +44,8 @@ export async function generateMetadata({ params }: PortfolioItemPageProps): Prom
   }
 }
 
+export const dynamic = 'force-dynamic';
+
 export default async function PortfolioItemPage({ params }: PortfolioItemPageProps) {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

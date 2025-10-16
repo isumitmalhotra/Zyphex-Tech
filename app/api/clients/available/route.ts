@@ -8,6 +8,9 @@ import { prisma } from '@/lib/prisma';
  * Fetch available clients for project creation
  * Returns only essential client information needed for project assignment
  */
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Verify authentication

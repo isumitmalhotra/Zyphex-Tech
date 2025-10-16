@@ -12,6 +12,9 @@ import fs from 'fs/promises'
 import path from 'path'
 const UPLOAD_DIR = path.join(process.cwd(), 'uploads')
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     // Authentication check

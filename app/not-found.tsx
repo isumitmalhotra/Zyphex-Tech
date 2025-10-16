@@ -1,6 +1,8 @@
+'use client'
+
 import React from 'react'
-import type { Metadata } from 'next'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -16,14 +18,7 @@ import {
 } from 'lucide-react'
 import * as Sentry from '@sentry/nextjs'
 
-export const metadata: Metadata = {
-  title: 'Page Not Found - Zyphex Tech',
-  description: 'The page you are looking for could not be found. Explore our services or return to the homepage.',
-  robots: {
-    index: false,
-    follow: false,
-  },
-}
+// Metadata removed - this is now a client component
 
 // Popular pages for quick navigation
 const popularPages = [
@@ -48,9 +43,10 @@ const popularPages = [
 ]
 
 export default function NotFound() {
+  const router = useRouter()
+  
   // Log 404 error to Sentry for monitoring
-  if (typeof window === 'undefined') {
-    // Server-side logging
+  React.useEffect(() => {
     Sentry.captureMessage('404 Page Not Found', {
       level: 'warning',
       tags: {
@@ -58,7 +54,7 @@ export default function NotFound() {
         error_page: 'not-found',
       },
     })
-  }
+  }, [])
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
@@ -125,7 +121,7 @@ export default function NotFound() {
                 const formData = new FormData(e.currentTarget)
                 const query = formData.get('search') as string
                 if (query) {
-                  window.location.href = `/blog?q=${encodeURIComponent(query)}`
+                  router.push(`/blog?q=${encodeURIComponent(query)}`)
                 }
               }}
               className="flex gap-2"

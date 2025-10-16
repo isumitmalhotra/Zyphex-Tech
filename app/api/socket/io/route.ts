@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 
 // This route provides Socket.io status information
 // The actual Socket.io server is handled by server.js
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(req: NextRequest) {
   try {
     // Check if Socket.io is available

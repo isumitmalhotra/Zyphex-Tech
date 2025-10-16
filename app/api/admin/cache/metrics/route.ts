@@ -7,6 +7,9 @@ import { monitoredCache, metricsCollector } from '@/lib/cache/metrics'
  * GET /api/admin/cache/metrics
  * Get cache performance metrics and alerts
  */
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     // Check authentication

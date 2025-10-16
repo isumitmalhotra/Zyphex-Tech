@@ -14,6 +14,9 @@ import {
   generateClientSatisfactionReport
 } from '@/lib/services/report-data'
 
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { type: string } }
