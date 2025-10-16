@@ -44,6 +44,7 @@
     "db:migrate": "npx prisma migrate deploy",
     "db:backup": "tsx scripts/backup-database.ts",
     "db:studio": "npx prisma studio",
+    "db:verify-indexes": "tsx scripts/verify-indexes.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

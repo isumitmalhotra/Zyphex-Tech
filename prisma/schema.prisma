@@ -68,8 +68,8 @@ model User {
   LeadActivity        LeadActivity[]
 
   // Meeting relations
-  organizedMeetings  Meeting[]           @relation("MeetingOrganizer")
-  meetingAttendances MeetingAttendee[]   @relation("MeetingAttendees")
+  organizedMeetings   Meeting[]           @relation("MeetingOrganizer")
+  meetingAttendances  MeetingAttendee[]   @relation("MeetingAttendees")
   assignedActionItems MeetingActionItem[] @relation("ActionItemAssignee")
 
   // File upload security (Phase 1)
@@ -78,9 +78,16 @@ model User {
   // Token management security (Phase 2)
   tokenBlacklist TokenBlacklist[]
 
-  @@index([email])
-  @@index([role])
-  @@index([deletedAt])
+  // Optimized Indexes for Performance
+  @@index([email]) // Existing - Login queries
+  @@index([role]) // Existing - Authorization queries
+  @@index([deletedAt]) // Existing - Soft delete queries
+  @@index([createdAt]) // Sorting/pagination
+  @@index([updatedAt]) // Recently modified users
+  @@index([emailVerified]) // Verified user queries
+  @@index([role, deletedAt]) // Compound: Active users by role
+  @@index([role, createdAt]) // Compound: Recent users by role
+  @@index([email, deletedAt]) // Compound: Active user login
 }
 
 model Permission {
@@ -130,12 +137,12 @@ model UserPermission {
 }
 
 model RefreshToken {
-  id         String    @id @default(uuid())
-  userId     String
-  token      String    @unique
-  expiresAt  DateTime
-  createdAt  DateTime  @default(now())
-  
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
   // Phase 2 enhancements
   deviceInfo String    @default("Unknown Device") // Device/browser identification
   lastUsedAt DateTime? // Track when token was last used for rotation
@@ -184,18 +191,24 @@ model Client {
   deletedAt DateTime? // Soft delete capability
 
   // Relations
-  projects         Project[]
-  invoices         Invoice[]
-  contactLogs      ContactLog[]
-  billingContracts BillingContract[]
-  paymentConfigs   PaymentConfig[]
-  Deal             Deal[]
-  meetings         Meeting[]
+  projects           Project[]
+  invoices           Invoice[]
+  contactLogs        ContactLog[]
+  billingContracts   BillingContract[]
+  paymentConfigs     PaymentConfig[]
+  Deal               Deal[]
+  meetings           Meeting[]
   meetingAttendances MeetingAttendee[]
 
-  @@index([email])
-  @@index([name])
-  @@index([deletedAt])
+  // Optimized Indexes for Performance
+  @@index([email]) // Existing - Email lookup
+  @@index([name]) // Existing - Name search
+  @@index([deletedAt]) // Existing - Soft delete queries
+  @@index([createdAt]) // Time-based sorting
+  @@index([company]) // Company name search
+  @@index([phone]) // Phone lookup
+  @@index([name, deletedAt]) // Compound: Active clients by name
+  @@index([email, deletedAt]) // Compound: Active client lookup
 }
 
 model Project {
@@ -249,24 +262,35 @@ model Project {
 
   // New messaging relations
   channels Channel[]
-  
+
   // Notifications
   notifications Notification[]
-  
+
   // Meeting relations
   meetings Meeting[]
 
   // File upload security
   files File[]
 
-  @@index([clientId])
-  @@index([managerId])
-  @@index([status])
-  @@index([priority])
-  @@index([methodology])
-  @@index([templateId])
-  @@index([startDate, endDate])
-  @@index([deletedAt])
+  // Optimized Indexes for Performance
+  @@index([clientId]) // Existing - Client's projects
+  @@index([managerId]) // Existing - Manager's projects
+  @@index([status]) // Existing - Filter by status
+  @@index([priority]) // Existing - Filter by priority
+  @@index([methodology]) // Existing - Filter by methodology
+  @@index([templateId]) // Existing - Template tracking
+  @@index([startDate, endDate]) // Existing - Date range queries
+  @@index([deletedAt]) // Existing - Soft delete queries
+  @@index([createdAt]) // Sorting/pagination
+  @@index([updatedAt]) // Recently updated projects
+  @@index([completionRate]) // Progress tracking
+  @@index([isClientVisible]) // Client portal queries
+  @@index([clientId, status]) // Compound: Client projects by status
+  @@index([managerId, status]) // Compound: Manager projects by status
+  @@index([clientId, status, deletedAt]) // Compound: Active client projects
+  @@index([status, priority, createdAt]) // Compound: Complex filtering
+  @@index([status, updatedAt]) // Compound: Recently active projects
+  @@index([managerId, priority, status]) // Compound: Manager priority view
 }
 
 model Team {
@@ -280,8 +304,11 @@ model Team {
   projects    Project[]
   teamMembers TeamMember[]
 
-  @@index([name])
-  @@index([deletedAt])
+  // Optimized Indexes for Performance
+  @@index([name]) // Existing - Name search
+  @@index([deletedAt]) // Existing - Soft delete queries
+  @@index([createdAt]) // Time-based sorting
+  @@index([name, deletedAt]) // Compound: Active teams
 }
 
 // IT Services Platform Models
@@ -308,11 +335,21 @@ model TimeEntry {
   project Project? @relation(fields: [projectId], references: [id])
   invoice Invoice? @relation(fields: [invoiceId], references: [id])
 
-  @@index([userId])
-  @@index([taskId])
-  @@index([projectId])
-  @@index([date])
-  @@index([billable])
+  // Optimized Indexes for Performance
+  @@index([userId]) // Existing - User's time entries
+  @@index([taskId]) // Existing - Task time entries
+  @@index([projectId]) // Existing - Project time entries
+  @@index([date]) // Existing - Date-based queries
+  @@index([billable]) // Existing - Billable time filtering
+  @@index([status]) // Status filtering
+  @@index([invoiceId]) // Invoice linkage
+  @@index([createdAt]) // Sorting/pagination
+  @@index([userId, date]) // Compound: User timesheet queries
+  @@index([projectId, date]) // Compound: Project time tracking
+  @@index([userId, status]) // Compound: User entries by status
+  @@index([billable, status, date]) // Compound: Billing queries
+  @@index([projectId, billable, status]) // Compound: Project billable time
+  @@index([userId, projectId, date]) // Compound: User project tracking
 }
 
 model Invoice {
@@ -349,12 +386,23 @@ model Invoice {
   paymentReminders PaymentReminder[]
   lateFees         LateFee[]
 
-  @@index([clientId])
-  @@index([projectId])
-  @@index([status])
-  @@index([dueDate])
-  @@index([invoiceNumber])
-  @@index([overdueAt])
+  // Optimized Indexes for Performance
+  @@index([clientId]) // Existing - Client invoices
+  @@index([projectId]) // Existing - Project invoices
+  @@index([status]) // Existing - Invoice status filtering
+  @@index([dueDate]) // Existing - Due date sorting/filtering
+  @@index([invoiceNumber]) // Existing - Invoice lookup
+  @@index([overdueAt]) // Existing - Overdue tracking
+  @@index([createdAt]) // Sorting/pagination
+  @@index([sentAt]) // Sent invoice tracking
+  @@index([paidAt]) // Payment tracking
+  @@index([billingType]) // Billing type filtering
+  @@index([clientId, status]) // Compound: Client invoices by status
+  @@index([status, dueDate]) // Compound: Overdue invoice queries
+  @@index([clientId, status, dueDate]) // Compound: Client invoice dashboard
+  @@index([projectId, status]) // Compound: Project invoices by status
+  @@index([status, createdAt]) // Compound: Recent invoices by status
+  @@index([clientId, dueDate]) // Compound: Client payment schedule
 }
 
 model Payment {
@@ -380,11 +428,17 @@ model Payment {
   invoice          Invoice           @relation(fields: [invoiceId], references: [id])
   paymentReminders PaymentReminder[]
 
-  @@index([invoiceId])
-  @@index([status])
-  @@index([paymentMethod])
-  @@index([stripePaymentId])
-  @@index([paypalOrderId])
+  // Optimized Indexes for Performance
+  @@index([invoiceId]) // Existing - Invoice payments
+  @@index([status]) // Existing - Payment status filtering
+  @@index([paymentMethod]) // Existing - Payment method tracking
+  @@index([stripePaymentId]) // Existing - Stripe lookup
+  @@index([paypalOrderId]) // Existing - PayPal lookup
+  @@index([createdAt]) // Sorting/pagination
+  @@index([processedAt]) // Processing time tracking
+  @@index([invoiceId, status]) // Compound: Invoice payment status
+  @@index([status, processedAt]) // Compound: Payment processing queries
+  @@index([paymentMethod, status]) // Compound: Method-based filtering
 }
 
 model PaymentReminder {
@@ -491,10 +545,18 @@ model Expense {
   user    User     @relation(fields: [userId], references: [id])
   invoice Invoice? @relation(fields: [invoiceId], references: [id])
 
-  @@index([projectId])
-  @@index([userId])
-  @@index([category])
-  @@index([date])
+  // Optimized Indexes for Performance
+  @@index([projectId]) // Existing - Project expenses
+  @@index([userId]) // Existing - User expenses
+  @@index([category]) // Existing - Category filtering
+  @@index([date]) // Existing - Date-based queries
+  @@index([invoiceId]) // Invoice linkage
+  @@index([reimbursed]) // Reimbursement tracking
+  @@index([billable]) // Billable expense filtering
+  @@index([createdAt]) // Time-based sorting
+  @@index([projectId, billable]) // Compound: Project billable expenses
+  @@index([userId, date]) // Compound: User expense timeline
+  @@index([reimbursed, userId]) // Compound: User reimbursement status
 }
 
 model BillingContract {
@@ -518,10 +580,16 @@ model BillingContract {
   client  Client   @relation(fields: [clientId], references: [id])
   project Project? @relation(fields: [projectId], references: [id])
 
-  @@index([clientId])
-  @@index([projectId])
-  @@index([contractType])
-  @@index([isActive])
+  // Optimized Indexes for Performance
+  @@index([clientId]) // Existing - Client contracts
+  @@index([projectId]) // Existing - Project contracts
+  @@index([contractType]) // Existing - Contract type filtering
+  @@index([isActive]) // Existing - Active contract filtering
+  @@index([startDate]) // Start date tracking
+  @@index([endDate]) // End date tracking
+  @@index([billingCycle]) // Billing cycle filtering
+  @@index([clientId, isActive]) // Compound: Active client contracts
+  @@index([isActive, billingCycle]) // Compound: Active billing cycles
 }
 
 model Task {
@@ -557,13 +625,27 @@ model Task {
   dependencies TaskDependency[] @relation("TaskDependencies")
   dependents   TaskDependency[] @relation("TaskDependents")
 
-  @@index([projectId])
-  @@index([assigneeId])
-  @@index([createdBy])
-  @@index([status])
-  @@index([priority])
-  @@index([dueDate])
-  @@index([isBlocking])
+  // Optimized Indexes for Performance
+  @@index([projectId]) // Existing - Project tasks
+  @@index([assigneeId]) // Existing - Assignee tasks
+  @@index([createdBy]) // Existing - Creator tracking
+  @@index([status]) // Existing - Status filtering
+  @@index([priority]) // Existing - Priority filtering
+  @@index([dueDate]) // Existing - Due date sorting
+  @@index([isBlocking]) // Existing - Critical path
+  @@index([createdAt]) // Sorting/pagination
+  @@index([updatedAt]) // Recently updated tasks
+  @@index([completedAt]) // Completion tracking
+  @@index([startDate]) // Start date tracking
+  @@index([isMilestone]) // Milestone filtering
+  @@index([projectId, status]) // Compound: Project tasks by status
+  @@index([assigneeId, status]) // Compound: User tasks by status
+  @@index([projectId, assigneeId]) // Compound: User tasks in project
+  @@index([status, priority, dueDate]) // Compound: Complex task queries
+  @@index([assigneeId, dueDate, status]) // Compound: User upcoming tasks
+  @@index([projectId, priority, status]) // Compound: Project priority view
+  @@index([status, dueDate]) // Compound: Overdue task queries
+  @@index([assigneeId, priority]) // Compound: User priority tasks
 }
 
 model ActivityLog {
@@ -581,10 +663,16 @@ model ActivityLog {
   // Relations
   user User @relation(fields: [userId], references: [id])
 
-  @@index([userId])
-  @@index([entityType, entityId])
-  @@index([createdAt])
-  @@index([action])
+  // Optimized Indexes for Performance
+  @@index([userId]) // Existing - User activities
+  @@index([entityType, entityId]) // Existing - Entity tracking
+  @@index([createdAt]) // Existing - Time-based queries
+  @@index([action]) // Existing - Action filtering
+  @@index([userId, createdAt]) // Compound: User activity timeline
+  @@index([entityType, createdAt]) // Compound: Entity activity history
+  @@index([action, createdAt]) // Compound: Action timeline
+  @@index([userId, action]) // Compound: User action filtering
+  @@index([userId, entityType]) // Compound: User entity activities
 }
 
 model Message {
@@ -613,12 +701,21 @@ model Message {
   reads     MessageRead[]
   reactions MessageReaction[]
 
-  @@index([senderId])
-  @@index([receiverId])
-  @@index([channelId])
-  @@index([projectId])
-  @@index([createdAt])
-  @@index([readAt])
+  // Optimized Indexes for Performance
+  @@index([senderId]) // Existing - Sender messages
+  @@index([receiverId]) // Existing - Receiver messages
+  @@index([channelId]) // Existing - Channel messages
+  @@index([projectId]) // Existing - Project messages
+  @@index([createdAt]) // Existing - Time-based sorting
+  @@index([readAt]) // Existing - Read status tracking
+  @@index([parentId]) // Thread parent tracking
+  @@index([messageType]) // Message type filtering
+  @@index([priority]) // Priority filtering
+  @@index([senderId, createdAt]) // Compound: Sender message history
+  @@index([receiverId, readAt]) // Compound: Unread messages
+  @@index([channelId, createdAt]) // Compound: Channel message timeline
+  @@index([projectId, createdAt]) // Compound: Project message timeline
+  @@index([receiverId, readAt, createdAt]) // Compound: Recent unread messages
 }
 
 model Channel {
@@ -640,9 +737,15 @@ model Channel {
   messages  Message[]
 
   @@unique([name, projectId]) // Channel names must be unique within a project
-  @@index([projectId])
-  @@index([type])
-  @@index([createdAt])
+  // Optimized Indexes for Performance
+  @@index([projectId]) // Existing - Project channels
+  @@index([type]) // Existing - Channel type filtering
+  @@index([createdAt]) // Existing - Time-based sorting
+  @@index([createdById]) // Creator tracking
+  @@index([isPrivate]) // Privacy filtering
+  @@index([isPinned]) // Pinned channels
+  @@index([projectId, type]) // Compound: Project channels by type
+  @@index([type, isPrivate]) // Compound: Channel access filtering
 }
 
 model MessageRead {
@@ -656,8 +759,11 @@ model MessageRead {
   user    User    @relation("UserMessageReads", fields: [userId], references: [id])
 
   @@unique([messageId, userId])
-  @@index([userId])
-  @@index([readAt])
+  // Optimized Indexes for Performance
+  @@index([userId]) // Existing - User read tracking
+  @@index([readAt]) // Existing - Read time tracking
+  @@index([messageId]) // Message read tracking
+  @@index([userId, readAt]) // Compound: User read history
 }
 
 model MessageReaction {
@@ -672,8 +778,11 @@ model MessageReaction {
   user    User    @relation("UserMessageReactions", fields: [userId], references: [id])
 
   @@unique([messageId, userId, emoji])
-  @@index([messageId])
-  @@index([userId])
+  // Optimized Indexes for Performance
+  @@index([messageId]) // Existing - Message reactions
+  @@index([userId]) // Existing - User reactions
+  @@index([emoji]) // Emoji filtering
+  @@index([createdAt]) // Time-based sorting
 }
 
 model Notification {
@@ -695,11 +804,17 @@ model Notification {
   user    User     @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
   project Project? @relation(fields: [projectId], references: [id])
 
-  @@index([userId])
-  @@index([read])
-  @@index([type])
-  @@index([relatedType, relatedId])
-  @@index([createdAt])
+  // Optimized Indexes for Performance
+  @@index([userId]) // Existing - User notifications
+  @@index([read]) // Existing - Read status filtering
+  @@index([type]) // Existing - Notification type
+  @@index([relatedType, relatedId]) // Existing - Related entity tracking
+  @@index([createdAt]) // Existing - Time-based sorting
+  @@index([projectId]) // Project notifications
+  @@index([userId, read]) // Compound: Unread notifications
+  @@index([userId, createdAt]) // Compound: Recent notifications
+  @@index([userId, read, createdAt]) // Compound: Recent unread notifications
+  @@index([type, createdAt]) // Compound: Type-based timeline
 }
 
 model Document {
@@ -723,11 +838,16 @@ model Document {
   project Project? @relation(fields: [projectId], references: [id])
   user    User     @relation(fields: [userId], references: [id])
 
-  @@index([projectId])
-  @@index([userId])
-  @@index([filename])
-  @@index([mimeType])
-  @@index([category])
+  // Optimized Indexes for Performance
+  @@index([projectId]) // Existing - Project documents
+  @@index([userId]) // Existing - User documents
+  @@index([filename]) // Existing - File lookup
+  @@index([mimeType]) // Existing - File type filtering
+  @@index([category]) // Existing - Category filtering
+  @@index([createdAt]) // Time-based sorting
+  @@index([isPublic]) // Public/private filtering
+  @@index([projectId, category]) // Compound: Project docs by category
+  @@index([userId, createdAt]) // Compound: User upload history
 }
 
 model TeamMember {
@@ -752,10 +872,17 @@ model TeamMember {
 
   @@unique([userId, projectId])
   @@unique([userId, teamId])
-  @@index([userId])
-  @@index([projectId])
-  @@index([teamId])
-  @@index([role])
+  // Optimized Indexes for Performance
+  @@index([userId]) // Existing - User memberships
+  @@index([projectId]) // Existing - Project team members
+  @@index([teamId]) // Existing - Team members
+  @@index([role]) // Existing - Role filtering
+  @@index([isActive]) // Active member filtering
+  @@index([startDate]) // Start date tracking
+  @@index([endDate]) // End date tracking
+  @@index([projectId, isActive]) // Compound: Active project members
+  @@index([userId, isActive]) // Compound: User active memberships
+  @@index([teamId, role]) // Compound: Team members by role
 }
 
 model Lead {
@@ -786,12 +913,20 @@ model Lead {
   deals      Deal[]
   activities LeadActivity[]
 
-  @@index([email])
-  @@index([status])
-  @@index([source])
-  @@index([assignedTo])
-  @@index([nextFollowUp])
-  @@index([qualificationScore])
+  // Optimized Indexes for Performance
+  @@index([email]) // Existing - Email lookup
+  @@index([status]) // Existing - Status filtering
+  @@index([source]) // Existing - Source tracking
+  @@index([assignedTo]) // Existing - Assignment tracking
+  @@index([nextFollowUp]) // Existing - Follow-up scheduling
+  @@index([qualificationScore]) // Existing - Lead scoring
+  @@index([createdAt]) // Time-based sorting
+  @@index([convertedToClient]) // Conversion tracking
+  @@index([convertedAt]) // Conversion time tracking
+  @@index([status, assignedTo]) // Compound: Assigned leads by status
+  @@index([status, nextFollowUp]) // Compound: Follow-up scheduling
+  @@index([assignedTo, nextFollowUp]) // Compound: User follow-ups
+  @@index([qualificationScore, status]) // Compound: Qualified leads
 }
 
 model Deal {
@@ -815,11 +950,19 @@ model Deal {
   lead   Lead    @relation(fields: [leadId], references: [id])
   client Client? @relation(fields: [clientId], references: [id])
 
-  @@index([leadId])
-  @@index([stage])
-  @@index([closeDate])
-  @@index([assignedTo])
-  @@index([clientId])
+  // Optimized Indexes for Performance
+  @@index([leadId]) // Existing - Lead deals
+  @@index([stage]) // Existing - Deal stage filtering
+  @@index([closeDate]) // Existing - Close date tracking
+  @@index([assignedTo]) // Existing - Assignment tracking
+  @@index([clientId]) // Existing - Client deals
+  @@index([createdAt]) // Time-based sorting
+  @@index([wonAt]) // Won date tracking
+  @@index([lostAt]) // Lost date tracking
+  @@index([probability]) // Probability filtering
+  @@index([stage, closeDate]) // Compound: Stage-based pipeline
+  @@index([assignedTo, stage]) // Compound: User deals by stage
+  @@index([stage, probability]) // Compound: Weighted pipeline
 }
 
 // Lead Activity Log for tracking actions (calls, emails, notes)
@@ -840,11 +983,16 @@ model LeadActivity {
   lead Lead @relation(fields: [leadId], references: [id])
   user User @relation(fields: [userId], references: [id])
 
-  @@index([leadId])
-  @@index([userId])
-  @@index([type])
-  @@index([scheduledAt])
-  @@index([createdAt])
+  // Optimized Indexes for Performance
+  @@index([leadId]) // Existing - Lead activities
+  @@index([userId]) // Existing - User activities
+  @@index([type]) // Existing - Activity type filtering
+  @@index([scheduledAt]) // Existing - Scheduled activities
+  @@index([createdAt]) // Existing - Time-based sorting
+  @@index([completedAt]) // Completion tracking
+  @@index([leadId, type]) // Compound: Lead activity by type
+  @@index([userId, scheduledAt]) // Compound: User scheduled activities
+  @@index([type, scheduledAt]) // Compound: Activity scheduling
 }
 
 model ContactLog {
@@ -864,11 +1012,15 @@ model ContactLog {
   client Client @relation(fields: [clientId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
 
-  @@index([clientId])
-  @@index([userId])
-  @@index([type])
-  @@index([scheduledAt])
-  @@index([createdAt])
+  // Optimized Indexes for Performance
+  @@index([clientId]) // Existing - Client contacts
+  @@index([userId]) // Existing - User contacts
+  @@index([type]) // Existing - Contact type filtering
+  @@index([scheduledAt]) // Existing - Scheduled contacts
+  @@index([createdAt]) // Existing - Time-based sorting
+  @@index([completedAt]) // Completion tracking
+  @@index([clientId, type]) // Compound: Client contacts by type
+  @@index([userId, scheduledAt]) // Compound: User scheduled contacts
 }
 
 model ResourceProfile {
@@ -1624,22 +1776,22 @@ enum BudgetCategory {
 
 // Tools & Integrations Management
 model Integration {
-  id            String             @id @default(uuid())
+  id            String              @id @default(uuid())
   name          String
   type          IntegrationType
   category      IntegrationCategory
   description   String?
-  isEnabled     Boolean            @default(false)
+  isEnabled     Boolean             @default(false)
   configuration Json? // Encrypted configuration data
   apiKey        String? // Encrypted API key
   webhookUrl    String?
   lastSyncAt    DateTime?
-  status        IntegrationStatus  @default(INACTIVE)
+  status        IntegrationStatus   @default(INACTIVE)
   errorMessage  String?
   syncFrequency String? // cron expression
   metadata      Json? // Additional metadata
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   // Relations
   logs IntegrationLog[]
@@ -1651,13 +1803,13 @@ model Integration {
 }
 
 model IntegrationLog {
-  id            String      @id @default(uuid())
+  id            String   @id @default(uuid())
   integrationId String
   action        String // sync, test, enable, disable, configure
   status        String // success, error, warning
   message       String?
   metadata      Json?
-  createdAt     DateTime    @default(now())
+  createdAt     DateTime @default(now())
 
   // Relations
   integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
@@ -1762,7 +1914,7 @@ model Meeting {
 
   // Client association (optional)
   clientId String?
-  client   Client?  @relation(fields: [clientId], references: [id])
+  client   Client? @relation(fields: [clientId], references: [id])
 
   // Recurrence settings
   isRecurring       Boolean              @default(false)
@@ -1797,19 +1949,19 @@ model Meeting {
 }
 
 model MeetingAttendee {
-  id        String         @id @default(uuid())
-  meetingId String
-  userId    String?
-  clientId  String?
-  email     String? // For external attendees
-  name      String? // For external attendees
-  status    AttendeeStatus @default(INVITED)
-  isRequired Boolean       @default(true)
-  attended  Boolean        @default(false)
-  joinedAt  DateTime?
-  leftAt    DateTime?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id         String         @id @default(uuid())
+  meetingId  String
+  userId     String?
+  clientId   String?
+  email      String? // For external attendees
+  name       String? // For external attendees
+  status     AttendeeStatus @default(INVITED)
+  isRequired Boolean        @default(true)
+  attended   Boolean        @default(false)
+  joinedAt   DateTime?
+  leftAt     DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
 
   // Relations
   meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
@@ -1914,20 +2066,20 @@ model ReportTemplate {
   type        ReportType
   isBuiltIn   Boolean        @default(false) // Pre-built templates vs custom
   isActive    Boolean        @default(true)
-  
+
   // Template configuration
-  config      Json // Data sources, filters, chart types, formatting options
-  layout      Json? // Report layout configuration
-  
+  config Json // Data sources, filters, chart types, formatting options
+  layout Json? // Report layout configuration
+
   // Metadata
-  createdBy   String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  reports     Report[]
-  schedules   ReportSchedule[]
-  
+  reports   Report[]
+  schedules ReportSchedule[]
+
   @@index([category])
   @@index([type])
   @@index([isBuiltIn])
@@ -1935,52 +2087,52 @@ model ReportTemplate {
 }
 
 model Report {
-  id           String       @id @default(uuid())
-  name         String
-  description  String?
-  category     ReportCategory
-  type         ReportType
-  status       ReportStatus @default(DRAFT)
-  
+  id          String         @id @default(uuid())
+  name        String
+  description String?
+  category    ReportCategory
+  type        ReportType
+  status      ReportStatus   @default(DRAFT)
+
   // Report configuration
-  templateId   String?
-  template     ReportTemplate? @relation(fields: [templateId], references: [id])
-  config       Json // Filters, date ranges, data sources
-  
+  templateId String?
+  template   ReportTemplate? @relation(fields: [templateId], references: [id])
+  config     Json // Filters, date ranges, data sources
+
   // Generated data
-  data         Json? // Report data
-  metadata     Json? // Statistics, totals, summaries
-  
+  data     Json? // Report data
+  metadata Json? // Statistics, totals, summaries
+
   // File storage
-  pdfUrl       String? // URL to generated PDF
-  excelUrl     String? // URL to generated Excel file
-  csvUrl       String? // URL to generated CSV file
-  fileSize     Int? // File size in bytes
-  
+  pdfUrl   String? // URL to generated PDF
+  excelUrl String? // URL to generated Excel file
+  csvUrl   String? // URL to generated CSV file
+  fileSize Int? // File size in bytes
+
   // Generation info
-  generatedAt  DateTime?
-  generatedBy  String?
+  generatedAt    DateTime?
+  generatedBy    String?
   generationTime Int? // Time taken in milliseconds
-  
+
   // Error tracking
-  error        String? // Error message if generation failed
-  retryCount   Int @default(0)
-  
+  error      String? // Error message if generation failed
+  retryCount Int     @default(0)
+
   // Access control
-  isPublic     Boolean @default(false)
-  sharedWith   String[] // Array of user IDs
-  
+  isPublic   Boolean  @default(false)
+  sharedWith String[] // Array of user IDs
+
   // Metadata
-  viewCount    Int @default(0)
-  downloadCount Int @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  expiresAt    DateTime? // Auto-delete old reports
-  
+  viewCount     Int       @default(0)
+  downloadCount Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  expiresAt     DateTime? // Auto-delete old reports
+
   // Relations
-  scheduleId   String?
-  schedule     ReportSchedule? @relation(fields: [scheduleId], references: [id])
-  
+  scheduleId String?
+  schedule   ReportSchedule? @relation(fields: [scheduleId], references: [id])
+
   @@index([category])
   @@index([type])
   @@index([status])
@@ -1991,41 +2143,41 @@ model Report {
 }
 
 model ReportSchedule {
-  id          String          @id @default(uuid())
+  id          String  @id @default(uuid())
   name        String
   description String?
-  
+
   // Template and configuration
-  templateId  String
-  template    ReportTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
-  config      Json // Filters, parameters
-  
+  templateId String
+  template   ReportTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  config     Json // Filters, parameters
+
   // Schedule settings
-  frequency   ReportFrequency
+  frequency      ReportFrequency
   cronExpression String? // For custom schedules
-  timezone    String @default("UTC")
-  
+  timezone       String          @default("UTC")
+
   // Delivery settings
-  format      ReportFormat
-  recipients  String[] // Array of email addresses
+  format       ReportFormat
+  recipients   String[] // Array of email addresses
   emailSubject String?
-  emailBody   String?
-  
+  emailBody    String?
+
   // Execution info
-  isActive    Boolean @default(true)
-  lastRunAt   DateTime?
-  nextRunAt   DateTime?
-  lastStatus  String? // Success, Failed
-  failureCount Int @default(0)
-  
+  isActive     Boolean   @default(true)
+  lastRunAt    DateTime?
+  nextRunAt    DateTime?
+  lastStatus   String? // Success, Failed
+  failureCount Int       @default(0)
+
   // Metadata
-  createdBy   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  reports     Report[]
-  
+  reports Report[]
+
   @@index([templateId])
   @@index([frequency])
   @@index([isActive])
@@ -2033,19 +2185,19 @@ model ReportSchedule {
 }
 
 model ReportCache {
-  id          String   @id @default(uuid())
-  cacheKey    String   @unique // Hash of report type + filters
-  category    ReportCategory
-  type        ReportType
-  data        Json // Cached report data
-  metadata    Json? // Cached statistics
-  
+  id       String         @id @default(uuid())
+  cacheKey String         @unique // Hash of report type + filters
+  category ReportCategory
+  type     ReportType
+  data     Json // Cached report data
+  metadata Json? // Cached statistics
+
   // Cache management
-  hitCount    Int @default(0)
-  lastAccess  DateTime @default(now())
-  createdAt   DateTime @default(now())
-  expiresAt   DateTime
-  
+  hitCount   Int      @default(0)
+  lastAccess DateTime @default(now())
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
   @@index([cacheKey])
   @@index([category])
   @@index([type])
