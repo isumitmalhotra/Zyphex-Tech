@@ -27,7 +27,7 @@ import {
   batchLoadByIds,
   batchLoadByForeignKey,
 } from './common';
-import { Prisma } from '@prisma/client';
+import { Prisma, TaskStatus } from '@prisma/client';
 
 // ============================================================================
 // Single Task Queries
@@ -159,7 +159,7 @@ export async function getTasks(
     // Add overdue filter
     if (filter?.overdue) {
       where.dueDate = { lt: new Date() };
-      where.status = { notIn: ['COMPLETED', 'CANCELLED'] };
+      where.status = { notIn: ['DONE', 'CANCELLED'] };
     }
 
     // Execute query with count
@@ -405,7 +405,7 @@ export async function getTaskStats(filter?: { projectId?: string; assigneeId?: s
       prisma.task.count({
         where: {
           ...where,
-          status: 'COMPLETED',
+          status: 'DONE',
         },
       }),
 
@@ -413,7 +413,7 @@ export async function getTaskStats(filter?: { projectId?: string; assigneeId?: s
       prisma.task.count({
         where: {
           ...where,
-          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+          status: { notIn: ['DONE', 'CANCELLED'] },
           dueDate: { lt: new Date() },
         },
       }),
@@ -422,7 +422,7 @@ export async function getTaskStats(filter?: { projectId?: string; assigneeId?: s
       prisma.task.count({
         where: {
           ...where,
-          status: { notIn: ['COMPLETED', 'CANCELLED'] },
+          status: { notIn: ['DONE', 'CANCELLED'] },
           dueDate: {
             gte: new Date(),
             lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -611,7 +611,7 @@ export async function updateTask(
  */
 export async function updateTaskStatus(
   id: string,
-  status: string
+  status: TaskStatus
 ): Promise<TaskMinimal> {
   return withQueryMetrics('updateTaskStatus', async () => {
     return prisma.task.update({
@@ -687,7 +687,7 @@ export async function restoreTask(id: string): Promise<TaskFull> {
  */
 export async function bulkUpdateTaskStatus(
   taskIds: string[],
-  status: string
+  status: TaskStatus
 ): Promise<{ count: number }> {
   return withQueryMetrics('bulkUpdateTaskStatus', async () => {
     return prisma.task.updateMany({

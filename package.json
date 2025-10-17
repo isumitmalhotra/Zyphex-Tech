@@ -45,6 +45,7 @@
     "db:backup": "tsx scripts/backup-database.ts",
     "db:studio": "npx prisma studio",
     "db:verify-indexes": "tsx scripts/verify-indexes.ts",
+    "test:query-library": "tsx scripts/test-query-library.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

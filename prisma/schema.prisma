@@ -614,6 +614,7 @@ model Task {
   skillsRequired Json? // Array of required skills
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime? // Soft delete capability
 
   // Relations
   project     Project     @relation(fields: [projectId], references: [id])
@@ -646,6 +647,15 @@ model Task {
   @@index([projectId, priority, status]) // Compound: Project priority view
   @@index([status, dueDate]) // Compound: Overdue task queries
   @@index([assigneeId, priority]) // Compound: User priority tasks
+  @@index([deletedAt]) // Soft delete queries
+  @@index([id, deletedAt]) // Compound: Task lookup with soft delete
+  @@index([status, deletedAt]) // Compound: Active tasks by status
+  @@index([priority, deletedAt]) // Compound: Active tasks by priority
+  @@index([projectId, deletedAt]) // Compound: Active project tasks
+  @@index([assigneeId, deletedAt]) // Compound: Active assignee tasks
+  @@index([projectId, status, deletedAt]) // Compound: Active project tasks by status
+  @@index([assigneeId, status, deletedAt]) // Compound: Active assignee tasks by status
+  @@index([assigneeId, dueDate, deletedAt]) // Compound: Active user upcoming tasks
 }
 
 model ActivityLog {
