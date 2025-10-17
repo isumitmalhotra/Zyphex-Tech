@@ -1,125 +1,64 @@
-/**import { getRedisClient, cacheKeys, cacheTTL } from './redis';
+import { getRedisClient, cacheKeys, cacheTTL } from './redis';
+import { memoryCacheAdapter, type CacheAdapter } from './memory';
 
- * Redis caching module exportsimport { memoryCacheAdapter, type CacheAdapter } from './memory';
-
- * 
-
- * Production-grade caching layer for Zyphex Tech platform// Cache manager that uses Redis with memory fallback
-
- */class CacheManager {
-
+// Cache manager that uses Redis with memory fallback
+class CacheManager {
   private primaryCache: CacheAdapter | null = null;
+  private fallbackCache: CacheAdapter = memoryCacheAdapter;
 
-// Core Redis client  private fallbackCache: CacheAdapter = memoryCacheAdapter;
-
-export { default as redis } from '../redis'
-
-export {  async getCache(): Promise<CacheAdapter> {
-
-  isRedisAvailable,    // Try to use Redis first
-
-  getRedisInfo,    const redis = getRedisClient();
-
-  getRedisMemoryStats,    if (redis && await this.isRedisHealthy()) {
-
-  getRedisMetrics,      return this.getRedisAdapter();
-
-  resetRedisMetrics,    }
-
-  logRedisMetrics,    
-
-  closeRedis,    // Fallback to memory cache
-
-  testRedisConnection,    return this.fallbackCache;
-
-  flushRedis,  }
-
-} from '../redis'
+  async getCache(): Promise<CacheAdapter> {
+    // Try to use Redis first
+    const redis = getRedisClient();
+    if (redis && await this.isRedisHealthy()) {
+      return this.getRedisAdapter();
+    }
+    
+    // Fallback to memory cache
+    return this.fallbackCache;
+  }
 
   private async isRedisHealthy(): Promise<boolean> {
-
-// Cache service    try {
-
-export {      const redis = getRedisClient();
-
-  cacheService,      if (!redis) return false;
-
-  CacheService,      
-
-  DEFAULT_TTL,      await redis.ping();
-
-} from './cache-service'      return true;
-
+    try {
+      const redis = getRedisClient();
+      if (!redis) return false;
+      
+      await redis.ping();
+      return true;
     } catch {
+      return false;
+    }
+  }
 
-// Cache keys      return false;
+  private getRedisAdapter(): CacheAdapter {
+    const redis = getRedisClient();
+    if (!redis) throw new Error('Redis client not available');
 
-export {    }
+    return {
+      async get<T>(key: string): Promise<T | null> {
+        try {
+          const result = await redis.get(key);
+          return result ? JSON.parse(result) : null;
+        } catch {
+          return null;
+        }
+      },
 
-  CacheNamespace,  }
+      async set<T>(key: string, value: T, ttl: number = 300): Promise<boolean> {
+        try {
+          await redis.setex(key, ttl, JSON.stringify(value));
+          return true;
+        } catch {
+          return false;
+        }
+      },
 
-  UserCacheKeys,
-
-  ClientCacheKeys,  private getRedisAdapter(): CacheAdapter {
-
-  ProjectCacheKeys,    const redis = getRedisClient();
-
-  TaskCacheKeys,    if (!redis) throw new Error('Redis client not available');
-
-  InvoiceCacheKeys,
-
-  SessionCacheKeys,    return {
-
-  DashboardCacheKeys,      async get<T>(key: string): Promise<T | null> {
-
-  StatsCacheKeys,        try {
-
-  ListCacheKeys,          const result = await redis.get(key);
-
-  SearchCacheKeys,          return result ? JSON.parse(result) : null;
-
-  generateCacheKey,        } catch {
-
-  parseCacheKey,          return null;
-
-  getCacheKeyPattern,        }
-
-} from './cache-keys'      },
-
-
-
-// Cache patterns      async set<T>(key: string, value: T, ttl: number = 300): Promise<boolean> {
-
-export {        try {
-
-  cacheAside,          await redis.setex(key, ttl, JSON.stringify(value));
-
-  cacheAsideStale,          return true;
-
-  writeThrough,        } catch {
-
-  writeBehind,          return false;
-
-  refreshAhead,        }
-
-  batchCacheAside,      },
-
-  invalidateEntity,
-
-  invalidateRelated,      async delete(key: string): Promise<boolean> {
-
-  invalidateTimeWindow,        try {
-
-  conditionalUpdate,          await redis.del(key);
-
-  withLock,          return true;
-
-  preventStampede,        } catch {
-
-  multiTierCache,          return false;
-
-} from './patterns'        }
-
+      async delete(key: string): Promise<boolean> {
+        try {
+          await redis.del(key);
+          return true;
+        } catch {
+          return false;
+        }
       },
 
       async deletePattern(pattern: string): Promise<boolean> {
