@@ -46,6 +46,7 @@
     "db:studio": "npx prisma studio",
     "db:verify-indexes": "tsx scripts/verify-indexes.ts",
     "test:query-library": "tsx scripts/test-query-library.ts",
+    "test:connection-pool": "tsx scripts/test-connection-pool.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {
