@@ -53,6 +53,10 @@
     "test:search-optimization": "tsx scripts/test-search-optimization.ts",
     "test:response-optimization": "tsx scripts/test-response-optimization.ts",
     "test:connection-optimization": "tsx scripts/test-connection-optimization.ts",
+    "test:performance-optimization": "tsx scripts/test-performance-optimization.ts",
+    "test:monitoring-dashboard": "tsx scripts/test-monitoring-dashboard.ts",
+    "optimize-migrations": "tsx scripts/optimize-migrations.ts",
+    "benchmark": "tsx scripts/performance-benchmark.ts",
     "cache:warm": "tsx scripts/warm-cache.ts",
     "postinstall": "prisma generate"
   },
