@@ -282,16 +282,57 @@ export const DashboardCacheKeys = {
   
   /**
    * Dashboard statistics (counts, progress, etc.)
-   * TTL: 5 minutes
+   * TTL: 2 minutes
    */
   stats: (userId: string) => `${CacheNamespace.DASHBOARD}:stats:${userId}`,
   
   /**
    * Recent activity feed
-   * TTL: 2 minutes
+   * TTL: 1 minute
    */
   activity: (userId: string, limit: number = 10) => 
     `${CacheNamespace.DASHBOARD}:activity:${userId}:${limit}`,
+  
+  /**
+   * Recent activity feed (alternative spelling)
+   * TTL: 1 minute
+   */
+  recentActivity: (userId: string, limit: number = 10) => 
+    `${CacheNamespace.DASHBOARD}:activity:${userId}:${limit}`,
+  
+  /**
+   * Active projects list
+   * TTL: 5 minutes
+   */
+  activeProjects: (userId: string, limit: number | string = 10) => 
+    `${CacheNamespace.DASHBOARD}:active-projects:${userId}:${limit}`,
+  
+  /**
+   * Active tasks list
+   * TTL: 3 minutes
+   */
+  activeTasks: (userId: string, limit: number | string = 20) => 
+    `${CacheNamespace.DASHBOARD}:active-tasks:${userId}:${limit}`,
+  
+  /**
+   * Overdue tasks list
+   * TTL: 5 minutes
+   */
+  overdueTasks: (userId: string, limit: number | string = 10) => 
+    `${CacheNamespace.DASHBOARD}:overdue-tasks:${userId}:${limit}`,
+  
+  /**
+   * Notifications list
+   * TTL: 30 seconds
+   */
+  notifications: (userId: string, limit: number | string = 50) => 
+    `${CacheNamespace.DASHBOARD}:notifications:${userId}:${limit}`,
+  
+  /**
+   * Complete dashboard data
+   * TTL: 2 minutes
+   */
+  complete: (userId: string) => `${CacheNamespace.DASHBOARD}:complete:${userId}`,
   
   /**
    * Dashboard widgets data
