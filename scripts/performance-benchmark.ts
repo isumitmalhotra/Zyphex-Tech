@@ -280,8 +280,7 @@ async function main() {
         const user = await prisma.user.findFirst()
         if (user) {
           await prisma.user.findUnique({
-            where: { id: user.id },
-            include: { profile: true }
+            where: { id: user.id }
           })
         }
       }
@@ -292,8 +291,7 @@ async function main() {
       warmup: 5,
       fn: async () => {
         await prisma.user.aggregate({
-          _count: true,
-          _avg: { id: true }
+          _count: true
         })
       }
     },

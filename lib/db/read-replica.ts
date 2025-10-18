@@ -466,7 +466,8 @@ class ReadReplicaManagerClass {
     }
     
     // Reset per-replica stats
-    for (const id of this.replicaConfigs.keys()) {
+    const replicaIds = Array.from(this.replicaConfigs.keys())
+    for (const id of replicaIds) {
       this.stats.readsPerReplica[id] = 0
     }
   }
