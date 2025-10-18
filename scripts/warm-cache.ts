@@ -20,11 +20,11 @@ async function warmUserCache(): Promise<number> {
   console.log('[Cache Warm] Starting user cache warming...')
   
   try {
-    // Get recently active users (last 7 days)
+    // Get recently created/updated users (last 7 days)
     const activeUsers = await prisma.user.findMany({
       where: {
         deletedAt: null,
-        lastLoginAt: {
+        updatedAt: {
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         },
       },
@@ -33,7 +33,7 @@ async function warmUserCache(): Promise<number> {
         email: true,
         name: true,
         role: true,
-        avatar: true,
+        image: true,
       },
       take: 100, // Limit to top 100 active users
     })
@@ -76,11 +76,12 @@ async function warmProjectCache(): Promise<number> {
         client: {
           select: {
             id: true,
-            companyName: true,
-            contactName: true,
+            name: true,
+            email: true,
+            company: true,
           },
         },
-        projectManager: {
+        manager: {
           select: {
             id: true,
             name: true,
@@ -121,7 +122,7 @@ async function warmDashboardCache(): Promise<number> {
     const users = await prisma.user.findMany({
       where: {
         deletedAt: null,
-        lastLoginAt: {
+        updatedAt: {
           gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
         },
       },
@@ -144,7 +145,7 @@ async function warmDashboardCache(): Promise<number> {
           where: {
             deletedAt: null,
             OR: [
-              { projectManagerId: user.id },
+              { managerId: user.id },
               { teamMembers: { some: { userId: user.id } } },
             ],
           },
@@ -153,7 +154,6 @@ async function warmDashboardCache(): Promise<number> {
         // Get user's pending tasks count
         const pendingTasksCount = await prisma.task.count({
           where: {
-            deletedAt: null,
             assigneeId: user.id,
             status: {
               notIn: ['DONE', 'CANCELLED'],
@@ -164,7 +164,6 @@ async function warmDashboardCache(): Promise<number> {
         // Get user's overdue tasks count
         const overdueTasksCount = await prisma.task.count({
           where: {
-            deletedAt: null,
             assigneeId: user.id,
             status: {
               notIn: ['DONE', 'CANCELLED'],
@@ -226,10 +225,9 @@ async function warmStatsCache(): Promise<number> {
           status: { notIn: ['COMPLETED', 'CANCELLED'] },
         },
       }),
-      prisma.task.count({ where: { deletedAt: null } }),
+      prisma.task.count(),
       prisma.task.count({
         where: {
-          deletedAt: null,
           status: 'DONE',
         },
       }),

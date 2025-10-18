@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { encryptionExtension } from '@/lib/db/encryption-extension'
+import { createQueryMonitorExtension } from '@/lib/monitoring/query-monitor'
 
 // PrismaClient is attached to the `global` object in development to prevent
 // exhausting your database connection limit.
@@ -98,7 +99,7 @@ export function logPoolMetrics(): void {
  * Create Prisma Client with optimized connection pooling and encryption extension
  */
 function createPrismaClient() {
-  const client = new PrismaClient({
+  const baseClient = new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     datasources: {
       db: {
@@ -107,8 +108,10 @@ function createPrismaClient() {
     },
   })
   
-  // Apply encryption extension for automatic field-level encryption
-  return client.$extends(encryptionExtension)
+  // Apply extensions: query monitoring and encryption
+  return baseClient
+    .$extends(createQueryMonitorExtension())
+    .$extends(encryptionExtension)
 }
 
 /**
