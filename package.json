@@ -49,6 +49,8 @@
     "test:connection-pool": "tsx scripts/test-connection-pool.ts",
     "test:redis-cache": "tsx scripts/test-redis-cache.ts",
     "test:query-monitoring": "tsx scripts/test-query-monitoring.ts",
+    "test:dashboard-optimization": "tsx scripts/test-dashboard-optimization.ts",
+    "test:search-optimization": "tsx scripts/test-search-optimization.ts",
     "cache:warm": "tsx scripts/warm-cache.ts",
     "postinstall": "prisma generate"
   },
