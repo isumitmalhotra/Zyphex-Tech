@@ -479,8 +479,10 @@ export function createQueryMonitorExtension() {
 /**
  * Create Prisma middleware for query monitoring (legacy support)
  */
-export function createQueryMonitorMiddleware(): Prisma.Middleware {
-  return async (params, next) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createQueryMonitorMiddleware(): any {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return async (params: any, next: any) => {
     const startTime = Date.now()
     
     try {
@@ -544,7 +546,8 @@ export function createQueryMonitorMiddleware(): Prisma.Middleware {
 /**
  * Generate a hash for query structure (for grouping similar queries)
  */
-function generateQueryHash(params: Prisma.MiddlewareParams): string {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function generateQueryHash(params: any): string {
   const structure = {
     model: params.model,
     action: params.action,

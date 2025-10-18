@@ -473,7 +473,6 @@ export async function getTaskTimeSummary(filter?: { projectId?: string; assignee
       }),
       prisma.timeEntry.aggregate({
         where: {
-          deletedAt: null,
           task: where,
         },
         _sum: {
@@ -511,7 +510,6 @@ export async function getTaskWithTimeEntries(taskId: string) {
       select: {
         ...taskSelectWithAssignee,
         timeEntries: {
-          where: { deletedAt: null },
           select: {
             id: true,
             hours: true,
@@ -530,9 +528,7 @@ export async function getTaskWithTimeEntries(taskId: string) {
         },
         _count: {
           select: {
-            timeEntries: {
-              where: { deletedAt: null },
-            },
+            timeEntries: true,
           },
         },
       },
@@ -546,6 +542,8 @@ export async function getTaskWithTimeEntries(taskId: string) {
  */
 export async function getTaskWithComments(taskId: string) {
   return withQueryMetrics('getTaskWithComments', async () => {
+    // Note: Task model doesn't have comments relation in current schema
+    // This function returns task data only
     return prisma.task.findFirst({
       where: {
         id: taskId,
@@ -553,30 +551,6 @@ export async function getTaskWithComments(taskId: string) {
       },
       select: {
         ...taskSelectWithAssignee,
-        comments: {
-          where: { deletedAt: null },
-          select: {
-            id: true,
-            content: true,
-            createdAt: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 50,
-        },
-        _count: {
-          select: {
-            comments: {
-              where: { deletedAt: null },
-            },
-          },
-        },
       },
     });
   });

@@ -99,12 +99,12 @@ export async function GET(request: NextRequest) {
     const activityFeed = tasks.slice(0, 10).map(task => ({
       type: 'task',
       title: `Task "${task.title}" ${task.status.toLowerCase()}`,
-      time: task.createdAt,
+      time: task.updatedAt || new Date(),
       project: task.project?.name,
-      icon: task.status === 'COMPLETED' ? 'CheckCircle' : 
-            task.status === 'IN_PROGRESS' ? 'Clock' : 'Circle',
-      color: task.status === 'COMPLETED' ? 'text-green-400' : 
-             task.status === 'IN_PROGRESS' ? 'text-blue-400' : 'text-gray-400'
+      icon: task.status.includes('COMPLETED') ? 'CheckCircle' : 
+            task.status.includes('PROGRESS') ? 'Clock' : 'Circle',
+      color: task.status.includes('COMPLETED') ? 'text-green-400' : 
+             task.status.includes('PROGRESS') ? 'text-blue-400' : 'text-gray-400'
     }))
 
     // Upcoming deadlines from tasks
@@ -136,8 +136,10 @@ export async function GET(request: NextRequest) {
       stats: {
         // Project stats from user counts
         projects: {
-          active: user._count.projects,
-          total: user._count.projects, // Simplified for performance
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          active: (user as any)._count?.projects || 0,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          total: (user as any)._count?.projects || 0, // Simplified for performance
         },
         // Task stats from optimized queries
         tasks: enhancedTaskStats,

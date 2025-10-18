@@ -120,14 +120,6 @@ export async function getInvoices(
       }
     }
 
-    // Add issue date filter
-    if (filter?.issueDate) {
-      const issueDateFilter = buildDateRangeFilter(filter.issueDate);
-      if (issueDateFilter) {
-        where.issueDate = issueDateFilter;
-      }
-    }
-
     // Add amount range filter
     if (filter?.amountRange) {
       const amountFilter = buildNumericRangeFilter(filter.amountRange);
@@ -196,7 +188,6 @@ export async function getOverdueInvoices(
     const { skip, take, page, limit } = calculatePagination(pagination);
 
     const where: Prisma.InvoiceWhereInput = {
-      deletedAt: null,
       status: { notIn: ['PAID', 'CANCELLED'] },
       dueDate: { lt: new Date() },
     };
@@ -238,7 +229,6 @@ export async function batchGetInvoicesByProjectIds(
 export async function getInvoiceStats(filter?: { clientId?: string; projectId?: string }) {
   return withQueryMetrics('getInvoiceStats', async () => {
     const where: Prisma.InvoiceWhereInput = {
-      deletedAt: null,
       ...(filter?.clientId && { clientId: filter.clientId }),
       ...(filter?.projectId && { projectId: filter.projectId }),
     };
@@ -297,7 +287,7 @@ export async function getInvoiceStats(filter?: { clientId?: string; projectId?: 
  */
 export async function updateInvoiceStatus(
   id: string,
-  status: string,
+  status: Prisma.InvoiceStatus,
   paidAt?: Date
 ): Promise<InvoiceFull> {
   return withQueryMetrics('updateInvoiceStatus', async () => {
@@ -436,7 +426,6 @@ export async function getConversation(
     const { skip, take, page, limit } = calculatePagination(pagination);
 
     const where: Prisma.MessageWhereInput = {
-      deletedAt: null,
       OR: [
         { senderId: userId1, receiverId: userId2 },
         { senderId: userId2, receiverId: userId1 },
@@ -482,7 +471,6 @@ export async function getUnreadMessageCount(userId: string): Promise<number> {
       where: {
         receiverId: userId,
         readAt: null,
-        deletedAt: null,
       },
     });
   });
@@ -515,7 +503,6 @@ export async function markAllMessagesAsRead(userId: string): Promise<{ count: nu
       where: {
         receiverId: userId,
         readAt: null,
-        deletedAt: null,
       },
       data: {
         readAt: new Date(),
@@ -550,26 +537,22 @@ export async function getMessageStats(userId: string) {
       prisma.message.count({
         where: {
           senderId: userId,
-          deletedAt: null,
         },
       }),
       prisma.message.count({
         where: {
           receiverId: userId,
-          deletedAt: null,
         },
       }),
       prisma.message.count({
         where: {
           receiverId: userId,
           readAt: null,
-          deletedAt: null,
         },
       }),
       prisma.message.count({
         where: {
           receiverId: userId,
-          deletedAt: null,
           createdAt: {
             gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
           },

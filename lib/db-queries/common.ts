@@ -334,7 +334,8 @@ export async function batchLoadByForeignKey<T extends Record<string, unknown>>(
  * Execute operations in a transaction with retry logic
  */
 export async function withTransaction<T>(
-  operations: (tx: Prisma.TransactionClient) => Promise<T>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  operations: (tx: any) => Promise<T>,
   maxRetries: number = 3
 ): Promise<T> {
   let lastError: Error | null = null;
@@ -407,7 +408,8 @@ export function combineWhereConditions<T extends Record<string, unknown>>(
   
   return {
     AND: filtered,
-  } as T;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any as T;
 }
 
 /**

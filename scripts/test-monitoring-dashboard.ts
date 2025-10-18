@@ -155,7 +155,7 @@ async function runTests() {
   
   console.log('\n🚨 ALERT SYSTEM TESTS\n')
   
-  await test('Alerts - Track slow queries', () => {
+  await test('Alerts - Track slow queries', async () => {
     PerformanceDashboard.reset()
     PerformanceDashboard.configureAlerts({ enabled: true, slowQueryThreshold: 1000 })
     
@@ -169,7 +169,7 @@ async function runTests() {
     assert(['warning', 'critical'].includes(alerts[0].severity), 'Should have appropriate severity')
   })
   
-  await test('Alerts - Track query failures', () => {
+  await test('Alerts - Track query failures', async () => {
     PerformanceDashboard.reset()
     PerformanceDashboard.configureAlerts({ enabled: true })
     
@@ -183,7 +183,7 @@ async function runTests() {
     assert(alerts[0].severity === 'critical', 'Should have critical severity')
   })
   
-  await test('Alerts - Filter by severity', () => {
+  await test('Alerts - Filter by severity', async () => {
     PerformanceDashboard.reset()
     PerformanceDashboard.configureAlerts({ enabled: true, slowQueryThreshold: 1000 })
     
@@ -201,7 +201,7 @@ async function runTests() {
     assert(warningAlerts.length >= 1, 'Should have warning alerts')
   })
   
-  await test('Alerts - Clear alerts', () => {
+  await test('Alerts - Clear alerts', async () => {
     PerformanceDashboard.reset()
     PerformanceDashboard.configureAlerts({ enabled: true })
     
@@ -218,7 +218,7 @@ async function runTests() {
     assert(alerts.length === 0, 'Should have no alerts after clearing')
   })
   
-  await test('Alerts - Configuration', () => {
+  await test('Alerts - Configuration', async () => {
     PerformanceDashboard.configureAlerts({
       slowQueryThreshold: 500,
       highUtilizationThreshold: 85,

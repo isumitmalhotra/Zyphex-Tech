@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Load environment variables first
 require('dotenv').config();
 
@@ -25,7 +27,7 @@ app.prepare().then(() => {
       // This tells it to parse the query portion of the URL.
       const parsedUrl = parse(req.url, true);
       await handle(req, res, parsedUrl);
-    } catch (err) {
+    } catch (_err) {
       // Error handling request
       res.statusCode = 500;
       res.end('internal server error');
@@ -70,7 +72,7 @@ app.prepare().then(() => {
       try {
         const decodedString = Buffer.from(token, 'base64').toString();
         decoded = JSON.parse(decodedString);
-      } catch (error) {
+      } catch (_error) {
         // Invalid token format
         return next(new Error('Invalid token format'));
       }
@@ -81,7 +83,7 @@ app.prepare().then(() => {
       socket.userName = decoded.name || decoded.userName;
       
       next();
-    } catch (error) {
+    } catch (_error) {
       // Authentication failed
       next(new Error('Authentication failed'));
     }
@@ -142,7 +144,7 @@ app.prepare().then(() => {
           io.to(`user_${receiverId}`).emit('new_message', messageData);
           socket.emit('message_sent', messageData); // Confirmation to sender
         }
-      } catch (error) {
+      } catch (_error) {
         // Error sending message
         socket.emit('error', { message: 'Failed to send message' });
       }
@@ -184,7 +186,7 @@ app.prepare().then(() => {
     });
 
     // Handle disconnect
-    socket.on('disconnect', (reason) => {
+    socket.on('disconnect', (_reason) => {
       // User disconnected
     });
 
@@ -197,11 +199,11 @@ app.prepare().then(() => {
   });
 
   httpServer
-    .once('error', (err) => {
+    .once('error', (_err) => {
       // HTTP Server error
       process.exit(1);
     })
-    .on('clientError', (err, socket) => {
+    .on('clientError', (_err, socket) => {
       // Client error
       socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
     })

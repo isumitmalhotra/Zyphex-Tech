@@ -14,7 +14,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
-import { Role, ProjectStatus, TaskStatus, TaskPriority } from '@prisma/client'
+import { Role, ProjectStatus, TaskStatus, Priority } from '@prisma/client'
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -199,10 +199,10 @@ export async function getDashboardStats(userId: string, role: Role): Promise<Das
       where: { receiverId: userId, readAt: null }
     }),
 
-    // Pending invoices
+    // Pending invoices (SENT but not paid)
     prisma.invoice.count({
       where: {
-        status: 'PENDING',
+        status: 'SENT',
         project: role === 'CLIENT'
           ? { clientId: userId }
           : role === 'PROJECT_MANAGER'
@@ -264,7 +264,6 @@ export async function getActiveProjects(
       startDate: true,
       endDate: true,
       budget: true,
-      progress: true,
       updatedAt: true,
       client: {
         select: {
@@ -477,8 +476,6 @@ export async function getRecentActivity(
       action: true,
       entityType: true,
       entityId: true,
-      entityName: true,
-      description: true,
       userId: true,
       metadata: true,
       createdAt: true,

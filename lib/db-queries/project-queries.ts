@@ -497,7 +497,6 @@ export async function getProjectWithTasksSummary(projectId: string) {
       prisma.timeEntry.aggregate({
         where: {
           projectId,
-          deletedAt: null,
         },
         _sum: {
           hours: true,
@@ -546,7 +545,6 @@ export async function getProjectWithActivity(projectId: string) {
           take: 10,
         },
         messages: {
-          where: { deletedAt: null },
           select: {
             id: true,
             content: true,
@@ -592,7 +590,7 @@ export async function updateProject(
  */
 export async function updateProjectStatus(
   id: string,
-  status: string
+  status: Prisma.ProjectStatus
 ): Promise<ProjectMinimal> {
   return withQueryMetrics('updateProjectStatus', async () => {
     return prisma.project.update({

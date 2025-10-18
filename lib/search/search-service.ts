@@ -17,7 +17,7 @@
  */
 
 import { prisma } from '@/lib/prisma'
-import { Prisma, ProjectStatus, TaskStatus, TaskPriority, Role } from '@prisma/client'
+import { Prisma, ProjectStatus, TaskStatus, Priority, Role } from '@prisma/client'
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -385,7 +385,7 @@ export class SearchService {
           ...where,
           OR: [
             { assigneeId: userId },
-            { creatorId: userId },
+            { createdBy: userId },
             { project: { managerId: userId } }
           ]
         }
@@ -405,7 +405,7 @@ export class SearchService {
           ...where,
           OR: [
             { assigneeId: userId },
-            { creatorId: userId }
+            { createdBy: userId }
           ]
         }
     }

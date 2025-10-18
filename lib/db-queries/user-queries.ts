@@ -445,7 +445,6 @@ export async function getUserDashboardData(userId: string) {
             },
             receivedMessages: {
               where: {
-                deletedAt: null,
                 readAt: null,
               },
             },
