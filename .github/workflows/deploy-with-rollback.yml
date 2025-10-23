@@ -113,13 +113,62 @@ jobs:
             NEW_COMMIT=$(git rev-parse --short HEAD)
             echo "New commit: $NEW_COMMIT"
             
-            # Install/update dependencies
-            echo "📦 Installing dependencies..."
-            if ! npm ci --legacy-peer-deps 2>&1 | tee npm-install.log; then
-              echo "❌ npm install failed!"
-              cat npm-install.log
-              exit 1
+            # Clean up to free memory and disk space
+            echo "🧹 Pre-installation cleanup..."
+            # Remove old node_modules if git pull changed package.json
+            if git diff --name-only $CURRENT_COMMIT $NEW_COMMIT | grep -q "package"; then
+              echo "Package files changed, cleaning node_modules..."
+              rm -rf node_modules
             fi
+            
+            # Clean npm cache to free space
+            npm cache clean --force 2>/dev/null || true
+            
+            # Clean old build artifacts
+            rm -rf .next.tmp npm-debug.log* yarn-error.log*
+            
+            echo "✅ Cleanup complete"
+            
+            # Install/update dependencies with memory optimization
+            echo "📦 Installing dependencies..."
+            
+            # Check available memory
+            FREE_MEM=$(free -m | awk 'NR==2{printf "%s", $7}')
+            echo "Available memory: ${FREE_MEM}MB"
+            
+            # Use memory-efficient installation strategy
+            if ! NODE_OPTIONS='--max-old-space-size=2048' npm install --prefer-offline --no-audit --legacy-peer-deps 2>&1 | tee npm-install.log; then
+              echo "❌ npm install failed!"
+              echo "Last 100 lines of npm-install.log:"
+              tail -n 100 npm-install.log
+              
+              # Check if it's a memory issue
+              if grep -q "ENOMEM\|out of memory" npm-install.log; then
+                echo "⚠️  Memory issue detected. Trying with swap space..."
+                
+                # Enable swap if not already enabled
+                if ! swapon -s | grep -q "/swapfile"; then
+                  echo "Creating temporary swap file..."
+                  sudo fallocate -l 2G /swapfile 2>/dev/null || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+                  sudo chmod 600 /swapfile
+                  sudo mkswap /swapfile
+                  sudo swapon /swapfile
+                fi
+                
+                # Retry with swap enabled
+                echo "Retrying npm install with swap enabled..."
+                if ! NODE_OPTIONS='--max-old-space-size=2048' npm install --prefer-offline --no-audit --legacy-peer-deps; then
+                  echo "❌ npm install still failed after retry!"
+                  exit 1
+                fi
+                
+                echo "✅ npm install succeeded with swap"
+              else
+                exit 1
+              fi
+            fi
+            
+            echo "✅ Dependencies installed successfully"
             
             # Generate Prisma Client
             echo "🔧 Generating Prisma Client..."
@@ -141,10 +190,16 @@ jobs:
             echo "🧹 Cleaning old build..."
             rm -rf .next
             
-            # Build application
+            # Build application with memory optimization
             echo "🏗️  Building application..."
             BUILD_START=$(date +%s)
-            if ! NODE_ENV=production NODE_OPTIONS='--max-old-space-size=4096' npm run build 2>&1 | tee build.log; then
+            
+            # Set memory limits and disable source maps for production to save memory
+            export NODE_OPTIONS='--max-old-space-size=3072'
+            export NEXT_TELEMETRY_DISABLED=1
+            export GENERATE_SOURCEMAP=false
+            
+            if ! npm run build 2>&1 | tee build.log; then
               BUILD_END=$(date +%s)
               BUILD_TIME=$((BUILD_END - BUILD_START))
               echo "❌ Build failed after ${BUILD_TIME}s!"
@@ -232,9 +287,9 @@ jobs:
               # Restore previous code
               git reset --hard $ROLLBACK_COMMIT
               
-              # Reinstall dependencies
+              # Reinstall dependencies (use existing node_modules if install fails)
               echo "Reinstalling dependencies..."
-              npm ci --legacy-peer-deps || true
+              NODE_OPTIONS='--max-old-space-size=2048' npm install --prefer-offline --no-audit --legacy-peer-deps || echo "Warning: npm install failed during rollback, using existing dependencies"
               
               # Restart with old version
               echo "Restarting with previous version..."
