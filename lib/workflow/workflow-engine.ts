@@ -350,7 +350,6 @@ export class WorkflowEngine {
    * Load workflow from database
    */
   private async loadWorkflow(workflowId: string): Promise<Workflow | null> {
-    // @ts-expect-error - Extended Prisma client has workflow model at runtime
     return await this.prisma.workflow.findUnique({
       where: { id: workflowId },
     }) as Workflow | null
@@ -363,7 +362,6 @@ export class WorkflowEngine {
     workflow: Workflow,
     context: ExecutionContext
   ): Promise<WorkflowExecution> {
-    // @ts-expect-error - Extended Prisma client has workflowExecution model at runtime
     return await this.prisma.workflowExecution.create({
       data: {
         workflowId: workflow.id,
@@ -373,7 +371,7 @@ export class WorkflowEngine {
         context: context as unknown as Prisma.InputJsonValue,
         retryCount: 0,
       },
-    }) as WorkflowExecution
+    }) as unknown as WorkflowExecution
   }
 
   /**
@@ -383,7 +381,6 @@ export class WorkflowEngine {
     executionId: string,
     status: WorkflowExecutionStatus
   ): Promise<void> {
-    // @ts-expect-error - Extended Prisma client has workflowExecution model at runtime
     await this.prisma.workflowExecution.update({
       where: { id: executionId },
       data: { status },
@@ -442,7 +439,6 @@ export class WorkflowEngine {
     status: WorkflowExecutionStatus,
     duration: number
   ): Promise<void> {
-    // @ts-expect-error - Extended Prisma client has workflow model at runtime
     const workflow = await this.prisma.workflow.findUnique({
       where: { id: workflowId },
     })
@@ -460,7 +456,6 @@ export class WorkflowEngine {
       (currentAvg * workflow.executionCount + duration) / newExecutionCount
     )
 
-    // @ts-expect-error - Extended Prisma client has workflow model at runtime
     await this.prisma.workflow.update({
       where: { id: workflowId },
       data: {
@@ -477,7 +472,6 @@ export class WorkflowEngine {
    * Get workflow max retries
    */
   private async getWorkflowMaxRetries(workflowId: string): Promise<number> {
-    // @ts-expect-error - Extended Prisma client has workflow model at runtime
     const workflow = await this.prisma.workflow.findUnique({
       where: { id: workflowId },
       select: { maxRetries: true },
@@ -492,7 +486,6 @@ export class WorkflowEngine {
     execution: WorkflowExecution,
     error: Error
   ): Promise<void> {
-    // @ts-expect-error - Extended Prisma client has workflow model at runtime
     const workflow = await this.prisma.workflow.findUnique({
       where: { id: execution.workflowId },
       select: { retryDelay: true },
@@ -501,7 +494,6 @@ export class WorkflowEngine {
     const retryDelay = workflow?.retryDelay || 60 // seconds
     const nextRetryAt = new Date(Date.now() + retryDelay * 1000)
 
-    // @ts-expect-error - Extended Prisma client has workflowExecution model at runtime
     await this.prisma.workflowExecution.update({
       where: { id: execution.id },
       data: {
@@ -536,7 +528,6 @@ export class WorkflowEngine {
     if (!this.config.enableLogging) return
 
     try {
-      // @ts-expect-error - Extended Prisma client has workflowLog model at runtime
       await this.prisma.workflowLog.create({
         data: {
           workflowId,

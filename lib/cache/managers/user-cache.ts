@@ -161,11 +161,9 @@ export class UserCacheManager {
     const count = await prisma.task.count({
       where: {
         assigneeId: userId,
-        OR: [
-          { status: 'PENDING' },
-          { status: 'IN_PROGRESS' },
-          { status: 'REVIEW' },
-        ],
+        status: {
+          in: ['TODO', 'IN_PROGRESS', 'REVIEW'],
+        },
         deletedAt: null,
       },
     })
@@ -193,7 +191,11 @@ export class UserCacheManager {
     const count = await prisma.message.count({
       where: {
         receiverId: userId,
-        read: false,
+        reads: {
+          none: {
+            userId: userId,
+          },
+        },
       },
     })
     

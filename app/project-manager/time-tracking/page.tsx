@@ -789,7 +789,20 @@ export default function TimeTrackingPage() {
               <CardContent className="flex items-center justify-center">
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
-                    <Pie data={billabilityData} cx="50%" cy="50%" labelLine={false} label={(entry) => `${entry.name}: ${entry.value.toFixed(1)}h`} outerRadius={100} fill="#8884d8" dataKey="value">
+                    <Pie 
+                      data={billabilityData} 
+                      cx="50%" 
+                      cy="50%" 
+                      labelLine={false} 
+                      label={(props: Record<string, unknown>) => {
+                        const name = props.name as string;
+                        const value = props.value as number;
+                        return `${name}: ${value.toFixed(1)}h`;
+                      }} 
+                      outerRadius={100} 
+                      fill="#8884d8" 
+                      dataKey="value"
+                    >
                       {billabilityData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
@@ -1100,15 +1113,15 @@ function TimeEntriesList({
   };
 
   const getStatusBadge = (status: TimeEntry["status"]) => {
-    const variants = {
-      draft: { variant: "secondary" as const, label: "Draft" },
-      submitted: { variant: "default" as const, label: "Submitted" },
-      approved: { variant: "default" as const, label: "Approved", className: "bg-green-600" },
-      rejected: { variant: "destructive" as const, label: "Rejected" },
+    const variants: Record<TimeEntry["status"], { variant: "secondary" | "default" | "destructive"; label: string; className?: string }> = {
+      draft: { variant: "secondary", label: "Draft" },
+      submitted: { variant: "default", label: "Submitted" },
+      approved: { variant: "default", label: "Approved", className: "bg-green-600" },
+      rejected: { variant: "destructive", label: "Rejected" },
     };
     const config = variants[status];
     return (
-      <Badge variant={config.variant} className={config.className}>
+      <Badge variant={config.variant} className={config.className || ""}>
         {config.label}
       </Badge>
     );
