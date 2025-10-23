@@ -72,7 +72,12 @@ jobs:
         run: |
           deployment_success=false
           
-          ssh -o StrictHostKeyChecking=accept-new -p ${VPS_PORT} ${VPS_USER}@${VPS_HOST} << 'ENDSSH'
+          # Increase SSH timeout and keep-alive for long builds
+          ssh -o StrictHostKeyChecking=accept-new \
+              -o ServerAliveInterval=60 \
+              -o ServerAliveCountMax=10 \
+              -o ConnectTimeout=30 \
+              -p ${VPS_PORT} ${VPS_USER}@${VPS_HOST} << 'ENDSSH'
             set -e
             
             # Color codes for output
@@ -195,11 +200,46 @@ jobs:
             BUILD_START=$(date +%s)
             
             # Set memory limits and disable source maps for production to save memory
-            export NODE_OPTIONS='--max-old-space-size=3072'
+            export NODE_OPTIONS='--max-old-space-size=2048'
             export NEXT_TELEMETRY_DISABLED=1
             export GENERATE_SOURCEMAP=false
             
-            if ! npm run build 2>&1 | tee build.log; then
+            # Run build in background to prevent SSH timeout
+            echo "Starting build process (this may take 5-10 minutes)..."
+            
+            # Use nohup to keep build running if SSH disconnects
+            nohup npm run build:vps > build.log 2>&1 &
+            BUILD_PID=$!
+            
+            echo "Build PID: $BUILD_PID"
+            
+            # Monitor build progress
+            TIMEOUT=600  # 10 minutes
+            ELAPSED=0
+            while kill -0 $BUILD_PID 2>/dev/null; do
+              sleep 10
+              ELAPSED=$((ELAPSED + 10))
+              
+              # Show progress every 30 seconds
+              if [ $((ELAPSED % 30)) -eq 0 ]; then
+                echo "Build running... ${ELAPSED}s elapsed"
+                # Show last few lines of build log
+                tail -n 3 build.log 2>/dev/null || true
+              fi
+              
+              # Timeout check
+              if [ $ELAPSED -ge $TIMEOUT ]; then
+                echo "❌ Build timeout after ${TIMEOUT}s!"
+                kill $BUILD_PID 2>/dev/null || true
+                break
+              fi
+            done
+            
+            # Wait for process to complete
+            wait $BUILD_PID
+            BUILD_EXIT_CODE=$?
+            
+            if [ $BUILD_EXIT_CODE -ne 0 ]; then
               BUILD_END=$(date +%s)
               BUILD_TIME=$((BUILD_END - BUILD_START))
               echo "❌ Build failed after ${BUILD_TIME}s!"
