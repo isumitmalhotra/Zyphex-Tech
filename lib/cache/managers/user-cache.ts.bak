@@ -1,0 +1,1041 @@
+/**
+ * User Cache Manager - Simplified Production Version
+ * 
+ * Caching strategy for user data with multi-level cache:
+ * - User profiles (30min TTL)
+ * - User permissions (30min TTL)
+ * - User projects list (30min TTL)
+ * - Automatic invalidation
+ * 
+ * Uses existing Prisma schema fields (no avatar, no isActive)
+ */
+
+import { getMultiLevelCache } from '../multi-level-cache'
+import { UserCacheKeys } from '../cache-keys'
+import { prisma } from '@/lib/prisma'
+
+/**
+ * TTL constants (in seconds)
+ */
+export const USER_CACHE_TTL = {
+  PROFILE: 1800,      // 30 minutes
+  PERMISSIONS: 1800,  // 30 minutes
+  PROJECTS: 1800,     // 30 minutes
+  TASKS: 900,         // 15 minutes
+  UNREAD: 60,         // 1 minute
+  SEARCH: 600,        // 10 minutes
+} as const
+
+/**
+ * User Cache Manager
+ */
+export class UserCacheManager {
+  private cache = getMultiLevelCache()
+  
+  /**
+   * Get user profile (cached)
+   */
+  async getUserProfile(userId: string) {
+    const cacheKey = UserCacheKeys.profile(userId)
+    
+    // Try cache first
+    const cached = await this.cache.get(cacheKey)
+    if (cached) return cached
+    
+    // Fetch from database
+    const user = await prisma.user.findUnique({
+      where: { id: userId, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        image: true,
+        createdAt: true,
+        updatedAt: true,
+        emailVerified: true,
+      },
+    })
+    
+    if (!user) return null
+    
+    // Cache and return
+    await this.cache.set(cacheKey, user, {
+      l1Ttl: USER_CACHE_TTL.PROFILE,
+      l2Ttl: USER_CACHE_TTL.PROFILE,
+    })
+    
+    return user
+  }
+  
+  /**
+   * Get user with projects (cached)
+   */
+  async getUserWithProjects(userId: string) {
+    const cacheKey = UserCacheKeys.projects(userId)
+    
+    // Try cache
+    const cached = await this.cache.get(cacheKey)
+    if (cached) return cached
+    
+    // Fetch from database
+    const user = await prisma.user.findUnique({
+      where: { id: userId, deletedAt: null },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        image: true,
+        projects: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 50,
+        },
+      },
+    })
+    
+    if (!user) return null
+    
+    // Cache and return
+    await this.cache.set(cacheKey, user, {
+      l1Ttl: 180, // 3 min in L1 (shorter due to size)
+      l2Ttl: USER_CACHE_TTL.PROJECTS,
+    })
+    
+    return user
+  }
+  
+  /**
+   * Get user permissions (cached)
+   */
+  async getUserPermissions(userId: string) {
+    const cacheKey = `${UserCacheKeys.profile(userId)}:permissions`
+    
+    // Try cache
+    const cached = await this.cache.get(cacheKey)
+    if (cached) return cached
+    
+    // Fetch user role
+    const user = await prisma.user.findUnique({
+      where: { id: userId, deletedAt: null },
+      select: { id: true, role: true },
+    })
+    
+    if (!user) return null
+    
+    // Calculate permissions based on role
+    const permissions = this.calculatePermissions(user.role)
+    
+    const result = {
+      userId: user.id,
+      role: user.role,
+      ...permissions,
+    }
+    
+    // Cache and return
+    await this.cache.set(cacheKey, result, {
+      l1Ttl: USER_CACHE_TTL.PERMISSIONS,
+      l2Ttl: USER_CACHE_TTL.PERMISSIONS,
+    })
+    
+    return result
+  }
+  
+  /**
+   * Get user tasks count (cached)
+   */
+  async getUserTasksCount(userId: string) {
+    const cacheKey = `${UserCacheKeys.tasks(userId)}:count`
+    
+    // Try cache
+    const cached = await this.cache.get<number>(cacheKey)
+    if (cached !== null) return cached
+    
+    // Count tasks
+    const count = await prisma.task.count({
+      where: {
+        assigneeId: userId,
+        OR: [
+          { status: 'PENDING' },
+          { status: 'IN_PROGRESS' },
+          { status: 'REVIEW' },
+        ],
+        deletedAt: null,
+      },
+    })
+    
+    // Cache and return
+    await this.cache.set(cacheKey, count, {
+      l1Ttl: USER_CACHE_TTL.TASKS,
+      l2Ttl: USER_CACHE_TTL.TASKS,
+    })
+    
+    return count
+  }
+  
+  /**
+   * Get user unread messages count (cached)
+   */
+  async getUserUnreadCount(userId: string) {
+    const cacheKey = UserCacheKeys.unreadCount(userId)
+    
+    // Try cache
+    const cached = await this.cache.get<number>(cacheKey)
+    if (cached !== null) return cached
+    
+    // Count unread messages
+    const count = await prisma.message.count({
+      where: {
+        receiverId: userId,
+        read: false,
+      },
+    })
+    
+    // Cache and return
+    await this.cache.set(cacheKey, count, {
+      l1Ttl: USER_CACHE_TTL.UNREAD,
+      l2Ttl: USER_CACHE_TTL.UNREAD,
+    })
+    
+    return count
+  }
+  
+  /**
+   * Search users (cached)
+   */
+  async searchUsers(query: string, limit: number = 20) {
+    const cacheKey = UserCacheKeys.search(query, limit)
+    
+    // Try cache
+    const cached = await this.cache.get(cacheKey)
+    if (cached) return cached
+    
+    // Search users
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { email: { contains: query, mode: 'insensitive' } },
+        ],
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        image: true,
+      },
+      take: limit,
+      orderBy: { name: 'asc' },
+    })
+    
+    // Cache and return
+    await this.cache.set(cacheKey, users, {
+      l1Ttl: USER_CACHE_TTL.SEARCH,
+      l2Ttl: USER_CACHE_TTL.SEARCH,
+    })
+    
+    return users
+  }
+  
+  /**
+   * Invalidate all user caches
+   */
+  async invalidateUserCache(userId: string) {
+    try {
+      await this.cache.invalidatePattern(UserCacheKeys.allForUser(userId))
+      console.log(`[UserCache] Invalidated cache for user: ${userId}`)
+    } catch (error) {
+      console.error('[UserCache] Error invalidating cache:', error)
+    }
+  }
+  
+  /**
+   * Invalidate specific user profile
+   */
+  async invalidateUserProfile(userId: string) {
+    try {
+      await this.cache.delete(UserCacheKeys.profile(userId))
+      console.log(`[UserCache] Invalidated profile for: ${userId}`)
+    } catch (error) {
+      console.error('[UserCache] Error:', error)
+    }
+  }
+  
+  /**
+   * Invalidate user projects
+   */
+  async invalidateUserProjects(userId: string) {
+    try {
+      await this.cache.delete(UserCacheKeys.projects(userId))
+      console.log(`[UserCache] Invalidated projects for: ${userId}`)
+    } catch (error) {
+      console.error('[UserCache] Error:', error)
+    }
+  }
+  
+  /**
+   * Warm cache for multiple users
+   */
+  async warmUserCache(userIds: string[]) {
+    console.log(`[UserCache] Warming cache for ${userIds.length} users...`)
+    
+    const promises = userIds.map(async (userId) => {
+      try {
+        await this.getUserProfile(userId)
+        await this.getUserPermissions(userId)
+        await this.getUserTasksCount(userId)
+      } catch (error) {
+        console.error(`[UserCache] Error warming cache for ${userId}:`, error)
+      }
+    })
+    
+    await Promise.allSettled(promises)
+    console.log(`[UserCache] Cache warming complete`)
+  }
+  
+  /**
+   * Calculate permissions based on role
+   */
+  private calculatePermissions(role: string) {
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return {
+          permissions: ['*'],
+          canCreateProjects: true,
+          canManageUsers: true,
+          canAccessAdmin: true,
+          canManageSettings: true,
+        }
+      
+      case 'ADMIN':
+        return {
+          permissions: ['projects:*', 'users:read', 'users:update'],
+          canCreateProjects: true,
+          canManageUsers: true,
+          canAccessAdmin: true,
+          canManageSettings: false,
+        }
+      
+      case 'PROJECT_MANAGER':
+        return {
+          permissions: ['projects:create', 'projects:read', 'projects:update', 'tasks:*'],
+          canCreateProjects: true,
+          canManageUsers: false,
+          canAccessAdmin: false,
+          canManageSettings: false,
+        }
+      
+      case 'TEAM_MEMBER':
+        return {
+          permissions: ['projects:read', 'tasks:read', 'tasks:update'],
+          canCreateProjects: false,
+          canManageUsers: false,
+          canAccessAdmin: false,
+          canManageSettings: false,
+        }
+      
+      case 'CLIENT':
+        return {
+          permissions: ['projects:read', 'invoices:read'],
+          canCreateProjects: false,
+          canManageUsers: false,
+          canAccessAdmin: false,
+          canManageSettings: false,
+        }
+      
+      default:
+        return {
+          permissions: [],
+          canCreateProjects: false,
+          canManageUsers: false,
+          canAccessAdmin: false,
+          canManageSettings: false,
+        }
+    }
+  }
+  
+  /**
+   * Get cache statistics
+   */
+  getStats() {
+    return this.cache.getStats()
+  }
+  
+  /**
+   * Log cache statistics
+   */
+  logStats() {
+    this.cache.logStats()
+  }
+}
+
+/**
+ * Singleton instance
+ */
+let instance: UserCacheManager | null = null
+
+export function getUserCacheManager(): UserCacheManager {
+  if (!instance) {
+    instance = new UserCacheManager()
+  }
+  return instance
+}
+
+/**
+ * Convenience functions
+ */
+export const getUserProfile = (userId: string) => 
+  getUserCacheManager().getUserProfile(userId)
+
+export const getUserWithProjects = (userId: string) => 
+  getUserCacheManager().getUserWithProjects(userId)
+
+export const getUserPermissions = (userId: string) => 
+  getUserCacheManager().getUserPermissions(userId)
+
+export const getUserTasksCount = (userId: string) => 
+  getUserCacheManager().getUserTasksCount(userId)
+
+export const getUserUnreadCount = (userId: string) => 
+  getUserCacheManager().getUserUnreadCount(userId)
+
+export const searchUsers = (query: string, limit?: number) => 
+  getUserCacheManager().searchUsers(query, limit)
+
+export const invalidateUserCache = (userId: string) => 
+  getUserCacheManager().invalidateUserCache(userId)
+
+export const invalidateUserProfile = (userId: string) => 
+  getUserCacheManager().invalidateUserProfile(userId)
+
+export const invalidateUserProjects = (userId: string) => 
+  getUserCacheManager().invalidateUserProjects(userId)
+
+export const warmUserCache = (userIds: string[]) => 
+  getUserCacheManager().warmUserCache(userIds)
+
+export default UserCacheManager
+interface UserPermissions {
+  userId: string
+  role: string
+  permissions: string[]
+  canCreateProjects: boolean
+  canManageUsers: boolean
+  canAccessAdmin: boolean
+  canManageSettings: boolean
+  customPermissions?: Record<string, boolean>
+}
+
+/**
+ * User preferences
+ */
+interface UserPreferences {
+  userId: string
+  theme: string
+  language: string
+  timezone: string
+  notifications: {
+    email: boolean
+    push: boolean
+    inApp: boolean
+  }
+  privacy: {
+    profileVisibility: string
+    showEmail: boolean
+    showActivity: boolean
+  }
+}
+
+/**
+ * User session info
+ */
+interface UserSession {
+  userId: string
+  sessionId: string
+  lastActive: Date
+  expiresAt: Date
+  ipAddress?: string
+  userAgent?: string
+}
+
+/**
+ * User Cache Manager Class
+ */
+export class UserCacheManager {
+  private cache = getMultiLevelCache()
+  
+  /**
+   * Get user profile (basic info)
+   * TTL: 30 minutes
+   * L1: Yes (hot data)
+   * L2: Yes (distributed)
+   */
+  async getUserProfile(userId: string): Promise<UserProfile | null> {
+    const cacheKey = UserCacheKeys.profile(userId)
+    
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId, deletedAt: null },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          image: true,
+          createdAt: true,
+          updatedAt: true,
+          emailVerified: true,
+        },
+      })
+      
+      if (!user) return null
+      
+      const profile: UserProfile = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        image: user.image,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        emailVerified: user.emailVerified,
+      }
+      
+      // Cache the profile
+      await this.cache.set(cacheKey, profile, {
+        l1Ttl: USER_CACHE_TTL.PROFILE,
+        l2Ttl: USER_CACHE_TTL.PROFILE,
+      })
+      
+      return profile
+    } catch (error) {
+      console.error('[UserCache] Error fetching user profile:', error)
+      return null
+    }
+  }
+  
+  /**
+   * Get user with projects
+   * TTL: 30 minutes
+   * L1: Conditional (if frequently accessed)
+   * L2: Yes
+   */
+  async getUserWithProjects(userId: string): Promise<UserWithProjects | null> {
+    const cacheKey = UserCacheKeys.projects(userId)
+    
+    return await this.cache.get<UserWithProjects>(
+      cacheKey,
+      async () => {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            avatar: true,
+            createdAt: true,
+            updatedAt: true,
+            emailVerified: true,
+            isActive: true,
+            projects: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+                role: true,
+              },
+              where: {
+                deletedAt: null,
+              },
+              orderBy: {
+                updatedAt: 'desc',
+              },
+            },
+          },
+        })
+        
+        return user as UserWithProjects | null
+      },
+      {
+        l1Ttl: 180, // 3 minutes in L1 (shorter due to size)
+        l2Ttl: USER_CACHE_TTL.PROJECTS,
+      }
+    )
+  }
+  
+  /**
+   * Get user permissions
+   * TTL: 30 minutes
+   * L1: Yes (critical for auth checks)
+   * L2: Yes
+   */
+  async getUserPermissions(userId: string): Promise<UserPermissions | null> {
+    const cacheKey = `${UserCacheKeys.profile(userId)}:permissions`
+    
+    return await this.cache.get<UserPermissions>(
+      cacheKey,
+      async () => {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            role: true,
+          },
+        })
+        
+        if (!user) return null
+        
+        // Calculate permissions based on role
+        const permissions = this.calculatePermissions(user.role)
+        
+        return {
+          userId: user.id,
+          role: user.role,
+          ...permissions,
+        }
+      },
+      {
+        l1Ttl: USER_CACHE_TTL.PERMISSIONS,
+        l2Ttl: USER_CACHE_TTL.PERMISSIONS,
+      }
+    )
+  }
+  
+  /**
+   * Get user preferences
+   * TTL: 1 hour
+   * L1: Conditional
+   * L2: Yes
+   */
+  async getUserPreferences(userId: string): Promise<UserPreferences | null> {
+    const cacheKey = `${UserCacheKeys.profile(userId)}:preferences`
+    
+    return await this.cache.get<UserPreferences>(
+      cacheKey,
+      async () => {
+        // Fetch from database or return defaults
+        const preferences = await prisma.$queryRaw<UserPreferences[]>`
+          SELECT * FROM user_preferences WHERE user_id = ${userId}
+        `
+        
+        if (preferences && preferences.length > 0) {
+          return preferences[0]
+        }
+        
+        // Return default preferences
+        return {
+          userId,
+          theme: 'light',
+          language: 'en',
+          timezone: 'UTC',
+          notifications: {
+            email: true,
+            push: true,
+            inApp: true,
+          },
+          privacy: {
+            profileVisibility: 'public',
+            showEmail: false,
+            showActivity: true,
+          },
+        }
+      },
+      {
+        l1Ttl: 300, // 5 minutes in L1
+        l2Ttl: USER_CACHE_TTL.PREFERENCES,
+      }
+    )
+  }
+  
+  /**
+   * Get user sessions
+   * TTL: 24 hours
+   * L1: No (stable data, doesn't need L1)
+   * L2: Yes
+   */
+  async getUserSessions(userId: string): Promise<UserSession[]> {
+    const cacheKey = UserCacheKeys.userSessions(userId)
+    
+    const cached = await this.cache.get<UserSession[]>(
+      cacheKey,
+      async () => {
+        const sessions = await prisma.session.findMany({
+          where: {
+            userId,
+            expires: {
+              gt: new Date(),
+            },
+          },
+          select: {
+            id: true,
+            userId: true,
+            expires: true,
+            sessionToken: true,
+          },
+          orderBy: {
+            expires: 'desc',
+          },
+        })
+        
+        return sessions.map(s => ({
+          userId: s.userId,
+          sessionId: s.id,
+          lastActive: new Date(),
+          expiresAt: s.expires,
+        }))
+      },
+      {
+        skipL1: true, // Skip L1 for session data
+        l2Ttl: USER_CACHE_TTL.SESSIONS,
+      }
+    )
+    
+    return cached || []
+  }
+  
+  /**
+   * Get user's pending tasks count (for dashboard)
+   * TTL: 15 minutes
+   */
+  async getUserTasksCount(userId: string): Promise<number> {
+    const cacheKey = `${UserCacheKeys.tasks(userId)}:count`
+    
+    const cached = await this.cache.get<number>(
+      cacheKey,
+      async () => {
+        const count = await prisma.task.count({
+          where: {
+            assigneeId: userId,
+            status: {
+              notIn: ['COMPLETED', 'CANCELLED'],
+            },
+            deletedAt: null,
+          },
+        })
+        
+        return count
+      },
+      {
+        l1Ttl: USER_CACHE_TTL.TASKS,
+        l2Ttl: USER_CACHE_TTL.TASKS,
+      }
+    )
+    
+    return cached || 0
+  }
+  
+  /**
+   * Get user's unread messages count
+   * TTL: 1 minute (near real-time)
+   */
+  async getUserUnreadCount(userId: string): Promise<number> {
+    const cacheKey = UserCacheKeys.unreadCount(userId)
+    
+    const cached = await this.cache.get<number>(
+      cacheKey,
+      async () => {
+        const count = await prisma.message.count({
+          where: {
+            recipientId: userId,
+            read: false,
+          },
+        })
+        
+        return count
+      },
+      {
+        l1Ttl: 60, // 1 minute
+        l2Ttl: 60,
+      }
+    )
+    
+    return cached || 0
+  }
+  
+  /**
+   * Search users by query
+   * TTL: 10 minutes
+   */
+  async searchUsers(query: string, limit: number = 20): Promise<UserProfile[]> {
+    const cacheKey = UserCacheKeys.search(query, limit)
+    
+    const cached = await this.cache.get<UserProfile[]>(
+      cacheKey,
+      async () => {
+        const users = await prisma.user.findMany({
+          where: {
+            OR: [
+              { name: { contains: query, mode: 'insensitive' } },
+              { email: { contains: query, mode: 'insensitive' } },
+            ],
+            isActive: true,
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            avatar: true,
+            createdAt: true,
+            updatedAt: true,
+            emailVerified: true,
+            isActive: true,
+          },
+          take: limit,
+          orderBy: {
+            name: 'asc',
+          },
+        })
+        
+        return users as UserProfile[]
+      },
+      {
+        l1Ttl: USER_CACHE_TTL.SEARCH,
+        l2Ttl: USER_CACHE_TTL.SEARCH,
+      }
+    )
+    
+    return cached || []
+  }
+  
+  /**
+   * Invalidate all user-related caches
+   */
+  async invalidateUserCache(userId: string): Promise<void> {
+    try {
+      // Invalidate all user-related keys
+      await this.cache.invalidatePattern(UserCacheKeys.allForUser(userId))
+      
+      console.log(`[UserCache] Invalidated cache for user: ${userId}`)
+    } catch (error) {
+      console.error('[UserCache] Error invalidating user cache:', error)
+    }
+  }
+  
+  /**
+   * Invalidate user profile only
+   */
+  async invalidateUserProfile(userId: string): Promise<void> {
+    try {
+      await this.cache.delete(UserCacheKeys.profile(userId))
+      console.log(`[UserCache] Invalidated profile for user: ${userId}`)
+    } catch (error) {
+      console.error('[UserCache] Error invalidating user profile:', error)
+    }
+  }
+  
+  /**
+   * Invalidate user permissions
+   */
+  async invalidateUserPermissions(userId: string): Promise<void> {
+    try {
+      await this.cache.delete(`${UserCacheKeys.profile(userId)}:permissions`)
+      console.log(`[UserCache] Invalidated permissions for user: ${userId}`)
+    } catch (error) {
+      console.error('[UserCache] Error invalidating permissions:', error)
+    }
+  }
+  
+  /**
+   * Invalidate user projects
+   */
+  async invalidateUserProjects(userId: string): Promise<void> {
+    try {
+      await this.cache.delete(UserCacheKeys.projects(userId))
+      console.log(`[UserCache] Invalidated projects for user: ${userId}`)
+    } catch (error) {
+      console.error('[UserCache] Error invalidating projects:', error)
+    }
+  }
+  
+  /**
+   * Warm cache for multiple users (preload hot data)
+   */
+  async warmUserCache(userIds: string[]): Promise<void> {
+    console.log(`[UserCache] Warming cache for ${userIds.length} users...`)
+    
+    const promises = userIds.map(async (userId) => {
+      try {
+        // Preload profile
+        await this.getUserProfile(userId)
+        
+        // Preload permissions
+        await this.getUserPermissions(userId)
+        
+        // Preload task count
+        await this.getUserTasksCount(userId)
+      } catch (error) {
+        console.error(`[UserCache] Error warming cache for user ${userId}:`, error)
+      }
+    })
+    
+    await Promise.allSettled(promises)
+    console.log(`[UserCache] Cache warming complete`)
+  }
+  
+  /**
+   * Calculate permissions based on role
+   */
+  private calculatePermissions(role: UserRole): Omit<UserPermissions, 'userId' | 'role'> {
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return {
+          permissions: ['*'], // All permissions
+          canCreateProjects: true,
+          canManageUsers: true,
+          canAccessAdmin: true,
+          canManageSettings: true,
+        }
+      
+      case 'ADMIN':
+        return {
+          permissions: [
+            'projects:create',
+            'projects:read',
+            'projects:update',
+            'projects:delete',
+            'users:read',
+            'users:update',
+            'settings:read',
+          ],
+          canCreateProjects: true,
+          canManageUsers: true,
+          canAccessAdmin: true,
+          canManageSettings: false,
+        }
+      
+      case 'PROJECT_MANAGER':
+        return {
+          permissions: [
+            'projects:create',
+            'projects:read',
+            'projects:update',
+            'tasks:create',
+            'tasks:read',
+            'tasks:update',
+            'tasks:delete',
+          ],
+          canCreateProjects: true,
+          canManageUsers: false,
+          canAccessAdmin: false,
+          canManageSettings: false,
+        }
+      
+      case 'TEAM_MEMBER':
+        return {
+          permissions: [
+            'projects:read',
+            'tasks:read',
+            'tasks:update',
+          ],
+          canCreateProjects: false,
+          canManageUsers: false,
+          canAccessAdmin: false,
+          canManageSettings: false,
+        }
+      
+      case 'CLIENT':
+        return {
+          permissions: [
+            'projects:read',
+            'invoices:read',
+          ],
+          canCreateProjects: false,
+          canManageUsers: false,
+          canAccessAdmin: false,
+          canManageSettings: false,
+        }
+      
+      default:
+        return {
+          permissions: [],
+          canCreateProjects: false,
+          canManageUsers: false,
+          canAccessAdmin: false,
+          canManageSettings: false,
+        }
+    }
+  }
+  
+  /**
+   * Get cache statistics
+   */
+  getStats() {
+    return this.cache.getStats()
+  }
+  
+  /**
+   * Log cache statistics
+   */
+  logStats() {
+    this.cache.logStats()
+  }
+}
+
+/**
+ * Singleton instance
+ */
+let userCacheInstance: UserCacheManager | null = null
+
+/**
+ * Get user cache manager instance
+ */
+export function getUserCacheManager(): UserCacheManager {
+  if (!userCacheInstance) {
+    userCacheInstance = new UserCacheManager()
+  }
+  return userCacheInstance
+}
+
+/**
+ * Convenience functions (use singleton)
+ */
+export const getUserProfile = (userId: string) => 
+  getUserCacheManager().getUserProfile(userId)
+
+export const getUserWithProjects = (userId: string) => 
+  getUserCacheManager().getUserWithProjects(userId)
+
+export const getUserPermissions = (userId: string) => 
+  getUserCacheManager().getUserPermissions(userId)
+
+export const getUserPreferences = (userId: string) => 
+  getUserCacheManager().getUserPreferences(userId)
+
+export const getUserSessions = (userId: string) => 
+  getUserCacheManager().getUserSessions(userId)
+
+export const getUserTasksCount = (userId: string) => 
+  getUserCacheManager().getUserTasksCount(userId)
+
+export const getUserUnreadCount = (userId: string) => 
+  getUserCacheManager().getUserUnreadCount(userId)
+
+export const searchUsers = (query: string, limit?: number) => 
+  getUserCacheManager().searchUsers(query, limit)
+
+export const invalidateUserCache = (userId: string) => 
+  getUserCacheManager().invalidateUserCache(userId)
+
+export const invalidateUserProfile = (userId: string) => 
+  getUserCacheManager().invalidateUserProfile(userId)
+
+export const invalidateUserPermissions = (userId: string) => 
+  getUserCacheManager().invalidateUserPermissions(userId)
+
+export const invalidateUserProjects = (userId: string) => 
+  getUserCacheManager().invalidateUserProjects(userId)
+
+export const warmUserCache = (userIds: string[]) => 
+  getUserCacheManager().warmUserCache(userIds)
+
+export default UserCacheManager

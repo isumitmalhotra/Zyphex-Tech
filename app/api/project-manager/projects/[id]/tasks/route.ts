@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { TaskStatus, Priority } from "@prisma/client"
+import { triggerTaskWorkflows } from "@/lib/workflow/trigger-helper"
+import { TriggerType } from "@/types/workflow"
 
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
@@ -59,7 +61,7 @@ export async function GET(
     })
 
     return NextResponse.json({ tasks })
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -150,12 +152,53 @@ export async function POST(
         }
       }
     })
+    
+    // Trigger TASK_CREATED workflow
+    triggerTaskWorkflows(
+      TriggerType.TASK_CREATED,
+      newTask.id,
+      {
+        title: newTask.title,
+        description: newTask.description,
+        status: newTask.status,
+        priority: newTask.priority,
+        projectId: newTask.projectId,
+        assigneeId: newTask.assigneeId,
+        assigneeName: newTask.assignee?.name,
+        assigneeEmail: newTask.assignee?.email,
+        dueDate: newTask.dueDate?.toISOString(),
+      },
+      user.id
+    ).catch((error) => {
+      console.error('Failed to trigger task created workflow:', error)
+    })
+    
+    // Trigger TASK_ASSIGNED if assignee is set
+    if (assigneeId) {
+      triggerTaskWorkflows(
+        TriggerType.TASK_ASSIGNED,
+        newTask.id,
+        {
+          title: newTask.title,
+          description: newTask.description,
+          status: newTask.status,
+          priority: newTask.priority,
+          projectId: newTask.projectId,
+          assigneeId: newTask.assigneeId,
+          assigneeName: newTask.assignee?.name,
+          assigneeEmail: newTask.assignee?.email,
+        },
+        user.id
+      ).catch((error) => {
+        console.error('Failed to trigger task assigned workflow:', error)
+      })
+    }
 
     return NextResponse.json({ 
       message: "Task created successfully",
       task: newTask 
     })
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

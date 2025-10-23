@@ -162,6 +162,18 @@ export const ProjectCacheKeys = {
   activeList: (userId: string) => `${CacheNamespace.PROJECT}:active:user:${userId}`,
   
   /**
+   * Projects by client
+   * TTL: 10 minutes
+   */
+  byClient: (clientId: string) => `${CacheNamespace.PROJECT}:client:${clientId}`,
+  
+  /**
+   * Project search results
+   * TTL: 10 minutes
+   */
+  search: (query: string, limit: number) => `${CacheNamespace.PROJECT}:search:${query}:${limit}`,
+  
+  /**
    * All project cache keys for a specific project (for invalidation)
    */
   allForProject: (projectId: string) => `${CacheNamespace.PROJECT}:*:${projectId}*`,
@@ -201,6 +213,22 @@ export const TaskCacheKeys = {
    */
   byStatus: (projectId: string, status: string) => 
     `${CacheNamespace.TASK}:status:${projectId}:${status}`,
+  
+  /**
+   * Project tasks (all or by status)
+   * TTL: 10 minutes
+   */
+  byProject: (projectId: string, status?: string) => 
+    status 
+      ? `${CacheNamespace.TASK}:project:${projectId}:${status}`
+      : `${CacheNamespace.TASK}:project:${projectId}`,
+  
+  /**
+   * Task search results
+   * TTL: 10 minutes
+   */
+  search: (query: string, limit: number) => 
+    `${CacheNamespace.TASK}:search:${query}:${limit}`,
   
   /**
    * All task cache keys for a specific task (for invalidation)

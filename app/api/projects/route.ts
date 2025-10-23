@@ -3,10 +3,13 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { Prisma, ProjectStatus } from '@prisma/client';
-import { cache } from '@/lib/cache';
 import { withCacheStatus } from '@/lib/api/cache-headers';
+import { triggerProjectWorkflows } from '@/lib/workflow/trigger-helper';
+import { TriggerType } from '@/types/workflow';
+import { getMultiLevelCache } from '@/lib/cache';
 
 // GET /api/projects - Get all projects
+const cache = getMultiLevelCache();
 // Force dynamic rendering for this API route
 export const dynamic = 'force-dynamic'
 
@@ -86,7 +89,7 @@ export async function GET(request: NextRequest) {
     if (userRole === 'PROJECT_MANAGER') {
       // Try cache first
       const cacheKey = `projects:manager:${userId}:${statusParam || 'all'}:${clientId || 'all'}`;
-      const cached = await cache.get<any>(cacheKey);
+      const cached = await cache.get<{ projects: unknown[] }>(cacheKey);
       
       if (cached) {
         return withCacheStatus(cached, true, 'short');
@@ -132,7 +135,7 @@ export async function GET(request: NextRequest) {
       });
       
       // Cache for 5 minutes
-      await cache.set(cacheKey, { projects }, 300);
+      await cache.set(cacheKey, { projects }, { l1Ttl: 300, l2Ttl: 300 });
       
       return withCacheStatus({ projects }, false, 'short');
     }
@@ -140,7 +143,7 @@ export async function GET(request: NextRequest) {
     // For admin and super admin, show all projects
     // Try cache first
     const adminCacheKey = `projects:admin:${statusParam || 'all'}:${clientId || 'all'}`;
-    const cachedAdmin = await cache.get<any>(adminCacheKey);
+    const cachedAdmin = await cache.get<{ projects: unknown[] }>(adminCacheKey);
     
     if (cachedAdmin) {
       return withCacheStatus(cachedAdmin, true, 'short');
@@ -174,10 +177,10 @@ export async function GET(request: NextRequest) {
     });
     
     // Cache for 5 minutes
-    await cache.set(adminCacheKey, { projects }, 300);
+    await cache.set(adminCacheKey, { projects }, { l1Ttl: 300, l2Ttl: 300 });
     
     return withCacheStatus({ projects }, false, 'short');
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to fetch projects' },
       { status: 500 }
@@ -249,8 +252,26 @@ export async function POST(request: NextRequest) {
       },
     });
     
+    // Trigger PROJECT_CREATED workflows
+    triggerProjectWorkflows(
+      TriggerType.PROJECT_CREATED,
+      project.id,
+      {
+        name: project.name,
+        description: project.description,
+        status: project.status,
+        budget: project.budget,
+        clientId: project.clientId,
+        clientName: project.client.name,
+        clientEmail: project.client.email,
+      },
+      session.user.id
+    ).catch((error) => {
+      console.error('Failed to trigger project workflows:', error)
+    })
+    
     return NextResponse.json(project, { status: 201 });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to create project' },
       { status: 500 }

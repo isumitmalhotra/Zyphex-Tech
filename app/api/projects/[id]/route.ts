@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { triggerProjectWorkflows } from '@/lib/workflow/trigger-helper';
+import { TriggerType } from '@/types/workflow';
 
 // GET /api/projects/[id] - Get project by ID
 // Force dynamic rendering for this API route
@@ -29,7 +33,7 @@ export async function GET(
     }
     
     return NextResponse.json(project);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to fetch project' },
       { status: 500 }
@@ -64,7 +68,7 @@ export async function PUT(
     }
     
     // Prepare update data
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (name) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (status) updateData.status = status;
@@ -92,7 +96,7 @@ export async function PUT(
     // Handle user connections/disconnections
     if (userIds) {
       // Get current user IDs
-      const currentUserIds = existingProject.users.map((user: any) => user.id);
+      const currentUserIds = existingProject.users.map((user: { id: string }) => user.id);
       
       // Disconnect users not in the new list
       const usersToDisconnect = currentUserIds.filter((id: string) => !userIds.includes(id));
@@ -118,7 +122,7 @@ export async function PUT(
     // Handle team connections/disconnections
     if (teamIds) {
       // Get current team IDs
-      const currentTeamIds = existingProject.teams.map((team: any) => team.id);
+      const currentTeamIds = existingProject.teams.map((team: { id: string }) => team.id);
       
       // Disconnect teams not in the new list
       const teamsToDisconnect = currentTeamIds.filter((id: string) => !teamIds.includes(id));
@@ -152,8 +156,44 @@ export async function PUT(
       },
     });
     
+    // Get session for user ID
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id || 'system';
+    
+    // Track what changed for workflows
+    const changes: Record<string, unknown> = {}
+    if (status && status !== existingProject.status) {
+      changes.status = { from: existingProject.status, to: status }
+      
+      // Trigger PROJECT_STATUS_CHANGED workflow
+      triggerProjectWorkflows(
+        TriggerType.PROJECT_STATUS_CHANGED,
+        updatedProject.id,
+        {
+          name: updatedProject.name,
+          status: updatedProject.status,
+          previousStatus: existingProject.status,
+          clientId: updatedProject.clientId,
+          clientName: updatedProject.client.name,
+          clientEmail: updatedProject.client.email,
+        },
+        userId,
+        changes
+      ).catch((error) => {
+        console.error('Failed to trigger status change workflow:', error)
+      })
+    }
+    
+    // Check budget threshold trigger
+    if (budget && budget !== existingProject.budget) {
+      changes.budget = { from: existingProject.budget, to: budget }
+      
+      // Could trigger PROJECT_BUDGET_THRESHOLD here based on spent/total ratio
+      // This would require additional budget tracking logic
+    }
+    
     return NextResponse.json(updatedProject);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to update project' },
       { status: 500 }
@@ -190,7 +230,7 @@ export async function DELETE(
       { message: 'Project deleted successfully' },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to delete project' },
       { status: 500 }

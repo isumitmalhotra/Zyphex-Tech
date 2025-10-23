@@ -78,6 +78,9 @@ model User {
   // Token management security (Phase 2)
   tokenBlacklist TokenBlacklist[]
 
+  // Workflow automation (Task 8)
+  createdWorkflows Workflow[] @relation("WorkflowCreator")
+
   // Optimized Indexes for Performance
   @@index([email]) // Existing - Login queries
   @@index([role]) // Existing - Authorization queries
@@ -2251,4 +2254,156 @@ model TokenBlacklist {
   @@index([userId])
   @@index([expiresAt])
   @@index([token])
+}
+
+// ============================================================================
+// WORKFLOW AUTOMATION SYSTEM (Task 8)
+// ============================================================================
+
+// Main Workflow Definition
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String // Workflow name (e.g., "Invoice Reminder", "Milestone Notification")
+  description String? // Detailed description of what the workflow does
+  enabled     Boolean  @default(true) // Whether workflow is active
+  version     Int      @default(1) // Version number for workflow updates
+
+  // Workflow Configuration (JSON structure)
+  triggers   Json // Array of trigger configurations { type, config, conditions }
+  conditions Json // Condition tree for execution (AND/OR logic)
+  actions    Json // Array of actions to execute { type, config, order }
+
+  // Metadata
+  category String @default("custom") // custom, template, system
+  tags     Json? // Array of tags for organization
+  
+  // Execution Settings
+  priority        Int     @default(5) // 1-10, higher = more important
+  maxRetries      Int     @default(3) // Number of retries on failure
+  retryDelay      Int     @default(60) // Seconds between retries
+  timeout         Int     @default(300) // Max execution time in seconds
+  allowParallel   Boolean @default(true) // Allow parallel executions
+  rateLimitCount  Int?    @default(100) // Max executions per hour (null = unlimited)
+  
+  // Statistics
+  executionCount  Int      @default(0) // Total executions
+  successCount    Int      @default(0) // Successful executions
+  failureCount    Int      @default(0) // Failed executions
+  lastExecutionAt DateTime? // Last time workflow ran
+  avgExecutionMs  Int?     @default(0) // Average execution time
+
+  // Audit
+  createdBy String
+  creator   User     @relation("WorkflowCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  // Relations
+  executions WorkflowExecution[]
+  logs       WorkflowLog[]
+
+  @@index([enabled])
+  @@index([category])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@index([enabled, deletedAt]) // Active workflows
+  @@index([category, enabled]) // Active workflows by category
+  @@index([lastExecutionAt]) // Recently executed
+}
+
+// Workflow Execution History
+model WorkflowExecution {
+  id         String   @id @default(cuid())
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  // Execution Status
+  status WorkflowExecutionStatus @default(PENDING)
+  
+  // Trigger Information
+  triggeredBy   String // USER_ACTION, SCHEDULE, WEBHOOK, EVENT
+  triggerSource String? // User ID, cron job name, webhook URL, etc.
+  triggerData   Json? // Data that triggered the workflow
+  
+  // Context Information
+  context Json // Execution context (project, task, invoice, etc.)
+  
+  // Execution Details
+  startedAt   DateTime  @default(now())
+  completedAt DateTime? // When execution finished
+  duration    Int? // Execution time in milliseconds
+  
+  // Results
+  actionsExecuted Int      @default(0) // Number of actions that ran
+  actionsSuccess  Int      @default(0) // Number of successful actions
+  actionsFailed   Int      @default(0) // Number of failed actions
+  results         Json? // Results from each action
+  errors          Json? // Error details if failed
+  
+  // Retry Information
+  retryCount    Int      @default(0)
+  retryOf       String? // ID of original execution if this is a retry
+  nextRetryAt   DateTime? // When next retry is scheduled
+  
+  // Metadata
+  metadata Json? // Additional execution metadata
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+  @@index([completedAt])
+  @@index([triggeredBy])
+  @@index([workflowId, status]) // Workflow executions by status
+  @@index([workflowId, startedAt]) // Workflow execution history
+  @@index([status, startedAt]) // Recent executions by status
+}
+
+// Workflow Audit Log
+model WorkflowLog {
+  id         String   @id @default(cuid())
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  
+  executionId String? // Optional link to execution
+  
+  // Log Information
+  level   WorkflowLogLevel // INFO, WARNING, ERROR, DEBUG
+  message String // Log message
+  data    Json? // Additional structured data
+  
+  // Context
+  action String? // Which action this log is related to
+  step   Int? // Step number in workflow
+  
+  // Metadata
+  timestamp DateTime @default(now())
+  duration  Int? // Duration in ms if applicable
+
+  @@index([workflowId])
+  @@index([executionId])
+  @@index([level])
+  @@index([timestamp])
+  @@index([workflowId, timestamp]) // Workflow logs chronologically
+  @@index([level, timestamp]) // Errors chronologically
+}
+
+// Enums for Workflow System
+enum WorkflowExecutionStatus {
+  PENDING // Queued for execution
+  RUNNING // Currently executing
+  SUCCESS // Completed successfully
+  FAILED // Execution failed
+  TIMEOUT // Execution timed out
+  CANCELLED // Manually cancelled
+  RETRYING // Retry scheduled
+}
+
+enum WorkflowLogLevel {
+  DEBUG // Detailed debugging information
+  INFO // General information
+  WARNING // Warning messages
+  ERROR // Error messages
+  CRITICAL // Critical failures
 }
