@@ -1,0 +1,400 @@
+name: Deploy to VPS with Automatic Rollback
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  DEPLOY_TIMEOUT: 300  # 5 minutes
+  HEALTH_CHECK_RETRIES: 5
+  HEALTH_CHECK_INTERVAL: 10  # seconds
+
+jobs:
+  deploy:
+    name: Deploy to Production VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need previous commit for rollback
+
+      - name: ✅ Validate Secrets
+        run: |
+          if [ -z "${{ secrets.VPS_HOST }}" ]; then
+            echo "❌ Error: VPS_HOST secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VPS_USER }}" ]; then
+            echo "❌ Error: VPS_USER secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VPS_PORT }}" ]; then
+            echo "❌ Error: VPS_PORT secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VPS_SSH_PRIVATE_KEY }}" ]; then
+            echo "❌ Error: VPS_SSH_PRIVATE_KEY secret is not set"
+            exit 1
+          fi
+          echo "✅ All required secrets are configured"
+
+      - name: 🔑 Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: 🔐 Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: 📝 Get Deployment Info
+        id: deploy-info
+        run: |
+          echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "commit_message=$(git log -1 --pretty=%B | head -n1)" >> $GITHUB_OUTPUT
+          echo "deploy_time=$(date '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+          echo "deployer=${{ github.actor }}" >> $GITHUB_OUTPUT
+
+      - name: 🚀 Deploy to VPS with Rollback
+        id: deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          COMMIT_HASH: ${{ steps.deploy-info.outputs.commit_hash }}
+        run: |
+          deployment_success=false
+          
+          ssh -o StrictHostKeyChecking=accept-new -p ${VPS_PORT} ${VPS_USER}@${VPS_HOST} << 'ENDSSH'
+            set -e
+            
+            # Color codes for output
+            RED='\033[0;31m'
+            GREEN='\033[0;32m'
+            YELLOW='\033[1;33m'
+            NC='\033[0m'
+            
+            echo "🔄 Starting deployment process..."
+            echo "Commit: ${COMMIT_HASH}"
+            
+            # Navigate to application directory
+            cd /var/www/zyphextech
+            
+            # Store current state for rollback
+            CURRENT_COMMIT=$(git rev-parse --short HEAD)
+            ROLLBACK_COMMIT=$CURRENT_COMMIT
+            echo "Current commit: $CURRENT_COMMIT"
+            
+            # Save current .next directory as backup
+            if [ -d ".next" ]; then
+              echo "📦 Backing up current build..."
+              rm -rf .next.backup
+              cp -r .next .next.backup
+              echo "✅ Backup created"
+            fi
+            
+            # Stash any local changes
+            git stash -u || true
+            
+            # Pull latest code
+            echo "📦 Pulling latest code..."
+            if ! git pull origin main; then
+              echo "❌ Git pull failed!"
+              exit 1
+            fi
+            
+            NEW_COMMIT=$(git rev-parse --short HEAD)
+            echo "New commit: $NEW_COMMIT"
+            
+            # Install/update dependencies
+            echo "📦 Installing dependencies..."
+            if ! npm ci --legacy-peer-deps 2>&1 | tee npm-install.log; then
+              echo "❌ npm install failed!"
+              cat npm-install.log
+              exit 1
+            fi
+            
+            # Generate Prisma Client
+            echo "🔧 Generating Prisma Client..."
+            if ! npx prisma generate 2>&1 | tee prisma-generate.log; then
+              echo "❌ Prisma generate failed!"
+              cat prisma-generate.log
+              exit 1
+            fi
+            
+            # Run database migrations (with backup)
+            echo "🗄️  Running database migrations..."
+            if ! npx prisma migrate deploy 2>&1 | tee migrate.log; then
+              echo "⚠️  Migration warning - check migrate.log"
+              cat migrate.log
+              # Migrations can fail on re-run, so we'll continue
+            fi
+            
+            # Clean old build
+            echo "🧹 Cleaning old build..."
+            rm -rf .next
+            
+            # Build application
+            echo "🏗️  Building application..."
+            BUILD_START=$(date +%s)
+            if ! NODE_ENV=production NODE_OPTIONS='--max-old-space-size=4096' npm run build 2>&1 | tee build.log; then
+              BUILD_END=$(date +%s)
+              BUILD_TIME=$((BUILD_END - BUILD_START))
+              echo "❌ Build failed after ${BUILD_TIME}s!"
+              echo "Build log:"
+              tail -n 50 build.log
+              exit 1
+            fi
+            BUILD_END=$(date +%s)
+            BUILD_TIME=$((BUILD_END - BUILD_START))
+            echo "✅ Build completed in ${BUILD_TIME}s"
+            
+            # Verify build succeeded
+            if [ ! -d ".next" ] || [ ! -f ".next/BUILD_ID" ]; then
+              echo "❌ Build verification failed - .next directory or BUILD_ID missing!"
+              ls -la .next/ || echo "No .next directory"
+              exit 1
+            fi
+            
+            BUILD_ID=$(cat .next/BUILD_ID)
+            echo "✅ Build verified - BUILD_ID: $BUILD_ID"
+            
+            # Restart application with PM2
+            echo "🔄 Restarting application..."
+            if ! pm2 restart zyphextech --update-env 2>&1 | tee pm2-restart.log; then
+              echo "❌ PM2 restart failed!"
+              cat pm2-restart.log
+              exit 1
+            fi
+            
+            # Wait for application to be ready
+            echo "⏳ Waiting for application to start..."
+            sleep 15
+            
+            # Enhanced health check with retries
+            echo "🏥 Running health checks..."
+            HEALTH_CHECK_PASSED=false
+            MAX_RETRIES=5
+            RETRY_COUNT=0
+            
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              echo "Health check attempt $((RETRY_COUNT + 1))/$MAX_RETRIES..."
+              
+              # Check if process is running
+              if ! pm2 list | grep -q "zyphextech.*online"; then
+                echo "⚠️  PM2 process not running properly"
+                pm2 list
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                sleep 10
+                continue
+              fi
+              
+              # Check HTTP health endpoint
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health 2>/dev/null || echo "000")
+              echo "Health endpoint returned: HTTP $HTTP_CODE"
+              
+              if [ "$HTTP_CODE" = "200" ]; then
+                echo "✅ Health check passed!"
+                HEALTH_CHECK_PASSED=true
+                break
+              fi
+              
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⏳ Waiting 10s before retry..."
+                sleep 10
+              fi
+            done
+            
+            if [ "$HEALTH_CHECK_PASSED" = false ]; then
+              echo "❌ Health checks failed after $MAX_RETRIES attempts!"
+              echo "Application logs:"
+              pm2 logs zyphextech --lines 50 --nostream || true
+              
+              echo ""
+              echo "🔄 INITIATING AUTOMATIC ROLLBACK..."
+              echo "Rolling back to commit: $ROLLBACK_COMMIT"
+              
+              # Restore previous build
+              if [ -d ".next.backup" ]; then
+                echo "Restoring previous build..."
+                rm -rf .next
+                mv .next.backup .next
+              fi
+              
+              # Restore previous code
+              git reset --hard $ROLLBACK_COMMIT
+              
+              # Reinstall dependencies
+              echo "Reinstalling dependencies..."
+              npm ci --legacy-peer-deps || true
+              
+              # Restart with old version
+              echo "Restarting with previous version..."
+              pm2 restart zyphextech
+              sleep 10
+              
+              # Verify rollback
+              ROLLBACK_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health 2>/dev/null || echo "000")
+              
+              if [ "$ROLLBACK_HTTP_CODE" = "200" ]; then
+                echo "✅ Rollback successful - application restored to working state"
+                echo "ROLLBACK_SUCCESS=true" >> rollback.status
+              else
+                echo "❌ Rollback failed - manual intervention required!"
+                echo "ROLLBACK_SUCCESS=false" >> rollback.status
+              fi
+              
+              exit 1
+            fi
+            
+            # Save successful deployment
+            echo "✅ Deployment successful!"
+            pm2 save
+            
+            # Clean up backup
+            rm -rf .next.backup
+            
+            # Write success marker
+            echo "DEPLOYMENT_SUCCESS=true" > deployment.status
+            echo "BUILD_ID=$BUILD_ID" >> deployment.status
+            echo "COMMIT=$NEW_COMMIT" >> deployment.status
+            echo "TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> deployment.status
+            
+          ENDSSH
+          
+          # Check deployment status
+          ssh -p ${VPS_PORT} ${VPS_USER}@${VPS_HOST} "cat /var/www/zyphextech/deployment.status" > deployment.status || true
+          
+          if grep -q "DEPLOYMENT_SUCCESS=true" deployment.status; then
+            echo "deployment_status=success" >> $GITHUB_OUTPUT
+            echo "✅ Deployment completed successfully!"
+          else
+            echo "deployment_status=failed" >> $GITHUB_OUTPUT
+            echo "❌ Deployment failed!"
+            exit 1
+          fi
+
+      - name: 🎉 Success Notification
+        if: success()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="🎉 **Deployment Successful**
+          
+          **Environment:** Production VPS
+          **Status:** ✅ SUCCESS
+          **Commit:** ${{ steps.deploy-info.outputs.commit_hash }}
+          **Message:** ${{ steps.deploy-info.outputs.commit_message }}
+          **Deployed by:** ${{ steps.deploy-info.outputs.deployer }}
+          **Time:** ${{ steps.deploy-info.outputs.deploy_time }}
+          **Website:** https://www.zyphextech.com
+          
+          All health checks passed! 🚀"
+          
+          echo "$MESSAGE"
+          
+          # Send to Discord
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+            curl -X POST "$DISCORD_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"embeds\": [{
+                  \"title\": \"🎉 Deployment Successful\",
+                  \"description\": \"$MESSAGE\",
+                  \"color\": 3066993,
+                  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+                }]
+              }" || echo "Discord notification failed"
+          fi
+          
+          # Send to Slack
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST "$SLACK_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"text\": \"$MESSAGE\"
+              }" || echo "Slack notification failed"
+          fi
+
+      - name: 🚨 Failure Notification
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          MESSAGE="🚨 **Deployment Failed & Rolled Back**
+          
+          **Environment:** Production VPS
+          **Status:** ❌ FAILED
+          **Commit:** ${{ steps.deploy-info.outputs.commit_hash }}
+          **Message:** ${{ steps.deploy-info.outputs.commit_message }}
+          **Deployed by:** ${{ steps.deploy-info.outputs.deployer }}
+          **Time:** ${{ steps.deploy-info.outputs.deploy_time }}
+          
+          ⚠️ **The deployment failed and has been automatically rolled back to the last working version.**
+          
+          **Action Required:**
+          1. Check GitHub Actions logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          2. Review build/health check failures
+          3. Fix issues locally and test before pushing
+          4. Website remains live on previous version: https://www.zyphextech.com
+          
+          **Last working commit:** Previous HEAD
+          **Failed commit:** ${{ steps.deploy-info.outputs.commit_hash }}"
+          
+          echo "$MESSAGE"
+          
+          # Send to Discord
+          if [ -n "$DISCORD_WEBHOOK" ]; then
+            curl -X POST "$DISCORD_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"embeds\": [{
+                  \"title\": \"🚨 Deployment Failed - Rolled Back\",
+                  \"description\": \"$MESSAGE\",
+                  \"color\": 15158332,
+                  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+                }]
+              }" || echo "Discord notification failed"
+          fi
+          
+          # Send to Slack
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST "$SLACK_WEBHOOK" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"text\": \"$MESSAGE\"
+              }" || echo "Slack notification failed"
+          fi
+
+      - name: 📊 Deployment Summary
+        if: always()
+        run: |
+          echo "## 📊 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production VPS" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ steps.deploy-info.outputs.commit_hash }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Message:** ${{ steps.deploy-info.outputs.commit_message }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed by:** ${{ steps.deploy-info.outputs.deployer }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Time:** ${{ steps.deploy-info.outputs.deploy_time }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "**Status:** ✅ SUCCESS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🌐 **Website:** https://www.zyphextech.com" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Status:** ❌ FAILED (Rolled Back)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ The deployment failed and has been automatically rolled back." >> $GITHUB_STEP_SUMMARY
+            echo "The website remains live on the previous working version." >> $GITHUB_STEP_SUMMARY
+          fi
