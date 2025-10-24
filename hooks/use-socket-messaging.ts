@@ -50,7 +50,7 @@ export function useSocketMessaging(events?: MessageEvents) {
   const { data: session } = useSession()
   const socketRef = useRef<Socket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const [connectedUsers, setConnectedUsers] = useState<string[]>([])
+  const [_connectedUsers, _setConnectedUsers] = useState<string[]>([]) // Prefixed as unused for now
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>()
 
   // Connect to Socket.io server
@@ -60,6 +60,15 @@ export function useSocketMessaging(events?: MessageEvents) {
     if (!session?.user?.id) {
       console.log('No session found, skipping socket connection')
       return
+    }
+
+    // TODO: Enable Socket.io when server is configured
+    // Temporarily disabled to prevent 503 errors
+    const ENABLE_SOCKET_IO = false;
+    
+    if (!ENABLE_SOCKET_IO) {
+      console.log('Socket.io disabled - real-time features unavailable');
+      return;
     }
 
     try {
@@ -256,6 +265,8 @@ export function useSocketMessaging(events?: MessageEvents) {
     return () => {
       disconnect()
     }
+    // connect and disconnect are stable functions
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id])
 
   // Cleanup on unmount
@@ -276,7 +287,7 @@ export function useSocketMessaging(events?: MessageEvents) {
     stopTyping,
     markMessageAsRead,
     addReaction,
-    connectedUsers
+    connectedUsers: _connectedUsers
   }
 }
 

@@ -2,30 +2,76 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import io, { Socket } from 'socket.io-client';
 import { useSession } from 'next-auth/react';
 
+// Type definitions for socket event data
+interface TaskUpdateData {
+  taskId: string;
+  projectId: string;
+  updates: Record<string, unknown>;
+  action: string;
+}
+
+interface MilestoneUpdateData {
+  milestoneId: string;
+  projectId: string;
+  updates: Record<string, unknown>;
+  action: string;
+}
+
+interface MessageData {
+  projectId: string;
+  message: string;
+  messageType: string;
+  senderId: string;
+  timestamp: string;
+}
+
+interface TypingData {
+  userId: string;
+  userName: string;
+  projectId: string;
+}
+
+interface UserProjectData {
+  userId: string;
+  userName: string;
+  projectId: string;
+}
+
+interface NotificationData {
+  type: string;
+  message: string;
+  userId: string;
+}
+
+interface ErrorData {
+  message: string;
+  code?: string;
+}
+
 interface SocketEvents {
   // Task events
-  task_updated: (data: any) => void;
+  task_updated: (data: TaskUpdateData) => void;
   
   // Milestone events
-  milestone_updated: (data: any) => void;
+  milestone_updated: (data: MilestoneUpdateData) => void;
   
   // Message events
-  new_message: (data: any) => void;
+  new_message: (data: MessageData) => void;
   
   // Typing events
-  user_typing: (data: any) => void;
-  user_stopped_typing: (data: any) => void;
+  user_typing: (data: TypingData) => void;
+  user_stopped_typing: (data: TypingData) => void;
   
   // Project events
-  user_joined_project: (data: any) => void;
-  user_left_project: (data: any) => void;
+  user_joined_project: (data: UserProjectData) => void;
+  user_left_project: (data: UserProjectData) => void;
   
   // Notification events
-  notification: (data: any) => void;
-  role_notification: (data: any) => void;
+  notification: (data: NotificationData) => void;
+  role_notification: (data: NotificationData) => void;
   
   // Error events
-  error: (data: any) => void;
+  error: (data: ErrorData) => void;
 }
 
 export function useSocket() {
@@ -39,6 +85,15 @@ export function useSocket() {
   // Initialize socket connection
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.id) {
+      // TODO: Enable Socket.io when server is configured
+      // Temporarily disabled to prevent 503 errors
+      const ENABLE_SOCKET_IO = false;
+      
+      if (!ENABLE_SOCKET_IO) {
+        console.log('Socket.io disabled - real-time features unavailable');
+        return;
+      }
+
       const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
       
       // Create a simple token with user info for socket authentication
@@ -48,6 +103,9 @@ export function useSocket() {
         role: session.user.role,
         iat: Math.floor(Date.now() / 1000)
       }));
+      
+      // Save ref value at start of effect
+      const joinedProjects = joinedProjectsRef.current;
       
       socketRef.current = io(socketUrl, {
         path: '/api/socket/io',
@@ -72,7 +130,7 @@ export function useSocket() {
         console.log('Socket.io disconnected:', reason);
         setIsConnected(false);
         setJoinedProjects(new Set());
-        joinedProjectsRef.current.clear();
+        joinedProjects.clear();
       });
 
       socketRef.current.on('connect_error', (error) => {
@@ -93,7 +151,8 @@ export function useSocket() {
         }
         setIsConnected(false);
         setJoinedProjects(new Set());
-        joinedProjectsRef.current.clear();
+        // Use the ref value captured at start of effect
+        joinedProjects.clear();
       };
     }
   }, [session, status]);
@@ -146,7 +205,7 @@ export function useSocket() {
   }, [isConnected]);
 
   // Update a task with real-time broadcast
-  const updateTask = useCallback((taskId: string, projectId: string, updates: any, action: string = 'update') => {
+  const updateTask = useCallback((taskId: string, projectId: string, updates: Record<string, unknown>, action: string = 'update') => {
     if (socketRef.current && isConnected) {
       socketRef.current.emit('task_update', {
         taskId,
@@ -158,7 +217,7 @@ export function useSocket() {
   }, [isConnected]);
 
   // Update a milestone with real-time broadcast
-  const updateMilestone = useCallback((milestoneId: string, projectId: string, updates: any, action: string = 'update') => {
+  const updateMilestone = useCallback((milestoneId: string, projectId: string, updates: Record<string, unknown>, action: string = 'update') => {
     if (socketRef.current && isConnected) {
       socketRef.current.emit('milestone_update', {
         milestoneId,
@@ -236,19 +295,19 @@ export function useSocket() {
 // Hook for project-specific socket events
 export function useProjectSocket(projectId: string) {
   const socket = useSocket();
-  const [messages, setMessages] = useState<any[]>([]);
-  const [typingUsers, setTypingUsers] = useState<any[]>([]);
-  const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
+  const [messages, setMessages] = useState<MessageData[]>([]);
+  const [typingUsers, setTypingUsers] = useState<TypingData[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<UserProjectData[]>([]);
   const hasJoinedRef = useRef(false);
 
   // Memoized event handlers
-  const handleNewMessage = useCallback((data: any) => {
+  const handleNewMessage = useCallback((data: MessageData) => {
     if (data.projectId === projectId) {
       setMessages(prev => [...prev, data]);
     }
   }, [projectId]);
 
-  const handleUserTyping = useCallback((data: any) => {
+  const handleUserTyping = useCallback((data: TypingData) => {
     if (data.projectId === projectId) {
       setTypingUsers(prev => {
         const exists = prev.find(user => user.userId === data.userId);
@@ -260,13 +319,13 @@ export function useProjectSocket(projectId: string) {
     }
   }, [projectId]);
 
-  const handleUserStoppedTyping = useCallback((data: any) => {
+  const handleUserStoppedTyping = useCallback((data: TypingData) => {
     if (data.projectId === projectId) {
       setTypingUsers(prev => prev.filter(user => user.userId !== data.userId));
     }
   }, [projectId]);
 
-  const handleUserJoined = useCallback((data: any) => {
+  const handleUserJoined = useCallback((data: UserProjectData) => {
     setOnlineUsers(prev => {
       const exists = prev.find(user => user.userId === data.userId);
       if (!exists) {
@@ -276,7 +335,7 @@ export function useProjectSocket(projectId: string) {
     });
   }, []);
 
-  const handleUserLeft = useCallback((data: any) => {
+  const handleUserLeft = useCallback((data: UserProjectData) => {
     setOnlineUsers(prev => prev.filter(user => user.userId !== data.userId));
   }, []);
 
@@ -293,7 +352,9 @@ export function useProjectSocket(projectId: string) {
         socket.leaveProject(projectId);
       }
     };
-  }, [socket.isConnected, projectId]);
+    // socket object contains the methods we need, so we include them individually
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket.isConnected, socket.joinProject, socket.leaveProject, projectId]);
 
   // Handle project-specific events
   useEffect(() => {
@@ -314,7 +375,7 @@ export function useProjectSocket(projectId: string) {
       socket.off('user_left_project', handleUserLeft);
     };
   }, [
-    socket.socket,
+    socket,
     handleNewMessage,
     handleUserTyping,
     handleUserStoppedTyping,

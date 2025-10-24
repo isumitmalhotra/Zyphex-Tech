@@ -59,22 +59,35 @@ async function createPMTestAccount() {
     const resourceProfile = await prisma.resourceProfile.create({
       data: {
         userId: pmTestUser.id,
-        department: 'Project Management',
-        title: 'Senior Project Manager',
-        skills: [
+        skills: JSON.stringify([
           'Project Management',
           'Agile/Scrum',
           'Team Leadership',
           'Budget Management',
           'Risk Management'
-        ],
+        ]),
         hourlyRate: 75.00,
-        availability: 40, // 40 hours per week
-        certifications: [
+        currency: 'USD',
+        capacity: 40, // 40 hours per week
+        availability: JSON.stringify({
+          monday: { start: '09:00', end: '17:00', available: true },
+          tuesday: { start: '09:00', end: '17:00', available: true },
+          wednesday: { start: '09:00', end: '17:00', available: true },
+          thursday: { start: '09:00', end: '17:00', available: true },
+          friday: { start: '09:00', end: '17:00', available: true },
+          saturday: { start: null, end: null, available: false },
+          sunday: { start: null, end: null, available: false }
+        }),
+        timezone: 'America/New_York',
+        bio: 'Experienced Project Manager with 10+ years in software development projects',
+        certifications: JSON.stringify([
           'PMP (Project Management Professional)',
           'Certified ScrumMaster (CSM)',
           'Agile Project Management'
-        ]
+        ]),
+        languages: JSON.stringify(['English', 'Spanish']),
+        yearsExperience: 10,
+        isAvailable: true
       }
     });
 

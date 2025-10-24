@@ -20,6 +20,15 @@ export function useSocket() {
       return
     }
 
+    // TODO: Enable Socket.io when server is configured
+    // Temporarily disabled to prevent 503 errors
+    const ENABLE_SOCKET_IO = false;
+    
+    if (!ENABLE_SOCKET_IO) {
+      console.log('Socket.io disabled - real-time features unavailable');
+      return;
+    }
+
     const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin
     
     // Create authentication token

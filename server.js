@@ -190,6 +190,69 @@ app.prepare().then(() => {
       // User disconnected
     });
 
+    // ======= CLIENT COMMUNICATIONS EVENTS =======
+    
+    // Handle client communications messages
+    socket.on('message', (data) => {
+      try {
+        const { recipientId, ...messageData } = data;
+        
+        if (recipientId) {
+          // Send to specific recipient
+          io.to(`user_${recipientId}`).emit('message', {
+            ...messageData,
+            senderId: socket.userId,
+            senderName: socket.userName,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Send confirmation to sender
+          socket.emit('message_sent', messageData);
+        }
+      } catch (_error) {
+        socket.emit('error', { message: 'Failed to send message' });
+      }
+    });
+
+    // Handle typing indicators for client comms
+    socket.on('typing', (data) => {
+      try {
+        const { clientId, isTyping } = data;
+        
+        if (clientId) {
+          // Notify the client that user is typing
+          io.to(`user_${clientId}`).emit('typing', {
+            userId: socket.userId,
+            userName: socket.userName,
+            isTyping,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } catch (_error) {
+        // Typing indicator error
+      }
+    });
+
+    // Handle message read receipts
+    socket.on('messageRead', (data) => {
+      try {
+        const { messageId, userId } = data;
+        
+        if (userId) {
+          // Notify the sender that message was read
+          io.to(`user_${userId}`).emit('messageRead', {
+            messageId,
+            readBy: socket.userId,
+            readAt: new Date().toISOString()
+          });
+        }
+      } catch (_error) {
+        // Read receipt error
+      }
+    });
+
+    // ======= END CLIENT COMMUNICATIONS EVENTS =======
+
     // Send welcome message
     socket.emit('connected', {
       message: 'Connected to real-time messaging',
