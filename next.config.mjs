@@ -14,8 +14,6 @@ const nextConfig = {
     // Reduce memory usage during build
     workerThreads: false,
     cpus: 1,
-    // Disable memory-intensive features for low-resource VPS
-    isrMemoryCacheSize: 0, // Disable ISR memory cache
   },
 
   // Increase static page generation timeout to 5 minutes

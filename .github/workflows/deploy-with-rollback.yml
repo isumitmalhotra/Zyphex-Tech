@@ -195,23 +195,36 @@ jobs:
             echo "🧹 Cleaning old build..."
             rm -rf .next
             
+            # Verify package.json has the new build script
+            echo "📝 Verifying build configuration..."
+            if grep -q "build:vps" package.json; then
+              echo "✅ New build script detected"
+            else
+              echo "⚠️  Old package.json detected, git pull may not have updated files"
+            fi
+            
+            # Show Node.js version and available memory
+            echo "Node version: $(node --version)"
+            echo "NPM version: $(npm --version)"
+            echo "Available memory: $(free -m | awk 'NR==2{printf "%dMB", $7}')"
+            
             # Build application with memory optimization
             echo "🏗️  Building application..."
             BUILD_START=$(date +%s)
             
-            # Set memory limits and disable source maps for production to save memory
-            export NODE_OPTIONS='--max-old-space-size=2048'
-            export NEXT_TELEMETRY_DISABLED=1
-            export GENERATE_SOURCEMAP=false
-            
-            # Run build in background to prevent SSH timeout
+            # Run build directly with cross-env to ensure settings are applied
+            # Using absolute path and explicit environment variables
             echo "Starting build process (this may take 5-10 minutes)..."
+            echo "Build command: npx cross-env NODE_OPTIONS=--max-old-space-size=2048 NEXT_TELEMETRY_DISABLED=1 next build"
             
-            # Use nohup to keep build running if SSH disconnects
-            nohup npm run build:vps > build.log 2>&1 &
+            # Use setsid and nohup to completely detach from SSH session
+            # This ensures build continues even if SSH connection drops
+            echo "Launching build in detached session..."
+            setsid nohup npx cross-env NODE_OPTIONS=--max-old-space-size=2048 NEXT_TELEMETRY_DISABLED=1 next build > build.log 2>&1 < /dev/null &
             BUILD_PID=$!
             
             echo "Build PID: $BUILD_PID"
+            echo "Build is running in detached session (will survive SSH disconnect)"
             
             # Monitor build progress
             TIMEOUT=600  # 10 minutes
