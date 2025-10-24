@@ -14,6 +14,8 @@ const nextConfig = {
     // Reduce memory usage during build
     workerThreads: false,
     cpus: 1,
+    // Disable memory-intensive optimizations during build
+    optimizeCss: false,
   },
 
   // Increase static page generation timeout to 5 minutes
@@ -131,6 +133,44 @@ const nextConfig = {
   onDemandEntries: {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
+  },
+  
+  // Webpack memory optimizations
+  webpack: (config, { isServer }) => {
+    // Reduce memory usage during build
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          default: false,
+          vendors: false,
+          // Vendor chunk
+          vendor: {
+            name: 'vendor',
+            chunks: 'all',
+            test: /node_modules/,
+            priority: 20
+          },
+          // Common chunk
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 10,
+            reuseExistingChunk: true,
+            enforce: true
+          }
+        },
+        maxInitialRequests: 25,
+        minSize: 20000
+      }
+    }
+    
+    // Limit parallelism to reduce memory
+    config.parallelism = 1
+    
+    return config
   },
 }
 
