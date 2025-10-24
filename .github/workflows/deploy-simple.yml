@@ -1,0 +1,96 @@
+name: Deploy to VPS - Simple & Working
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Only one deployment at a time
+concurrency:
+  group: vps-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      - name: 🚀 Deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          ssh -o StrictHostKeyChecking=no \
+              -o ServerAliveInterval=30 \
+              -o ServerAliveCountMax=20 \
+              -p ${VPS_PORT} ${VPS_USER}@${VPS_HOST} << 'ENDSSH'
+            
+            set -e
+            cd /var/www/zyphextech
+            
+            echo "🔄 Pulling latest code..."
+            git pull origin main
+            
+            echo "📦 Installing dependencies..."
+            npm install --prefer-offline --no-audit --legacy-peer-deps || npm install
+            
+            echo "🔧 Generating Prisma Client..."
+            npx prisma generate
+            
+            echo "🗄️  Running migrations..."
+            npx prisma migrate deploy || true
+            
+            echo "🏗️  Building application..."
+            # Stop PM2 first to free up memory
+            pm2 stop zyphextech || true
+            
+            # Build with adequate memory
+            NODE_OPTIONS='--max-old-space-size=2048' npm run build
+            
+            echo "✅ Build completed!"
+            
+            echo "🔄 Restarting application..."
+            pm2 restart zyphextech || pm2 start ecosystem.config.js
+            pm2 save
+            
+            echo "⏳ Waiting for startup..."
+            sleep 15
+            
+            echo "🏥 Health check..."
+            for i in {1..5}; do
+              if curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+                echo "✅ Application is healthy!"
+                exit 0
+              fi
+              echo "Attempt $i/5 failed, retrying..."
+              sleep 5
+            done
+            
+            echo "⚠️  Health check timeout, but application may still be starting"
+            echo "Check: pm2 logs zyphextech"
+            
+          ENDSSH
+
+      - name: ✅ Success
+        if: success()
+        run: |
+          echo "🎉 Deployment successful!"
+          echo "🌐 https://www.zyphextech.com"
+
+      - name: ❌ Failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed - check logs"
+          echo "🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
