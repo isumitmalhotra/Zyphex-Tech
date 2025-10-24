@@ -6,6 +6,11 @@ on:
       - main
   workflow_dispatch:
 
+# Prevent concurrent deployments to the same environment
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false  # Don't cancel, queue them instead
+
 env:
   DEPLOY_TIMEOUT: 300  # 5 minutes
   HEALTH_CHECK_RETRIES: 5
@@ -88,6 +93,32 @@ jobs:
             
             echo "🔄 Starting deployment process..."
             echo "Commit: ${COMMIT_HASH}"
+            
+            # Deployment lock to prevent concurrent deployments
+            LOCK_FILE="/var/www/zyphextech/.deployment.lock"
+            if [ -f "$LOCK_FILE" ]; then
+              LOCK_PID=$(cat "$LOCK_FILE" 2>/dev/null || echo "")
+              if [ -n "$LOCK_PID" ] && kill -0 "$LOCK_PID" 2>/dev/null; then
+                echo "❌ Another deployment is already running (PID: $LOCK_PID)"
+                echo "⏳ Waiting for it to complete..."
+                WAIT_COUNT=0
+                while [ -f "$LOCK_FILE" ] && [ $WAIT_COUNT -lt 60 ]; do
+                  sleep 10
+                  WAIT_COUNT=$((WAIT_COUNT + 1))
+                done
+                if [ -f "$LOCK_FILE" ]; then
+                  echo "⚠️  Previous deployment still running after 10 minutes, removing stale lock"
+                  rm -f "$LOCK_FILE"
+                fi
+              else
+                echo "⚠️  Removing stale lock file"
+                rm -f "$LOCK_FILE"
+              fi
+            fi
+            
+            # Create lock file with current PID
+            echo $$ > "$LOCK_FILE"
+            echo "🔒 Deployment lock acquired"
             
             # Navigate to application directory
             cd /var/www/zyphextech
@@ -360,6 +391,10 @@ jobs:
                 echo "ROLLBACK_SUCCESS=false" >> rollback.status
               fi
               
+              # Remove deployment lock even on failure
+              rm -f "$LOCK_FILE"
+              echo "🔓 Deployment lock released (rollback)"
+              
               exit 1
             fi
             
@@ -369,6 +404,10 @@ jobs:
             
             # Clean up backup
             rm -rf .next.backup
+            
+            # Remove deployment lock
+            rm -f "$LOCK_FILE"
+            echo "🔓 Deployment lock released"
             
             # Write success marker
             echo "DEPLOYMENT_SUCCESS=true" > deployment.status
