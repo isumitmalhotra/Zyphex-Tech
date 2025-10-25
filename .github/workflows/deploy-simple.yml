@@ -56,6 +56,20 @@ jobs:
               sudo chown -R deploy:deploy /var/www/zyphextech
             fi
             
+            echo "🧹 Cleaning build artifacts..."
+            # Remove old build to prevent cache issues - use sudo if needed
+            if [ -d ".next" ]; then
+              echo "Removing .next directory..."
+              sudo rm -rf .next || rm -rf .next
+            fi
+            if [ -d "node_modules/.cache" ]; then
+              echo "Removing node cache..."
+              sudo rm -rf node_modules/.cache || rm -rf node_modules/.cache
+            fi
+            
+            # Fix permissions again after cleanup
+            sudo chown -R deploy:deploy /var/www/zyphextech 2>/dev/null || true
+            
             echo "📦 Installing dependencies..."
             npm install --prefer-offline --no-audit --legacy-peer-deps
             
@@ -64,11 +78,6 @@ jobs:
             
             echo "🗄️  Running migrations..."
             npx prisma migrate deploy || true
-            
-            echo "🧹 Cleaning build artifacts..."
-            # Remove old build to prevent cache issues
-            rm -rf .next
-            rm -rf node_modules/.cache
             
             echo "🏗️  Building application..."
             # Stop PM2 first to free up memory
