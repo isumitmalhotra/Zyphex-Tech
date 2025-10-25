@@ -40,14 +40,24 @@ jobs:
             set -e
             cd /var/www/zyphextech
             
-            echo "🔄 Stashing local changes..."
+            echo "� Current user: $(whoami)"
+            echo "📁 Directory ownership: $(ls -ld /var/www/zyphextech)"
+            
+            echo "�🔄 Stashing local changes..."
             git stash || true
             
             echo "🔄 Pulling latest code..."
             git pull origin main
             
+            echo "🔧 Fix permissions if needed..."
+            # Ensure deploy user owns all files
+            if [ "$(stat -c '%U' .)" != "deploy" ]; then
+              echo "⚠️  Directory not owned by deploy user, fixing..."
+              sudo chown -R deploy:deploy /var/www/zyphextech
+            fi
+            
             echo "📦 Installing dependencies..."
-            npm install --prefer-offline --no-audit --legacy-peer-deps || npm install
+            npm install --prefer-offline --no-audit --legacy-peer-deps
             
             echo "🔧 Generating Prisma Client..."
             npx prisma generate
