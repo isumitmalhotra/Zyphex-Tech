@@ -250,7 +250,54 @@ export {
 // export { cacheManager } from './legacy-cache-manager'
 
 // Legacy cache adapter (backwards compatibility)
-// export { cache } from './legacy-cache-adapter'
+// Note: For backwards compatibility, export a simple cache object
+import { getMultiLevelCache } from './multi-level-cache';
+import { cacheService } from './cache-service';
+
+export const cache = {
+  get: async <T>(key: string): Promise<T | null> => {
+    const multiCache = await getMultiLevelCache();
+    return multiCache.get<T>(key);
+  },
+  set: async <T>(key: string, value: T, ttl?: number): Promise<boolean> => {
+    const multiCache = await getMultiLevelCache();
+    await multiCache.set(key, value, { l1Ttl: ttl || 300, l2Ttl: ttl || 300 });
+    return true;
+  },
+  delete: async (key: string): Promise<boolean> => {
+    const multiCache = await getMultiLevelCache();
+    await multiCache.delete(key);
+    return true;
+  }
+};
+
+// Legacy cache manager (backwards compatibility)
+export const cacheManager = {
+  get: async <T>(key: string): Promise<T | null> => {
+    const multiCache = await getMultiLevelCache();
+    return multiCache.get<T>(key);
+  },
+  set: async <T>(key: string, value: T, ttl?: number): Promise<boolean> => {
+    const multiCache = await getMultiLevelCache();
+    await multiCache.set(key, value, { l1Ttl: ttl || 300, l2Ttl: ttl || 300 });
+    return true;
+  },
+  delete: async (key: string): Promise<boolean> => {
+    const multiCache = await getMultiLevelCache();
+    await multiCache.delete(key);
+    return true;
+  },
+  deletePattern: async (pattern: string): Promise<boolean> => {
+    // Use cacheService for pattern deletion
+    await cacheService.invalidatePattern(pattern);
+    return true;
+  },
+  clear: async (): Promise<boolean> => {
+    // Clear all keys by pattern
+    await cacheService.invalidatePattern('*');
+    return true;
+  }
+};
 
 // Cache Monitoring & Performance (NEW)
 export {
