@@ -412,8 +412,49 @@ export default function SuperAdminConversionAnalyticsPage() {
 
   // Export functionality
   const handleExport = (format: string) => {
-    console.log(`Exporting conversion analytics as ${format}`)
-    // TODO: Implement actual export logic
+    const timestamp = new Date().toISOString().split('T')[0]
+    
+    if (format === 'csv') {
+      // Convert to CSV
+      const headers = ['Page', 'Conversions', 'Rate', 'Value']
+      const csvContent = [
+        headers.join(','),
+        ...topPages.map((row: { page: string; conversions: number; rate: string; value: string }) => [
+          row.page,
+          row.conversions,
+          row.rate,
+          row.value
+        ].join(','))
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `conversion-analytics-${timestamp}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } else if (format === 'json') {
+      // Convert to JSON
+      const jsonContent = JSON.stringify({ 
+        exportDate: new Date().toISOString(),
+        topPages,
+        conversionFunnel,
+        leadSources
+      }, null, 2)
+      
+      const blob = new Blob([jsonContent], { type: 'application/json' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `conversion-analytics-${timestamp}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    }
   }
 
   return (

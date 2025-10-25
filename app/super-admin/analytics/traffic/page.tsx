@@ -233,8 +233,51 @@ export default function SuperAdminTrafficAnalyticsPage() {
 
   // Export functionality
   const handleExport = (format: string) => {
-    console.log(`Exporting traffic analytics as ${format}`)
-    // TODO: Implement actual export logic
+    const data = topPages
+    const timestamp = new Date().toISOString().split('T')[0]
+    
+    if (format === 'csv') {
+      // Convert to CSV
+      const headers = ['Page', 'Views', 'Bounce Rate', 'Avg Time', 'Exit Rate']
+      const csvContent = [
+        headers.join(','),
+        ...data.map((row: { page: string; views: number; bounce: string; avgTime: string; exitRate: string }) => [
+          row.page,
+          row.views,
+          row.bounce,
+          row.avgTime,
+          row.exitRate
+        ].join(','))
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `traffic-analytics-${timestamp}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } else if (format === 'json') {
+      // Convert to JSON
+      const jsonContent = JSON.stringify({ 
+        exportDate: new Date().toISOString(),
+        topPages: data,
+        browsers,
+        operatingSystems
+      }, null, 2)
+      
+      const blob = new Blob([jsonContent], { type: 'application/json' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `traffic-analytics-${timestamp}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    }
   }
 
   return (

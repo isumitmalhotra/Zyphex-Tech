@@ -737,9 +737,11 @@ export default function CareersPage() {
                 <Button 
                   variant="link" 
                   className="zyphex-accent-text"
-                  onClick={() => alert("Chat feature coming soon!")}
+                  asChild
                 >
-                  Start a conversation
+                  <Link href="/auth/login?redirect=/user/messages">
+                    Start a conversation
+                  </Link>
                 </Button>
               </CardContent>
             </Card>

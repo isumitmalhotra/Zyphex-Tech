@@ -518,8 +518,50 @@ export default function SuperAdminPerformanceAnalyticsPage() {
 
   // Export functionality
   const handleExport = (format: string) => {
-    console.log(`Exporting performance analytics as ${format}`)
-    // TODO: Implement actual export logic
+    const timestamp = new Date().toISOString().split('T')[0]
+    
+    if (format === 'csv') {
+      // Convert system metrics to CSV
+      const headers = ['Metric', 'Value', 'Status', 'Change']
+      const csvContent = [
+        headers.join(','),
+        ...systemMetrics.map((row: { title: string; value: string; status: string; change: string }) => [
+          row.title,
+          row.value,
+          row.status,
+          row.change
+        ].join(','))
+      ].join('\n')
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `performance-analytics-${timestamp}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } else if (format === 'json') {
+      // Convert to JSON
+      const jsonContent = JSON.stringify({ 
+        exportDate: new Date().toISOString(),
+        systemMetrics,
+        pageMetrics,
+        databaseMetrics,
+        cacheMetrics
+      }, null, 2)
+      
+      const blob = new Blob([jsonContent], { type: 'application/json' })
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `performance-analytics-${timestamp}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    }
   }
 
   return (
