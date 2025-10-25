@@ -247,13 +247,26 @@ export const handleZodError = (
   error: z.ZodError,
   context: RequestContext
 ): ApiErrorResponse => {
-  const validationErrors: ValidationError[] = error.errors.map(err => ({
-    field: err.path.join('.'),
-    code: ApiErrorCode.VALIDATION_INVALID_FORMAT,
-    message: err.message,
-    value: err.input,
-    constraints: { expected: err.expected, received: err.received },
-  }));
+  const validationErrors: ValidationError[] = error.errors.map(err => {
+    // Type guard to safely access properties
+    const hasInput = 'input' in err;
+    const hasExpected = 'expected' in err;
+    const hasReceived = 'received' in err;
+    
+    return {
+      field: err.path.join('.'),
+      code: ApiErrorCode.VALIDATION_INVALID_FORMAT,
+      message: err.message,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      value: hasInput ? (err as any).input : undefined,
+      constraints: { 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        expected: hasExpected ? (err as any).expected : undefined, 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        received: hasReceived ? (err as any).received : undefined 
+      },
+    };
+  });
 
   return createErrorResponse(
     ApiErrorCode.VALIDATION_SCHEMA_MISMATCH,
@@ -547,12 +560,12 @@ export const handleApiError = async (
 
   // Log error if enabled
   if (handlerConfig.logErrors) {
-    await logError(apiError, originalError, context);
+    await logError(apiError, originalError, context as ErrorHandlerContext);
   }
 
   // Send critical error notifications
   if (handlerConfig.notifyOnCritical) {
-    await notifyOnCriticalError(apiError, context);
+    await notifyOnCriticalError(apiError, context as ErrorHandlerContext);
   }
 
   // Create NextResponse with appropriate headers

@@ -27,20 +27,21 @@ interface ErrorProps {
  */
 export default function Error({ error, reset }: ErrorProps) {
   useEffect(() => {
-    // Log error to Sentry with additional context
-    Sentry.captureException(error, {
-      tags: {
-        error_boundary: 'app_error',
-        error_digest: error.digest,
-      },
-      level: 'error',
-      extra: {
-        errorMessage: error.message,
-        errorStack: error.stack,
-        errorDigest: error.digest,
-      },
-    })
-
+    // Log error to Sentry with additional context - DISABLED
+    // Sentry.captureException(error, {
+    //   tags: {
+    //     error_boundary: 'app_error',
+    //     error_digest: error.digest,
+    //   },
+    //   level: 'error',
+    //   extra: {
+    //     errorMessage: error.message,
+    //     errorStack: error.stack,
+    //     errorDigest: error.digest,
+    //   },
+    // })
+    console.error('App Error:', error)
+    
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
       console.error('App Error Boundary caught:', error)

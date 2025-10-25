@@ -10,6 +10,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { cacheMonitor } from '@/lib/cache/cache-monitor'
 
+// This route uses server-side APIs (sessions, headers) and must be treated as dynamic
+export const dynamic = 'force-dynamic'
+
 export async function GET(_req: NextRequest) {
   try {
     // Check authentication

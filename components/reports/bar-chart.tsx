@@ -1,27 +1,11 @@
 "use client";
 
-import React from 'react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ChartOptions,
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import React, { useEffect, useState } from 'react';
+// Dynamic imports to prevent SSR issues
+import type { ChartOptions } from 'chart.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
+// ChartJS.register(...)
 
 export interface BarChartProps {
   title?: string;
@@ -49,6 +33,42 @@ export function BarChart({
   height = 300,
   className
 }: BarChartProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [BarComponent, setBarComponent] = useState<React.ComponentType<any> | null>(null);
+  const [chartReady, setChartReady] = useState(false);
+
+  // Load Chart.js dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    Promise.all([
+      import('chart.js'),
+      import('react-chartjs-2')
+    ]).then(([chartModule, reactChartModule]) => {
+      const {
+        Chart: ChartJS,
+        CategoryScale,
+        LinearScale,
+        BarElement,
+        Title,
+        Tooltip,
+        Legend
+      } = chartModule;
+      ChartJS.register(
+        CategoryScale,
+        LinearScale,
+        BarElement,
+        Title,
+        Tooltip,
+        Legend
+      );
+      setBarComponent(() => reactChartModule.Bar);
+      setChartReady(true);
+    }).catch(error => {
+      console.error('Error loading Chart.js:', error);
+    });
+  }, []);
+
   const defaultOptions: ChartOptions<'bar'> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -79,7 +99,13 @@ export function BarChart({
       )}
       <CardContent>
         <div style={{ height: `${height}px` }}>
-          <Bar data={data} options={mergedOptions} />
+          {chartReady && BarComponent ? (
+            <BarComponent data={data} options={mergedOptions} />
+          ) : (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              Loading chart...
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// Uses server session/headers; treat as dynamic
+export const dynamic = 'force-dynamic'
+
 // GET /api/project-manager/clients/stats - Get overall client stats
 export async function GET(_req: Request) {
   try {

@@ -21,14 +21,13 @@ const nextConfig = {
     optimizeCss: false,
     // Disable instrumentation hook to save memory
     instrumentationHook: false,
-    // Faster builds
-    turbotrace: {
-      logLevel: 'error',
-    },
   },
 
   // Increase static page generation timeout to 5 minutes
   staticPageGenerationTimeout: 300,
+
+  // Disable standalone output to skip build traces
+  // output: 'standalone',
 
   // Compiler optimizations
   compiler: {
@@ -158,6 +157,9 @@ const nextConfig = {
         'puppeteer': 'puppeteer',
         'canvas': 'canvas',
       })
+      
+      // Don't apply splitChunks optimization for server bundle
+      return config;
     }
 
     // Resolve fallbacks for Node.js modules
@@ -169,7 +171,7 @@ const nextConfig = {
       crypto: false,
     }
 
-    // Reduce memory usage during build
+    // Reduce memory usage during build - ONLY FOR CLIENT
     config.optimization = {
       ...config.optimization,
       splitChunks: {

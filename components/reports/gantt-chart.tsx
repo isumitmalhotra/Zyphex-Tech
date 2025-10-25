@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import Gantt from 'frappe-gantt';
+// Dynamic import to prevent SSR issues
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import 'frappe-gantt/dist/frappe-gantt.css';
 
 export interface GanttTask {
   id: string;
@@ -37,15 +36,24 @@ export function GanttChart({
   className
 }: GanttChartProps) {
   const ganttRef = useRef<HTMLDivElement>(null);
-  const ganttInstance = useRef<Gantt | null>(null);
+  const ganttInstance = useRef<unknown>(null);
   const [mounted, setMounted] = useState(false);
+  const [GanttClass, setGanttClass] = useState<unknown>(null);
 
+  // Load Gantt library dynamically
   useEffect(() => {
-    setMounted(true);
+    if (typeof window === 'undefined') return;
+    
+    import('frappe-gantt').then((ganttModule) => {
+      setGanttClass(() => ganttModule.default);
+      setMounted(true);
+    }).catch(error => {
+      console.error('Error loading Gantt library:', error);
+    });
   }, []);
 
   useEffect(() => {
-    if (!mounted || !ganttRef.current || tasks.length === 0) return;
+    if (!mounted || !GanttClass || !ganttRef.current || tasks.length === 0) return;
 
     const currentRef = ganttRef.current;
 
@@ -57,7 +65,8 @@ export function GanttChart({
       }
 
       // Create new instance
-      ganttInstance.current = new Gantt(currentRef, tasks, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ganttInstance.current = new (GanttClass as any)(currentRef, tasks, {
         view_mode: viewMode,
         on_click: (task: GanttTask) => {
           if (onClick) onClick(task);
@@ -84,7 +93,7 @@ export function GanttChart({
         currentRef.innerHTML = '';
       }
     };
-  }, [tasks, viewMode, onClick, onDateChange, onProgressChange, mounted]);
+  }, [tasks, viewMode, onClick, onDateChange, onProgressChange, mounted, GanttClass]);
 
   if (!mounted) {
     return (

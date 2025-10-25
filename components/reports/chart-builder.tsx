@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import {
@@ -10,9 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { BarChart } from './bar-chart';
-import { LineChart } from './line-chart';
-import { PieChart } from './pie-chart';
 import { TableView, TableColumn } from './table-view';
 
 export type ChartType = 'bar' | 'line' | 'pie' | 'table';
@@ -37,6 +34,51 @@ export function ChartBuilder({
   const [chartType, setChartType] = useState<ChartType>(defaultChartType);
   const [xAxis, setXAxis] = useState<string>('');
   const [yAxis, setYAxis] = useState<string>('');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [ChartComponent, setChartComponent] = useState<React.ComponentType<any> | null>(null);
+  const [isLoadingChart, setIsLoadingChart] = useState(false);
+
+  // Load chart component dynamically based on type
+  useEffect(() => {
+    if (chartType === 'table' || typeof window === 'undefined') {
+      setChartComponent(null);
+      return;
+    }
+
+    setIsLoadingChart(true);
+    let cancelled = false;
+
+    async function loadChart() {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let chartModule: any;
+        switch (chartType) {
+          case 'bar':
+            chartModule = await import('./bar-chart');
+            if (!cancelled) setChartComponent(() => chartModule.BarChart);
+            break;
+          case 'line':
+            chartModule = await import('./line-chart');
+            if (!cancelled) setChartComponent(() => chartModule.LineChart);
+            break;
+          case 'pie':
+            chartModule = await import('./pie-chart');
+            if (!cancelled) setChartComponent(() => chartModule.PieChart);
+            break;
+        }
+      } catch (error) {
+        console.error('Error loading chart:', error);
+      } finally {
+        if (!cancelled) setIsLoadingChart(false);
+      }
+    }
+
+    loadChart();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chartType]);
 
   // Extract available columns from data
   const columns = data.length > 0 ? Object.keys(data[0]) : [];
@@ -119,35 +161,35 @@ export function ChartBuilder({
       );
     }
 
-    switch (chartType) {
-      case 'bar':
-        if ('labels' in chartData && 'datasets' in chartData) {
-          return <BarChart data={chartData as { labels: string[]; datasets: { label: string; data: number[]; backgroundColor?: string; borderColor?: string; borderWidth?: number }[] }} height={400} />;
-        }
-        break;
-      case 'line':
-        if ('labels' in chartData && 'datasets' in chartData) {
-          return <LineChart data={chartData as { labels: string[]; datasets: { label: string; data: number[]; backgroundColor?: string; borderColor?: string; fill?: boolean; tension?: number }[] }} height={400} />;
-        }
-        break;
-      case 'pie':
-        if ('labels' in chartData && 'datasets' in chartData) {
-          return <PieChart data={chartData as { labels: string[]; datasets: { data: number[]; backgroundColor?: string[]; borderColor?: string[]; borderWidth?: number }[] }} height={400} />;
-        }
-        break;
-      case 'table':
-        if ('columns' in chartData && 'data' in chartData) {
-          return (
-            <TableView
-              columns={chartData.columns as TableColumn[]}
-              data={chartData.data as Record<string, unknown>[]}
-              searchable
-            />
-          );
-        }
-        break;
-      default:
-        return null;
+    if (chartType === 'table' && 'columns' in chartData && 'data' in chartData) {
+      return (
+        <TableView
+          columns={chartData.columns as TableColumn[]}
+          data={chartData.data as Record<string, unknown>[]}
+          searchable
+        />
+      );
+    }
+
+    if (isLoadingChart) {
+      return (
+        <div className="flex items-center justify-center p-12 text-muted-foreground">
+          Loading chart...
+        </div>
+      );
+    }
+
+    if (!ChartComponent) {
+      return (
+        <div className="flex items-center justify-center p-12 text-muted-foreground">
+          Chart component not loaded
+        </div>
+      );
+    }
+
+    // Render the dynamically loaded chart component
+    if ('labels' in chartData && 'datasets' in chartData) {
+      return <ChartComponent data={chartData} height={400} />;
     }
 
     return null;

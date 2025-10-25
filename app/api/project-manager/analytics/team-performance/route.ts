@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+
+// Uses server session/headers; force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 

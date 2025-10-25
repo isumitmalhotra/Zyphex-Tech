@@ -80,7 +80,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               <h1 className="text-4xl font-bold text-destructive">Oops!</h1>
               <h2 className="text-2xl font-semibold text-foreground">Something went wrong</h2>
               <p className="text-muted-foreground">
-                We're sorry for the inconvenience. Our team has been notified and is working on a fix.
+                We&apos;re sorry for the inconvenience. Our team has been notified and is working on a fix.
               </p>
             </div>
 

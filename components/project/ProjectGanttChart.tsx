@@ -20,8 +20,8 @@ import {
   PlayCircle
 } from 'lucide-react'
 import { format } from 'date-fns'
-// @ts-expect-error - frappe-gantt types not available
-import Gantt from 'frappe-gantt'
+// Dynamic import to prevent SSR issues
+// import Gantt from 'frappe-gantt'
 
 interface Task {
   id: string
@@ -99,8 +99,22 @@ export default function ProjectGanttChart({
   onTaskDelete 
 }: ProjectGanttChartProps) {
   const ganttRef = useRef<HTMLDivElement>(null)
-  const ganttInstance = useRef<typeof Gantt | null>(null)
+  const ganttInstance = useRef<{ change_view_mode?: (mode: string) => void } | null>(null)
   const [activeTab, setActiveTab] = useState('gantt')
+  const [GanttClass, setGanttClass] = useState<unknown>(null)
+  const [isGanttLoaded, setIsGanttLoaded] = useState(false)
+
+  // Load Gantt library dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    import('frappe-gantt').then((ganttModule) => {
+      setGanttClass(() => ganttModule.default);
+      setIsGanttLoaded(true);
+    }).catch((_error) => {
+      console.error('Error loading Gantt library:', _error);
+    });
+  }, []);
 
   // Convert tasks to Gantt format
   const convertTasksToGanttData = useCallback((tasks: Task[]) => {
@@ -154,11 +168,13 @@ export default function ProjectGanttChart({
 
   // Initialize Gantt chart
   useEffect(() => {
-    if (ganttRef.current && project.tasks.length > 0) {
-      try {
-        const ganttData = convertTasksToGanttData(project.tasks)
-        
-        ganttInstance.current = new Gantt(ganttRef.current, ganttData, {
+    if (!isGanttLoaded || !GanttClass || !ganttRef.current || project.tasks.length === 0) return;
+
+    try {
+      const ganttData = convertTasksToGanttData(project.tasks)
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ganttInstance.current = new (GanttClass as any)(ganttRef.current, ganttData, {
           header_height: 50,
           column_width: 30,
           step: 24,
@@ -217,20 +233,20 @@ export default function ProjectGanttChart({
         `
         document.head.appendChild(style)
 
-      } catch (error) {
+      } catch (_error) {
         // Error initializing Gantt chart
       }
-    }
+    
 
     return () => {
       if (ganttInstance.current) {
         // Cleanup if needed
       }
     }
-  }, [project.tasks, convertTasksToGanttData, onTaskUpdate])
+  }, [project.tasks, convertTasksToGanttData, onTaskUpdate, isGanttLoaded, GanttClass])
 
   const handleViewModeChange = (mode: string) => {
-    if (ganttInstance.current) {
+    if (ganttInstance.current?.change_view_mode) {
       ganttInstance.current.change_view_mode(mode)
     }
   }

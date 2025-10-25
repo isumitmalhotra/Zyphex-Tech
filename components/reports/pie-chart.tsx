@@ -1,17 +1,11 @@
 "use client";
 
-import React from 'react';
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  ChartOptions,
-} from 'chart.js';
-import { Pie } from 'react-chartjs-2';
+import React, { useEffect, useState } from 'react';
+// Dynamic imports to prevent SSR issues
+import type { ChartOptions } from 'chart.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+// ChartJS.register(ArcElement, Tooltip, Legend);
 
 export interface PieChartProps {
   title?: string;
@@ -38,6 +32,27 @@ export function PieChart({
   height = 300,
   className
 }: PieChartProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [PieComponent, setPieComponent] = useState<React.ComponentType<any> | null>(null);
+  const [chartReady, setChartReady] = useState(false);
+
+  // Load Chart.js dynamically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    Promise.all([
+      import('chart.js'),
+      import('react-chartjs-2')
+    ]).then(([chartModule, reactChartModule]) => {
+      const { Chart: ChartJS, ArcElement, Tooltip, Legend } = chartModule;
+      ChartJS.register(ArcElement, Tooltip, Legend);
+      setPieComponent(() => reactChartModule.Pie);
+      setChartReady(true);
+    }).catch(error => {
+      console.error('Error loading Chart.js:', error);
+    });
+  }, []);
+
   const defaultOptions: ChartOptions<'pie'> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -63,7 +78,11 @@ export function PieChart({
       )}
       <CardContent>
         <div style={{ height: `${height}px` }} className="flex items-center justify-center">
-          <Pie data={data} options={mergedOptions} />
+          {chartReady && PieComponent ? (
+            <PieComponent data={data} options={mergedOptions} />
+          ) : (
+            <div className="text-muted-foreground">Loading chart...</div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -2,12 +2,18 @@
 // import { captureException, captureMessage, setUser, setTag, setContext, addBreadcrumb as sentryAddBreadcrumb } from '@sentry/nextjs';
 
 // Stub functions to replace Sentry calls
-const captureException = (error: any) => console.error('[SENTRY DISABLED]', error);
-const captureMessage = (message: string, level?: any) => console.log('[SENTRY DISABLED]', message, level);
-const setUser = (user: any) => { /* noop */ };
-const setTag = (key: string, value: any) => { /* noop */ };
-const setContext = (name: string, context: any) => { /* noop */ };
-const sentryAddBreadcrumb = (breadcrumb: any) => { /* noop */ };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const captureException = (_error: any) => console.error('[SENTRY DISABLED]', _error);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const captureMessage = (_message: string, _level?: any) => console.log('[SENTRY DISABLED]', _message, _level);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const setUser = (_user: any) => { /* noop */ };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const setTag = (_key: string, _value: any) => { /* noop */ };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const setContext = (_name: string, _context: any) => { /* noop */ };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sentryAddBreadcrumb = (_breadcrumb: any) => { /* noop */ };
 
 import { NextRequest } from 'next/server';
 import { ApiErrorCode, ErrorSeverity } from '@/lib/api/error-types';

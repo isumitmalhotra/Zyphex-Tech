@@ -30,6 +30,9 @@ import { authOptions } from '@/lib/auth'
 import { cacheMonitor, CacheHealth } from '@/lib/cache/cache-monitor'
 import { getMultiLevelCache } from '@/lib/cache/multi-level-cache'
 
+// This route relies on server-side context (sessions/headers) and must be dynamic
+export const dynamic = 'force-dynamic'
+
 /**
  * GET /api/admin/cache/dashboard
  * 

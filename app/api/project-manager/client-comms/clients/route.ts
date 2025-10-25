@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+
+// Uses server-side session/headers; make this route dynamic
+export const dynamic = 'force-dynamic'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
