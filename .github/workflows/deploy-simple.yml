@@ -83,8 +83,8 @@ jobs:
             # Stop PM2 first to free up memory
             pm2 stop zyphextech || true
             
-            # Build with 4GB memory (same as local)
-            NODE_OPTIONS='--max-old-space-size=4096' npm run build
+            # Build with 4GB memory and Sentry disabled during build
+            NODE_OPTIONS='--max-old-space-size=4096' SENTRY_BUILD_DISABLED=true npm run build
             
             echo "✅ Build completed!"
             
