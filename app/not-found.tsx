@@ -16,7 +16,8 @@ import {
   Mail,
   AlertCircle 
 } from 'lucide-react'
-import * as Sentry from '@sentry/nextjs'
+// Sentry disabled to prevent build errors
+// import * as Sentry from '@sentry/nextjs'
 
 // Metadata removed - this is now a client component
 
@@ -45,16 +46,16 @@ const popularPages = [
 export default function NotFound() {
   const router = useRouter()
   
-  // Log 404 error to Sentry for monitoring
-  React.useEffect(() => {
-    Sentry.captureMessage('404 Page Not Found', {
-      level: 'warning',
-      tags: {
-        error_type: '404',
-        error_page: 'not-found',
-      },
-    })
-  }, [])
+  // Log 404 error to Sentry for monitoring - DISABLED
+  // React.useEffect(() => {
+  //   Sentry.captureMessage('404 Page Not Found', {
+  //     level: 'warning',
+  //     tags: {
+  //       error_type: '404',
+  //       error_page: 'not-found',
+  //     },
+  //   })
+  // }, [])
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">

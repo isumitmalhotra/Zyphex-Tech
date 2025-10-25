@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import * as Sentry from '@sentry/nextjs'
+// Sentry disabled to prevent build errors
+// import * as Sentry from '@sentry/nextjs'
 import { useEffect } from 'react'
 import Link from 'next/link'
 
@@ -18,19 +19,19 @@ export default function GlobalError({
   reset: () => void 
 }) {
   useEffect(() => {
-    // Log error to Sentry with critical priority
-    Sentry.captureException(error, {
-      level: 'fatal',
-      tags: {
-        error_boundary: 'global_error',
-        error_digest: error.digest,
-      },
-      extra: {
-        errorMessage: error.message,
-        errorStack: error.stack,
-        errorDigest: error.digest,
-      },
-    })
+    // Log error to Sentry with critical priority - DISABLED
+    // Sentry.captureException(error, {
+    //   level: 'fatal',
+    //   tags: {
+    //     error_boundary: 'global_error',
+    //     error_digest: error.digest,
+    //   },
+    //   extra: {
+    //     errorMessage: error.message,
+    //     errorStack: error.stack,
+    //     errorDigest: error.digest,
+    //   },
+    // })
 
     // Log to console
     console.error('Global Error:', error)

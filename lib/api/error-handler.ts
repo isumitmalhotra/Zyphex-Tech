@@ -10,7 +10,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
+// Sentry disabled to prevent build errors
+// import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
 import { 
   ApiErrorResponse, 
@@ -379,30 +380,30 @@ const logError = async (
   context?: ErrorHandlerContext
 ): Promise<void> => {
   try {
-    // Log to Sentry for error tracking
-    if (originalError) {
-      Sentry.withScope((scope) => {
-        scope.setTag('errorCode', error.code);
-        scope.setTag('severity', error.severity);
-        scope.setTag('statusCode', error.statusCode);
-        scope.setContext('request', {
-          requestId: error.requestId,
-          method: error.method,
-          path: error.path,
-          userAgent: context?.request.headers['user-agent'],
-          clientIp: context?.request.headers['x-forwarded-for'],
-        });
-        
-        if (context?.user) {
-          scope.setUser({
-            id: context.user.id,
-            email: context.user.email,
-          });
-        }
-
-        Sentry.captureException(originalError);
-      });
-    }
+    // Log to Sentry for error tracking - DISABLED
+    // if (originalError) {
+    //   Sentry.withScope((scope) => {
+    //     scope.setTag('errorCode', error.code);
+    //     scope.setTag('severity', error.severity);
+    //     scope.setTag('statusCode', error.statusCode);
+    //     scope.setContext('request', {
+    //       requestId: error.requestId,
+    //       method: error.method,
+    //       path: error.path,
+    //       userAgent: context?.request.headers['user-agent'],
+    //       clientIp: context?.request.headers['x-forwarded-for'],
+    //     });
+    //     
+    //     if (context?.user) {
+    //       scope.setUser({
+    //         id: context.user.id,
+    //         email: context.user.email,
+    //       });
+    //     }
+    //
+    //     Sentry.captureException(originalError);
+    //   });
+    // }
 
     // Use comprehensive error logger service
     const errorContext = {

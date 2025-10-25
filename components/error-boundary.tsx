@@ -1,7 +1,8 @@
 'use client'
 
 import React, { Component, type ReactNode } from 'react'
-import * as Sentry from '@sentry/nextjs'
+// Sentry disabled to prevent build errors
+// import * as Sentry from '@sentry/nextjs'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -35,14 +36,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error to Sentry
-    Sentry.captureException(error, {
-      contexts: {
-        react: {
-          componentStack: errorInfo.componentStack,
-        },
-      },
-    })
+    // Log error to Sentry - DISABLED
+    // Sentry.captureException(error, {
+    //   contexts: {
+    //     react: {
+    //       componentStack: errorInfo.componentStack,
+    //     },
+    //   },
+    // })
 
     // Update state with error details
     this.setState({

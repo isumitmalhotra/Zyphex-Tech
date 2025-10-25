@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useEffect } from 'react'
-import * as Sentry from '@sentry/nextjs'
+// Sentry disabled to prevent build errors
+// import * as Sentry from '@sentry/nextjs'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
