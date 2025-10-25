@@ -152,7 +152,21 @@ const nextConfig = {
         'jspdf': 'jspdf',
         'html2canvas': 'html2canvas',
         'socket.io-client': 'socket.io-client',
+        'chart.js': 'chart.js',
+        'react-chartjs-2': 'react-chartjs-2',
+        'frappe-gantt': 'frappe-gantt',
+        'puppeteer': 'puppeteer',
+        'canvas': 'canvas',
       })
+    }
+
+    // Resolve fallbacks for Node.js modules
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+      crypto: false,
     }
 
     // Reduce memory usage during build

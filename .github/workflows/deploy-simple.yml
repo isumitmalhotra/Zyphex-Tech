@@ -70,20 +70,16 @@ jobs:
             fi
             
             echo "🧹 Cleaning build artifacts..."
-            # Remove old build to prevent cache issues - use sudo if needed
-            if [ -d ".next" ]; then
-              echo "Removing .next directory..."
-              sudo rm -rf .next || rm -rf .next
-            fi
-            if [ -d "node_modules/.cache" ]; then
-              echo "Removing node cache..."
-              sudo rm -rf node_modules/.cache || rm -rf node_modules/.cache
-            fi
+            # Complete clean - remove ALL build artifacts and dependencies
+            echo "Removing .next, node_modules, and lock files..."
+            sudo rm -rf .next || rm -rf .next
+            sudo rm -rf node_modules/.cache || rm -rf node_modules/.cache
+            rm -f package-lock.json
             
             # Fix permissions again after cleanup
             sudo chown -R deploy:deploy /var/www/zyphextech 2>/dev/null || true
             
-            echo "📦 Installing dependencies..."
+            echo "📦 Installing dependencies (fresh install)..."
             npm install --prefer-offline --no-audit --legacy-peer-deps
             
             echo "🔧 Generating Prisma Client..."
