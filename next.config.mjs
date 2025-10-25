@@ -10,12 +10,19 @@ const nextConfig = {
       'lucide-react',
       '@radix-ui/react-icons',
       'date-fns',
+      'recharts',
+      'chart.js',
+      'react-chartjs-2',
     ],
     // Reduce memory usage during build
     workerThreads: false,
     cpus: 1,
     // Disable memory-intensive optimizations during build
     optimizeCss: false,
+    // Faster builds
+    turbotrace: {
+      logLevel: 'error',
+    },
   },
 
   // Increase static page generation timeout to 5 minutes
@@ -136,7 +143,16 @@ const nextConfig = {
   },
   
   // Webpack memory optimizations
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
+    // Exclude client-only packages from server bundle
+    if (isServer) {
+      config.externals.push({
+        'jspdf': 'jspdf',
+        'html2canvas': 'html2canvas',
+        'socket.io-client': 'socket.io-client',
+      })
+    }
+
     // Reduce memory usage during build
     config.optimization = {
       ...config.optimization,
@@ -145,12 +161,25 @@ const nextConfig = {
         cacheGroups: {
           default: false,
           vendors: false,
-          // Vendor chunk
+          // Framework chunk (react, react-dom, next)
+          framework: {
+            name: 'framework',
+            test: /[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|next)[\\/]/,
+            priority: 40,
+            enforce: true,
+          },
+          // Common UI libraries
+          lib: {
+            test: /[\\/]node_modules[\\/](@radix-ui|lucide-react|cmdk)[\\/]/,
+            name: 'lib',
+            priority: 30,
+          },
+          // Vendor chunk (other node_modules)
           vendor: {
             name: 'vendor',
             chunks: 'all',
-            test: /node_modules/,
-            priority: 20
+            test: /[\\/]node_modules[\\/]/,
+            priority: 20,
           },
           // Common chunk
           common: {
@@ -159,16 +188,27 @@ const nextConfig = {
             chunks: 'all',
             priority: 10,
             reuseExistingChunk: true,
-            enforce: true
+            enforce: true,
           }
         },
         maxInitialRequests: 25,
-        minSize: 20000
-      }
+        minSize: 20000,
+      },
+      // Minimize build time
+      minimize: process.env.NODE_ENV === 'production',
+      minimizer: config.optimization.minimizer,
     }
     
     // Limit parallelism to reduce memory
     config.parallelism = 1
+    
+    // Ignore problematic warnings
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^encoding$/,
+        contextRegExp: /node-fetch/,
+      })
+    )
     
     return config
   },
