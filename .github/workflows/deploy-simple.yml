@@ -65,6 +65,11 @@ jobs:
             echo "🗄️  Running migrations..."
             npx prisma migrate deploy || true
             
+            echo "🧹 Cleaning build artifacts..."
+            # Remove old build to prevent cache issues
+            rm -rf .next
+            rm -rf node_modules/.cache
+            
             echo "🏗️  Building application..."
             # Stop PM2 first to free up memory
             pm2 stop zyphextech || true
