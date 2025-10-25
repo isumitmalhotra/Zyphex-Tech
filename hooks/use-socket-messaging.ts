@@ -62,9 +62,8 @@ export function useSocketMessaging(events?: MessageEvents) {
       return
     }
 
-    // TODO: Enable Socket.io when server is configured
-    // Temporarily disabled to prevent 503 errors
-    const ENABLE_SOCKET_IO = false;
+    // Socket.io is now enabled
+    const ENABLE_SOCKET_IO = true;
     
     if (!ENABLE_SOCKET_IO) {
       console.log('Socket.io disabled - real-time features unavailable');

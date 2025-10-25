@@ -19,8 +19,8 @@ const nextConfig = {
     cpus: 1,
     // Disable memory-intensive optimizations during build
     optimizeCss: false,
-    // Disable instrumentation hook to save memory
-    instrumentationHook: false,
+    // ENABLE instrumentation hook for Socket.io initialization
+    instrumentationHook: true,
   },
 
   // Increase static page generation timeout to 5 minutes

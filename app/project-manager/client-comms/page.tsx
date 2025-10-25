@@ -51,6 +51,7 @@ import {
   X,
   Filter,
   CheckCheck,
+  Check,
   Download,
   Image as ImageIcon,
   File as FileIcon,
@@ -964,8 +965,12 @@ export default function ClientCommunicationsPage() {
                             <div className="flex items-center justify-end gap-1 mt-2">
                               <Clock className="h-3 w-3 opacity-70" />
                               <span className="text-xs opacity-70">{formatMessageTime(message.timestamp)}</span>
-                              {message.senderId === 'me' && message.read && (
-                                <CheckCheck className="h-3 w-3 ml-1 opacity-70" />
+                              {message.senderId === 'me' && (
+                                message.read ? (
+                                  <CheckCheck className="h-3 w-3 ml-1 text-blue-500" />
+                                ) : (
+                                  <Check className="h-3 w-3 ml-1 opacity-70" />
+                                )
                               )}
                             </div>
                           </div>

@@ -532,43 +532,562 @@ export default function TaskAssignmentPage() {
             </Card>
           </TabsContent>
 
-          {/* Similar TabsContent for other status filters would go here */}
+          {/* PROMPT 27: To Do Tasks View */}
           <TabsContent value="todo">
             <Card className="zyphex-card">
-              <CardContent className="pt-6">
-                <p className="text-center text-gray-500">To Do tasks view - Coming soon</p>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="zyphex-heading">To Do Tasks</CardTitle>
+                    <CardDescription className="zyphex-subheading">
+                      Tasks ready to be started ({stats.todo} tasks)
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Select defaultValue="priority">
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="priority">Sort by Priority</SelectItem>
+                        <SelectItem value="dueDate">Sort by Due Date</SelectItem>
+                        <SelectItem value="assignee">Sort by Assignee</SelectItem>
+                        <SelectItem value="project">Sort by Project</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button className="zyphex-button-primary">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Quick Add Task
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredTasks.filter(t => t.status === 'TODO').map((task) => {
+                    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date()
+                    return (
+                      <Card key={task.id} className={`hover-zyphex-lift ${isOverdue ? 'border-red-300' : ''}`}>
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <CardTitle className="text-base font-semibold line-clamp-2">
+                              {task.title}
+                            </CardTitle>
+                            <Badge variant="outline" className={priorityColors[task.priority]}>
+                              {task.priority}
+                            </Badge>
+                          </div>
+                          <CardDescription className="text-sm line-clamp-2">
+                            {task.description}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Badge variant="outline" className="text-xs">
+                              {task.project.name}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <User className="h-4 w-4" />
+                            <span>{task.assignee?.name || 'Unassigned'}</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                            <Calendar className="h-4 w-4" />
+                            <span>{task.dueDate ? format(new Date(task.dueDate), 'MMM dd, yyyy') : 'No deadline'}</span>
+                            {isOverdue && <AlertTriangle className="h-4 w-4" />}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Clock className="h-4 w-4" />
+                            <span>Est: {task.estimatedHours}h</span>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button size="sm" variant="outline" className="flex-1">
+                              Start Task
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="outline" className="px-2">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>Edit</DropdownMenuItem>
+                                <DropdownMenuItem>Assign</DropdownMenuItem>
+                                <DropdownMenuItem>Delete</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+                {filteredTasks.filter(t => t.status === 'TODO').length === 0 && (
+                  <div className="text-center py-12">
+                    <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium zyphex-heading mb-2">No To Do tasks</h3>
+                    <p className="zyphex-subheading">All tasks have been started or completed!</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* PROMPT 28: In Progress Tasks View */}
           <TabsContent value="in-progress">
             <Card className="zyphex-card">
-              <CardContent className="pt-6">
-                <p className="text-center text-gray-500">In Progress tasks view - Coming soon</p>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="zyphex-heading">In Progress Tasks</CardTitle>
+                    <CardDescription className="zyphex-subheading">
+                      Tasks currently being worked on ({stats.inProgress} tasks)
+                    </CardDescription>
+                  </div>
+                  <Select defaultValue="startDate">
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="startDate">Sort by Start Date</SelectItem>
+                      <SelectItem value="progress">Sort by Progress</SelectItem>
+                      <SelectItem value="dueDate">Sort by Due Date</SelectItem>
+                      <SelectItem value="assignee">Sort by Assignee</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filteredTasks.filter(t => t.status === 'IN_PROGRESS').map((task) => {
+                    const progress = Math.min((task.actualHours / task.estimatedHours) * 100, 100)
+                    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date()
+                    return (
+                      <Card key={task.id} className="hover-zyphex-lift border-blue-200 bg-blue-50/50">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <CardTitle className="text-base font-semibold line-clamp-2">
+                              {task.title}
+                            </CardTitle>
+                            <Badge variant="outline" className={priorityColors[task.priority]}>
+                              {task.priority}
+                            </Badge>
+                          </div>
+                          <CardDescription className="text-sm line-clamp-2">
+                            {task.description}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Badge variant="outline" className="text-xs">
+                              {task.project.name}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <User className="h-4 w-4" />
+                            <span className="font-medium">{task.assignee?.name || 'Unassigned'}</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
+                            <Calendar className="h-4 w-4" />
+                            <span>{task.dueDate ? format(new Date(task.dueDate), 'MMM dd, yyyy') : 'No deadline'}</span>
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span className="text-gray-600">Time Progress</span>
+                              <span className="font-medium">{task.actualHours}h / {task.estimatedHours}h</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full transition-all" 
+                                style={{ width: `${progress}%` }}
+                              ></div>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">{Math.round(progress)}% complete</p>
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Button size="sm" variant="outline" className="flex-1">
+                              Log Time
+                            </Button>
+                            <Button size="sm" className="flex-1 bg-purple-600 hover:bg-purple-700">
+                              Move to Review
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+                {filteredTasks.filter(t => t.status === 'IN_PROGRESS').length === 0 && (
+                  <div className="text-center py-12">
+                    <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium zyphex-heading mb-2">No tasks in progress</h3>
+                    <p className="zyphex-subheading">Start working on a task from the To Do list!</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* PROMPT 29: Review Tasks View */}
           <TabsContent value="review">
             <Card className="zyphex-card">
-              <CardContent className="pt-6">
-                <p className="text-center text-gray-500">Review tasks view - Coming soon</p>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="zyphex-heading">Review Tasks</CardTitle>
+                    <CardDescription className="zyphex-subheading">
+                      Tasks pending review or approval ({stats.review} tasks)
+                    </CardDescription>
+                  </div>
+                  <Button className="zyphex-button-primary">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve Selected
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {filteredTasks.filter(t => t.status === 'REVIEW').map((task) => (
+                    <Card key={task.id} className="hover-zyphex-lift border-purple-200 bg-purple-50/50">
+                      <CardContent className="pt-6">
+                        <div className="flex gap-4">
+                          <div className="flex-1 space-y-3">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="text-lg font-semibold mb-1">{task.title}</h3>
+                                <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                                <div className="flex gap-2 flex-wrap">
+                                  <Badge variant="outline" className="text-xs">
+                                    {task.project.name}
+                                  </Badge>
+                                  <Badge variant="outline" className={priorityColors[task.priority]}>
+                                    {task.priority}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-500 mb-1">Submitted by</p>
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4" />
+                                  <span className="font-medium">{task.assignee?.name || 'Unknown'}</span>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-gray-500 mb-1">Time Spent</p>
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4" />
+                                  <span className="font-medium">{task.actualHours}h / {task.estimatedHours}h</span>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-gray-500 mb-1">Due Date</p>
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  <span className="font-medium">
+                                    {task.dueDate ? format(new Date(task.dueDate), 'MMM dd') : 'No deadline'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-gray-500 mb-1">Reviewer</p>
+                                <Button variant="outline" size="sm">
+                                  Assign Reviewer
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="border-t pt-3">
+                              <p className="text-sm font-medium mb-2">Review Comments</p>
+                              <div className="bg-white rounded-lg p-3 text-sm text-gray-600 mb-3 border">
+                                No comments yet. Add your feedback below.
+                              </div>
+                              <Input placeholder="Add review comments..." className="mb-2" />
+                            </div>
+
+                            <div className="flex gap-2">
+                              <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Approve
+                              </Button>
+                              <Button size="sm" variant="outline" className="text-red-600 border-red-300">
+                                Request Changes
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                Back to In Progress
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {filteredTasks.filter(t => t.status === 'REVIEW').length === 0 && (
+                  <div className="text-center py-12">
+                    <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium zyphex-heading mb-2">No tasks in review</h3>
+                    <p className="zyphex-subheading">Tasks will appear here when they are ready for review!</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* PROMPT 30: Completed Tasks View */}
           <TabsContent value="done">
             <Card className="zyphex-card">
-              <CardContent className="pt-6">
-                <p className="text-center text-gray-500">Completed tasks view - Coming soon</p>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="zyphex-heading">Completed Tasks</CardTitle>
+                    <CardDescription className="zyphex-subheading">
+                      Archive of finished tasks ({stats.done} tasks)
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Export Report
+                    </Button>
+                    <Select defaultValue="completionDate">
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="completionDate">Completion Date</SelectItem>
+                        <SelectItem value="project">Project</SelectItem>
+                        <SelectItem value="assignee">Assignee</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Completion Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <Card className="bg-green-50 border-green-200">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-green-600 mb-1">Total Completed</p>
+                          <p className="text-2xl font-bold text-green-700">{stats.done}</p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-blue-600 mb-1">Avg Completion Time</p>
+                          <p className="text-2xl font-bold text-blue-700">
+                            {Math.round(tasks.filter(t => t.status === 'DONE').reduce((sum, t) => sum + t.actualHours, 0) / Math.max(stats.done, 1))}h
+                          </p>
+                        </div>
+                        <Clock className="h-8 w-8 text-blue-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-purple-50 border-purple-200">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-purple-600 mb-1">This Month</p>
+                          <p className="text-2xl font-bold text-purple-700">{stats.done}</p>
+                        </div>
+                        <Target className="h-8 w-8 text-purple-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Completed Tasks List */}
+                <div className="space-y-3">
+                  {filteredTasks.filter(t => t.status === 'DONE').map((task) => (
+                    <Card key={task.id} className="hover-zyphex-lift border-green-200 bg-green-50/30">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-start gap-3">
+                              <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1">
+                                <h3 className="font-semibold mb-1">{task.title}</h3>
+                                <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                                <div className="flex gap-4 text-sm text-gray-600">
+                                  <div className="flex items-center gap-1">
+                                    <Badge variant="outline" className="text-xs">{task.project.name}</Badge>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <User className="h-3 w-3" />
+                                    <span>{task.assignee?.name || 'Unassigned'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    <span>Completed {format(new Date(task.updatedAt), 'MMM dd, yyyy')}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    <span>{task.actualHours}h spent</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              View Details
+                            </Button>
+                            <Button size="sm" variant="outline" className="text-orange-600">
+                              Re-open Task
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {filteredTasks.filter(t => t.status === 'DONE').length === 0 && (
+                  <div className="text-center py-12">
+                    <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium zyphex-heading mb-2">No completed tasks</h3>
+                    <p className="zyphex-subheading">Complete some tasks to see them here!</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* PROMPT 31: Blocked Tasks View */}
           <TabsContent value="blocked">
             <Card className="zyphex-card">
-              <CardContent className="pt-6">
-                <p className="text-center text-gray-500">Blocked tasks view - Coming soon</p>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="zyphex-heading flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-red-600" />
+                      Blocked Tasks
+                    </CardTitle>
+                    <CardDescription className="zyphex-subheading">
+                      Tasks with blockers requiring attention ({stats.blocked} tasks)
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" className="text-red-600 border-red-300">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Report Blocker
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {filteredTasks.filter(t => t.status === 'BLOCKED').map((task) => (
+                    <Card key={task.id} className="border-red-300 bg-red-50/50">
+                      <CardContent className="pt-6">
+                        <div className="space-y-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                                <h3 className="text-lg font-semibold">{task.title}</h3>
+                                <Badge variant="outline" className={priorityColors[task.priority]}>
+                                  {task.priority} PRIORITY
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3 ml-8">{task.description}</p>
+                              
+                              <div className="bg-red-100 border border-red-200 rounded-lg p-4 ml-8">
+                                <p className="text-sm font-medium text-red-800 mb-2">🚫 Blocker Reason</p>
+                                <p className="text-sm text-red-700">
+                                  Waiting for security audit approval before proceeding with implementation. 
+                                  Dependencies on external authentication service not yet configured.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm ml-8">
+                            <div>
+                              <p className="text-gray-500 mb-1">Project</p>
+                              <Badge variant="outline" className="text-xs">
+                                {task.project.name}
+                              </Badge>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 mb-1">Blocked Since</p>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                <span className="font-medium">{format(new Date(task.updatedAt), 'MMM dd')}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 mb-1">Assignee</p>
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                <span className="font-medium">{task.assignee?.name || 'Unassigned'}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 mb-1">Resolver</p>
+                              <Button variant="outline" size="sm">
+                                Assign Resolver
+                              </Button>
+                            </div>
+                          </div>
+
+                          <div className="ml-8 border-t pt-4">
+                            <p className="text-sm font-medium mb-2">Blocker Resolution Tracking</p>
+                            <div className="space-y-2 mb-3">
+                              <div className="flex items-center gap-2 text-sm">
+                                <div className="h-2 w-2 rounded-full bg-yellow-500"></div>
+                                <span className="text-gray-600">Security team contacted - Pending response</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <div className="h-2 w-2 rounded-full bg-gray-300"></div>
+                                <span className="text-gray-400">Authentication service setup - Not started</span>
+                              </div>
+                            </div>
+                            <Input placeholder="Add resolution update..." className="mb-2" />
+                          </div>
+
+                          <div className="flex gap-2 ml-8">
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Resolve Blocker
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              Update Status
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              Escalate Issue
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="outline">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>Edit Task</DropdownMenuItem>
+                                <DropdownMenuItem>Change Priority</DropdownMenuItem>
+                                <DropdownMenuItem>View History</DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+                {filteredTasks.filter(t => t.status === 'BLOCKED').length === 0 && (
+                  <div className="text-center py-12">
+                    <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium zyphex-heading mb-2">No blocked tasks! 🎉</h3>
+                    <p className="zyphex-subheading">All tasks are progressing smoothly without blockers.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
