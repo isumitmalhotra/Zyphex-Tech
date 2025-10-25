@@ -14,11 +14,13 @@ const nextConfig = {
       'chart.js',
       'react-chartjs-2',
     ],
-    // Reduce memory usage during build
+    // CRITICAL: Reduce memory usage during build
     workerThreads: false,
     cpus: 1,
     // Disable memory-intensive optimizations during build
     optimizeCss: false,
+    // Disable instrumentation hook to save memory
+    instrumentationHook: false,
     // Faster builds
     turbotrace: {
       logLevel: 'error',
@@ -214,48 +216,5 @@ const nextConfig = {
   },
 }
 
-// Inject Sentry configuration
-import { withSentryConfig } from "@sentry/nextjs";
-
-// Disable Sentry during build to avoid "self is not defined" errors
-const sentryConfig = process.env.SENTRY_BUILD_DISABLED === 'true' ? {
-  disableClientWebpackPlugin: true,
-  disableServerWebpackPlugin: true,
-} : {
-  // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
-
-  org: "zyphex-tech",
-
-  project: "javascript-nextjs",
-
-  // Only print logs for uploading source maps in CI
-  silent: !process.env.CI,
-
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
-
-  // Disable source map upload to save memory during build
-  widenClientFileUpload: false,
-  
-  // Disable automatic upload in CI/CD - can be done separately
-  disableClientWebpackPlugin: true,
-  disableServerWebpackPlugin: true,
-
-  // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  tunnelRoute: "/monitoring",
-
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
-
-  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-  // See the following for more information:
-  // https://docs.sentry.io/product/crons/
-  // https://vercel.com/docs/cron-jobs
-  automaticVercelMonitors: true,
-};
-
-export default withSentryConfig(nextConfig, sentryConfig);
+// Export without Sentry to save memory during build
+export default nextConfig;

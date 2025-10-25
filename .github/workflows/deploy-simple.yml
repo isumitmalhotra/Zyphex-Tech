@@ -56,6 +56,19 @@ jobs:
               sudo chown -R deploy:deploy /var/www/zyphextech
             fi
             
+            echo "💾 Ensuring swap space is available..."
+            # Check if swap exists, create if needed (for low memory VPS)
+            if [ $(swapon --show | wc -l) -eq 0 ]; then
+              echo "Creating 2GB swap file..."
+              sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+              sudo chmod 600 /swapfile
+              sudo mkswap /swapfile
+              sudo swapon /swapfile
+              echo "Swap enabled"
+            else
+              echo "Swap already enabled"
+            fi
+            
             echo "🧹 Cleaning build artifacts..."
             # Remove old build to prevent cache issues - use sudo if needed
             if [ -d ".next" ]; then
@@ -82,9 +95,22 @@ jobs:
             echo "🏗️  Building application..."
             # Stop PM2 first to free up memory
             pm2 stop zyphextech || true
+            pm2 delete zyphextech || true
             
-            # Build with 4GB memory and Sentry disabled during build
-            NODE_OPTIONS='--max-old-space-size=4096' SENTRY_BUILD_DISABLED=true npm run build
+            # Clear memory cache
+            sync
+            echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null || true
+            
+            # Build with maximum memory optimization
+            # - 3GB heap (leave 1GB for system)
+            # - Disable type checking (already in config)
+            # - Disable Sentry instrumentation
+            # - Single CPU core
+            NODE_OPTIONS='--max-old-space-size=3072' \
+            NEXT_TELEMETRY_DISABLED=1 \
+            SKIP_TYPE_CHECK=true \
+            NEXT_RUNTIME='' \
+            npm run build
             
             echo "✅ Build completed!"
             
