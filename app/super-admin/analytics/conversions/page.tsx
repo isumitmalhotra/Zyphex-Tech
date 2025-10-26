@@ -1,961 +1,487 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Progress } from "@/components/ui/progress"
-import { SubtleBackground } from "@/components/subtle-background"
-import {
-  TrendingUp,
-  TrendingDown,
-  Target,
-  DollarSign,
-  Download,
-  ArrowRight,
-  CheckCircle,
-  Clock,
-  Mail,
-  Phone,
-  MessageSquare,
-  Calendar,
-  Award,
-  Star,
-  AlertCircle,
-  BarChart3,
-  PieChart,
-  ArrowUpRight,
-  ArrowDownRight,
-  Filter
-} from "lucide-react"
+import { Loader2, AlertCircle, RefreshCw, Users, Target, DollarSign, Clock, ArrowRight, Download } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-export default function SuperAdminConversionAnalyticsPage() {
-  const [dateRange, setDateRange] = useState("30")
-  const [funnelView, setFunnelView] = useState("all")
+interface FunnelStage {
+  leads: number
+  contacted: number
+  qualified: number
+  proposal: number
+  negotiation: number
+  won: number
+}
 
-  // Conversion Metrics Overview
-  const conversionMetrics = [
-    {
-      title: "Conversion Rate",
-      value: "3.45%",
-      change: "+0.28%",
-      trend: "up",
-      icon: Target,
-      description: "Overall conversion rate",
-      color: "blue"
-    },
-    {
-      title: "Total Conversions",
-      value: "2,847",
-      change: "+342",
-      trend: "up",
-      icon: CheckCircle,
-      description: "This month",
-      color: "green"
-    },
-    {
-      title: "Goal Completions",
-      value: "4,523",
-      change: "+567",
-      trend: "up",
-      icon: Award,
-      description: "All goals achieved",
-      color: "purple"
-    },
-    {
-      title: "Conversion Value",
-      value: "$428,560",
-      change: "+$52,340",
-      trend: "up",
-      icon: DollarSign,
-      description: "Total revenue from conversions",
-      color: "orange"
-    }
-  ]
+interface ConversionRates {
+  leadToContacted: number
+  contactedToQualified: number
+  qualifiedToProposal: number
+  proposalToNegotiation: number
+  negotiationToWon: number
+  overallConversion: number
+}
 
-  // Conversion Funnel Data
-  const conversionFunnel = [
-    {
-      stage: "Visitors",
-      count: 82450,
-      percentage: 100,
-      dropOff: 0,
-      conversionRate: "100%",
-      color: "from-blue-500 to-blue-600"
-    },
-    {
-      stage: "Page Views",
-      count: 65230,
-      percentage: 79.1,
-      dropOff: 17220,
-      conversionRate: "79.1%",
-      color: "from-cyan-500 to-cyan-600"
-    },
-    {
-      stage: "Engaged Users",
-      count: 34580,
-      percentage: 41.9,
-      dropOff: 30650,
-      conversionRate: "53.0%",
-      color: "from-green-500 to-green-600"
-    },
-    {
-      stage: "Form Submissions",
-      count: 8920,
-      percentage: 10.8,
-      dropOff: 25660,
-      conversionRate: "25.8%",
-      color: "from-yellow-500 to-yellow-600"
-    },
-    {
-      stage: "Qualified Leads",
-      count: 4560,
-      percentage: 5.5,
-      dropOff: 4360,
-      conversionRate: "51.1%",
-      color: "from-orange-500 to-orange-600"
-    },
-    {
-      stage: "Conversions",
-      count: 2847,
-      percentage: 3.45,
-      dropOff: 1713,
-      conversionRate: "62.4%",
-      color: "from-red-500 to-red-600"
-    }
-  ]
+interface LeadSource {
+  source: string
+  leads: number
+  converted: number
+  conversionRate: number
+  totalValue: number
+  avgQualityScore: number
+}
 
-  // Goal Completions
-  const goals = [
-    {
-      name: "Contact Form Submission",
-      completions: 1245,
-      value: "$124,500",
-      conversionRate: "2.8%",
-      change: "+18.2%",
-      trend: "up",
-      icon: Mail
-    },
-    {
-      name: "Phone Call Request",
-      completions: 678,
-      value: "$203,400",
-      conversionRate: "1.5%",
-      change: "+12.5%",
-      trend: "up",
-      icon: Phone
-    },
-    {
-      name: "Demo Booking",
-      completions: 534,
-      value: "$160,200",
-      conversionRate: "1.2%",
-      change: "+25.8%",
-      trend: "up",
-      icon: Calendar
-    },
-    {
-      name: "Newsletter Signup",
-      completions: 2156,
-      value: "$43,120",
-      conversionRate: "4.8%",
-      change: "+8.9%",
-      trend: "up",
-      icon: MessageSquare
-    },
-    {
-      name: "Free Trial Started",
-      completions: 892,
-      value: "$89,200",
-      conversionRate: "2.0%",
-      change: "+32.4%",
-      trend: "up",
-      icon: Award
-    }
-  ]
+interface PipelineData {
+  stages: {
+    qualified: number
+    proposal: number
+    negotiation: number
+    closed: number
+    lost: number
+  }
+  value: {
+    qualified: number
+    proposal: number
+    negotiation: number
+    closed: number
+    lost: number
+  }
+}
 
-  // Lead Analytics
-  const leadMetrics = [
-    {
-      title: "Lead Generation Rate",
-      value: "10.8%",
-      change: "+1.2%",
-      trend: "up",
-      description: "Visitor to lead conversion"
-    },
-    {
-      title: "Lead Quality Score",
-      value: "8.2/10",
-      change: "+0.5",
-      trend: "up",
-      description: "Average lead quality"
-    },
-    {
-      title: "Lead-to-Customer",
-      value: "31.9%",
-      change: "+4.3%",
-      trend: "up",
-      description: "Lead conversion rate"
-    },
-    {
-      title: "Avg. Lead Value",
-      value: "$3,240",
-      change: "+$420",
-      trend: "up",
-      description: "Per qualified lead"
-    }
-  ]
+interface ConversionMetrics {
+  totalLeads: number
+  totalDeals: number
+  avgTimeToConversion: number
+  bestSource: string
+  winRate: number
+  avgDealSize: number
+  totalPipelineValue: number
+}
 
-  // Lead Sources
-  const leadSources = [
-    {
-      source: "Organic Search",
-      leads: 3845,
-      conversions: 1234,
-      conversionRate: "32.1%",
-      value: "$370,260",
-      quality: 8.5,
-      change: "+15.2%"
-    },
-    {
-      source: "Paid Advertising",
-      leads: 2560,
-      conversions: 892,
-      conversionRate: "34.8%",
-      value: "$267,600",
-      quality: 9.2,
-      change: "+22.4%"
-    },
-    {
-      source: "Social Media",
-      leads: 1890,
-      conversions: 456,
-      conversionRate: "24.1%",
-      value: "$136,800",
-      quality: 7.8,
-      change: "+8.9%"
-    },
-    {
-      source: "Referrals",
-      leads: 1234,
-      conversions: 678,
-      conversionRate: "54.9%",
-      value: "$203,400",
-      quality: 9.8,
-      change: "+32.1%"
-    },
-    {
-      source: "Email Marketing",
-      leads: 891,
-      conversions: 234,
-      conversionRate: "26.3%",
-      value: "$70,200",
-      quality: 8.1,
-      change: "+11.5%"
-    },
-    {
-      source: "Direct Traffic",
-      leads: 1500,
-      conversions: 353,
-      conversionRate: "23.5%",
-      value: "$105,900",
-      quality: 7.5,
-      change: "+6.8%"
-    }
-  ]
+interface MonthlyTrend {
+  month: string
+  leads: number
+  converted: number
+  deals: number
+  closed: number
+  value: number
+}
 
-  // Sales Funnel Stages
-  const salesFunnel = [
-    {
-      stage: "Awareness",
-      leads: 8920,
-      percentage: 100,
-      avgTime: "0 days",
-      conversionRate: "100%",
-      nextStageRate: "68.5%"
-    },
-    {
-      stage: "Interest",
-      leads: 6110,
-      percentage: 68.5,
-      avgTime: "2.3 days",
-      conversionRate: "68.5%",
-      nextStageRate: "52.3%"
-    },
-    {
-      stage: "Consideration",
-      leads: 3195,
-      percentage: 35.8,
-      avgTime: "5.7 days",
-      conversionRate: "52.3%",
-      nextStageRate: "61.2%"
-    },
-    {
-      stage: "Intent",
-      leads: 1955,
-      percentage: 21.9,
-      avgTime: "8.4 days",
-      conversionRate: "61.2%",
-      nextStageRate: "71.8%"
-    },
-    {
-      stage: "Evaluation",
-      leads: 1404,
-      percentage: 15.7,
-      avgTime: "6.2 days",
-      conversionRate: "71.8%",
-      nextStageRate: "68.9%"
-    },
-    {
-      stage: "Purchase",
-      leads: 967,
-      percentage: 10.8,
-      avgTime: "3.1 days",
-      conversionRate: "68.9%",
-      nextStageRate: "100%"
-    }
-  ]
+interface ConversionsData {
+  success: boolean
+  source: 'database'
+  funnel: FunnelStage
+  conversionRates: ConversionRates
+  leadSources: LeadSource[]
+  pipeline: PipelineData
+  metrics: ConversionMetrics
+  monthlyTrend: MonthlyTrend[]
+}
 
-  // Drop-off Analysis
-  const dropOffPoints = [
-    {
-      point: "Landing Page → Engagement",
-      dropOff: 17220,
-      percentage: "20.9%",
-      reason: "High bounce rate",
-      impact: "High",
-      recommendation: "Optimize landing page content"
-    },
-    {
-      point: "Engagement → Form Start",
-      dropOff: 25660,
-      percentage: "74.2%",
-      reason: "Form friction",
-      impact: "Critical",
-      recommendation: "Simplify form fields"
-    },
-    {
-      point: "Form → Qualification",
-      dropOff: 4360,
-      percentage: "48.9%",
-      reason: "Low quality leads",
-      impact: "Medium",
-      recommendation: "Improve lead scoring"
-    },
-    {
-      point: "Qualification → Conversion",
-      dropOff: 1713,
-      percentage: "37.6%",
-      reason: "Sales process friction",
-      impact: "High",
-      recommendation: "Streamline sales process"
-    }
-  ]
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
-  // Conversion by Channel
-  const channelConversions = [
-    { channel: "Website", conversions: 1245, rate: "3.8%", value: "$373,500" },
-    { channel: "Mobile App", conversions: 678, rate: "5.2%", value: "$203,400" },
-    { channel: "Email", conversions: 534, rate: "2.1%", value: "$160,200" },
-    { channel: "Social", conversions: 234, rate: "1.8%", value: "$70,200" },
-    { channel: "Other", conversions: 156, rate: "2.4%", value: "$46,800" }
-  ]
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-  // Time-based Conversion Analysis
-  const timeAnalysis = [
-    { period: "0-24 hours", conversions: 892, percentage: "31.3%", avgValue: "$420" },
-    { period: "1-3 days", conversions: 678, percentage: "23.8%", avgValue: "$380" },
-    { period: "4-7 days", conversions: 534, percentage: "18.8%", avgValue: "$340" },
-    { period: "1-2 weeks", conversions: 423, percentage: "14.9%", avgValue: "$310" },
-    { period: "2-4 weeks", conversions: 234, percentage: "8.2%", avgValue: "$280" },
-    { period: "1+ month", conversions: 86, percentage: "3.0%", avgValue: "$250" }
-  ]
+export default function ConversionsAnalyticsPage() {
+  const [data, setData] = useState<ConversionsData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  // Device Performance
-  const devicePerformance = [
-    {
-      device: "Desktop",
-      visitors: 45230,
-      conversions: 1678,
-      rate: "3.7%",
-      value: "$503,400",
-      change: "+12.3%"
-    },
-    {
-      device: "Mobile",
-      visitors: 28940,
-      conversions: 892,
-      rate: "3.1%",
-      value: "$267,600",
-      change: "+18.7%"
-    },
-    {
-      device: "Tablet",
-      visitors: 8280,
-      conversions: 277,
-      rate: "3.3%",
-      value: "$83,100",
-      change: "+8.2%"
-    }
-  ]
+  useEffect(() => {
+    fetchConversionsData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey])
 
-  // Top Converting Pages
-  const topPages = [
-    { page: "/services", conversions: 567, rate: "4.2%", value: "$170,100" },
-    { page: "/pricing", conversions: 489, rate: "5.8%", value: "$146,700" },
-    { page: "/contact", conversions: 423, rate: "3.9%", value: "$126,900" },
-    { page: "/demo", conversions: 356, rate: "6.4%", value: "$106,800" },
-    { page: "/free-trial", conversions: 298, rate: "5.1%", value: "$89,400" }
-  ]
-
-  // Export functionality
-  const handleExport = (format: string) => {
-    const timestamp = new Date().toISOString().split('T')[0]
+  async function fetchConversionsData() {
+    setIsLoading(true)
+    setError(null)
     
-    if (format === 'csv') {
-      // Convert to CSV
-      const headers = ['Page', 'Conversions', 'Rate', 'Value']
-      const csvContent = [
-        headers.join(','),
-        ...topPages.map((row: { page: string; conversions: number; rate: string; value: string }) => [
-          row.page,
-          row.conversions,
-          row.rate,
-          row.value
-        ].join(','))
-      ].join('\n')
+    try {
+      const now = new Date()
+      const startDate = new Date(now.getFullYear(), 0, 1)
       
-      const blob = new Blob([csvContent], { type: 'text/csv' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `conversion-analytics-${timestamp}.csv`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
-    } else if (format === 'json') {
-      // Convert to JSON
-      const jsonContent = JSON.stringify({ 
-        exportDate: new Date().toISOString(),
-        topPages,
-        conversionFunnel,
-        leadSources
-      }, null, 2)
+      const params = new URLSearchParams({
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: now.toISOString().split('T')[0]
+      })
       
-      const blob = new Blob([jsonContent], { type: 'application/json' })
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `conversion-analytics-${timestamp}.json`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+      const response = await fetch(`/api/super-admin/analytics/conversions?${params}`)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch conversions data: ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      setData(result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load conversions data')
+      console.error('Conversions data fetch error:', err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  return (
-    <div className="min-h-screen zyphex-gradient-bg relative">
-      <SubtleBackground />
-      
-      <div className="relative z-10 p-8">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold zyphex-heading mb-2">Conversion Analytics</h1>
-              <p className="text-lg zyphex-subheading">
-                Track conversion metrics, lead analytics, and sales funnel performance
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Select value={dateRange} onValueChange={setDateRange}>
-                <SelectTrigger className="w-[180px] zyphex-input">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="zyphex-dropdown">
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                  <SelectItem value="365">Last year</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button 
-                variant="outline" 
-                className="zyphex-button-secondary"
-                onClick={() => handleExport("csv")}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export CSV
-              </Button>
-              <Button 
-                variant="outline" 
-                className="zyphex-button-secondary"
-                onClick={() => handleExport("pdf")}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export PDF
-              </Button>
-            </div>
-          </div>
+  function formatNumber(num: number): string {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+    return num.toString()
+  }
 
-          {/* Conversion Metrics Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {conversionMetrics.map((metric, index) => (
-              <Card key={index} className="zyphex-card hover-zyphex-lift transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`p-3 rounded-lg bg-gradient-to-br from-${metric.color}-500/20 to-${metric.color}-600/20 border border-${metric.color}-500/30`}>
-                      <metric.icon className={`h-6 w-6 text-${metric.color}-400`} />
-                    </div>
-                    <Badge variant="outline" className={`${
-                      metric.trend === "up" 
-                        ? "bg-green-500/20 text-green-400 border-green-500/30" 
-                        : "bg-red-500/20 text-red-400 border-red-500/30"
-                    }`}>
-                      {metric.trend === "up" ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-                      {metric.change}
-                    </Badge>
-                  </div>
-                  <h3 className="text-sm zyphex-subheading mb-1">{metric.title}</h3>
-                  <p className="text-3xl font-bold zyphex-heading mb-1">{metric.value}</p>
-                  <p className="text-xs zyphex-subheading">{metric.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+  function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
 
-          {/* Conversion Funnel Visualization */}
-          <Card className="zyphex-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="zyphex-heading">Conversion Funnel</CardTitle>
-                  <CardDescription className="zyphex-subheading">
-                    Track visitor journey from entry to conversion
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Filter className="h-5 w-5 text-blue-400" />
-                  <Select value={funnelView} onValueChange={setFunnelView}>
-                    <SelectTrigger className="w-[150px] zyphex-input">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="zyphex-dropdown">
-                      <SelectItem value="all">All Traffic</SelectItem>
-                      <SelectItem value="organic">Organic Only</SelectItem>
-                      <SelectItem value="paid">Paid Only</SelectItem>
-                      <SelectItem value="social">Social Only</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {conversionFunnel.map((stage, index) => (
-                  <div key={index} className="relative">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="bg-gray-500/20 text-gray-400 border-gray-500/30">
-                          {index + 1}
-                        </Badge>
-                        <div>
-                          <p className="font-semibold zyphex-heading">{stage.stage}</p>
-                          <p className="text-sm zyphex-subheading">
-                            {stage.count.toLocaleString()} users • {stage.conversionRate} conversion
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold zyphex-heading">{stage.percentage}%</p>
-                        {stage.dropOff > 0 && (
-                          <p className="text-sm text-red-400">-{stage.dropOff.toLocaleString()} drop-off</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <div className="w-full bg-gray-800/50 rounded-full h-8">
-                        <div 
-                          className={`h-8 rounded-full bg-gradient-to-r ${stage.color} flex items-center justify-center transition-all duration-500`}
-                          style={{ width: `${stage.percentage}%` }}
-                        >
-                          <span className="text-white text-sm font-medium">{stage.count.toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                    {index < conversionFunnel.length - 1 && (
-                      <div className="flex justify-center my-2">
-                        <ArrowRight className="h-6 w-6 text-gray-500" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+  function formatDays(days: number): string {
+    if (days < 1) return '< 1 day'
+    if (days === 1) return '1 day'
+    if (days < 7) return `${Math.round(days)} days`
+    if (days < 30) return `${Math.round(days / 7)} weeks`
+    return `${Math.round(days / 30)} months`
+  }
 
-          {/* Goal Completions */}
-          <Card className="zyphex-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="zyphex-heading">Goal Completions</CardTitle>
-                  <CardDescription className="zyphex-subheading">
-                    Track specific conversion goals and their performance
-                  </CardDescription>
-                </div>
-                <Award className="h-5 w-5 text-purple-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {goals.map((goal, index) => (
-                  <div key={index} className="p-4 rounded-lg zyphex-glass-effect hover-zyphex-lift transition-all">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-purple-500/20 border border-purple-500/30">
-                          <goal.icon className="h-5 w-5 text-purple-400" />
-                        </div>
-                        <div>
-                          <p className="font-semibold zyphex-heading">{goal.name}</p>
-                          <p className="text-sm zyphex-subheading">{goal.completions.toLocaleString()} completions</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30 mb-1">
-                          {goal.trend === "up" ? <ArrowUpRight className="h-3 w-3 mr-1" /> : <ArrowDownRight className="h-3 w-3 mr-1" />}
-                          {goal.change}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="zyphex-subheading">Conversion Rate:</span>
-                        <span className="ml-2 zyphex-heading font-medium">{goal.conversionRate}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="zyphex-subheading">Value:</span>
-                        <span className="ml-2 zyphex-heading font-medium">{goal.value}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+  function exportData() {
+    if (!data) return
+    
+    const csv = [
+      ['Metric', 'Value'],
+      ['Total Leads', data.metrics.totalLeads],
+      ['Total Deals', data.metrics.totalDeals],
+      ['Win Rate', `${data.metrics.winRate}%`],
+      ['Avg Deal Size', formatCurrency(data.metrics.avgDealSize)],
+      ['Avg Time to Conversion', formatDays(data.metrics.avgTimeToConversion)],
+      ['Best Source', data.metrics.bestSource],
+      ['Total Pipeline Value', formatCurrency(data.metrics.totalPipelineValue)],
+      ['Overall Conversion Rate', `${data.conversionRates.overallConversion}%`],
+    ].map(row => row.join(',')).join('\n')
+    
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `conversions-analytics-${Date.now()}.csv`
+    a.click()
+  }
 
-          {/* Lead Analytics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {leadMetrics.map((metric, index) => (
-              <Card key={index} className="zyphex-card hover-zyphex-lift transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium zyphex-subheading">{metric.title}</h3>
-                    <Badge variant="outline" className={`${
-                      metric.trend === "up"
-                        ? "bg-green-500/20 text-green-400 border-green-500/30"
-                        : "bg-red-500/20 text-red-400 border-red-500/30"
-                    }`}>
-                      {metric.change}
-                    </Badge>
-                  </div>
-                  <p className="text-3xl font-bold zyphex-heading mb-1">{metric.value}</p>
-                  <p className="text-xs zyphex-subheading">{metric.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Lead Sources */}
-          <Card className="zyphex-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="zyphex-heading">Lead Sources</CardTitle>
-                  <CardDescription className="zyphex-subheading">
-                    Lead generation and conversion by source channel
-                  </CardDescription>
-                </div>
-                <BarChart3 className="h-5 w-5 text-green-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {leadSources.map((source, index) => (
-                  <div key={index} className="p-4 rounded-lg zyphex-glass-effect hover-zyphex-lift transition-all">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="font-semibold zyphex-heading mb-1">{source.source}</p>
-                        <p className="text-sm zyphex-subheading">{source.leads.toLocaleString()} leads generated</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30 mb-1">
-                            {source.conversionRate}
-                          </Badge>
-                          <p className="text-xs text-green-400">{source.change}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                          <span className="text-sm font-medium zyphex-heading">{source.quality}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <Separator className="my-3 bg-gray-800/50" />
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="zyphex-subheading">Conversions:</span>
-                        <span className="ml-2 zyphex-heading font-medium">{source.conversions.toLocaleString()}</span>
-                      </div>
-                      <div>
-                        <span className="zyphex-subheading">Value:</span>
-                        <span className="ml-2 zyphex-heading font-medium">{source.value}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="zyphex-subheading">Quality:</span>
-                        <span className="ml-2 zyphex-heading font-medium">{source.quality}/10</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Sales Funnel Stages */}
-          <Card className="zyphex-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="zyphex-heading">Sales Funnel Analysis</CardTitle>
-                  <CardDescription className="zyphex-subheading">
-                    Detailed breakdown of each funnel stage with conversion rates
-                  </CardDescription>
-                </div>
-                <PieChart className="h-5 w-5 text-orange-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {salesFunnel.map((stage, index) => (
-                  <div key={index} className="p-4 rounded-lg bg-gray-800/30">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="bg-orange-500/20 text-orange-400 border-orange-500/30">
-                          Stage {index + 1}
-                        </Badge>
-                        <div>
-                          <p className="font-semibold zyphex-heading">{stage.stage}</p>
-                          <p className="text-sm zyphex-subheading">{stage.leads.toLocaleString()} leads</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold zyphex-heading">{stage.percentage}%</p>
-                        <p className="text-xs zyphex-subheading">{stage.avgTime} avg time</p>
-                      </div>
-                    </div>
-                    <Progress value={stage.percentage} className="h-2 mb-2" />
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="zyphex-subheading">Stage Conversion:</span>
-                        <span className="ml-2 zyphex-heading font-medium">{stage.conversionRate}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="zyphex-subheading">Next Stage:</span>
-                        <span className="ml-2 zyphex-heading font-medium">{stage.nextStageRate}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Drop-off Analysis */}
-          <Card className="zyphex-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="zyphex-heading">Funnel Drop-off Points</CardTitle>
-                  <CardDescription className="zyphex-subheading">
-                    Identify critical drop-off points and optimization opportunities
-                  </CardDescription>
-                </div>
-                <AlertCircle className="h-5 w-5 text-red-400" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {dropOffPoints.map((point, index) => (
-                  <div key={index} className="p-4 rounded-lg border-l-4 border-red-500 bg-red-500/5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-semibold zyphex-heading mb-1">{point.point}</p>
-                        <p className="text-sm zyphex-subheading">{point.reason}</p>
-                      </div>
-                      <Badge variant="outline" className={`${
-                        point.impact === "Critical" 
-                          ? "bg-red-500/20 text-red-400 border-red-500/30"
-                          : point.impact === "High"
-                          ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
-                          : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-                      }`}>
-                        {point.impact} Impact
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div>
-                        <span className="zyphex-subheading">Drop-off:</span>
-                        <span className="ml-2 text-red-400 font-medium">{point.dropOff.toLocaleString()} users ({point.percentage})</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="zyphex-subheading">Recommendation:</span>
-                        <span className="ml-2 text-blue-400 font-medium">{point.recommendation}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Additional Analytics Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Conversion by Channel */}
-            <Card className="zyphex-card">
-              <CardHeader>
-                <CardTitle className="zyphex-heading">Conversion by Channel</CardTitle>
-                <CardDescription className="zyphex-subheading">
-                  Performance breakdown by traffic channel
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {channelConversions.map((channel, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30">
-                      <div>
-                        <p className="font-medium zyphex-heading">{channel.channel}</p>
-                        <p className="text-sm zyphex-subheading">{channel.conversions.toLocaleString()} conversions</p>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="outline" className="bg-blue-500/20 text-blue-400 border-blue-500/30 mb-1">
-                          {channel.rate}
-                        </Badge>
-                        <p className="text-xs zyphex-subheading">{channel.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Time to Conversion */}
-            <Card className="zyphex-card">
-              <CardHeader>
-                <CardTitle className="zyphex-heading">Time to Conversion</CardTitle>
-                <CardDescription className="zyphex-subheading">
-                  Conversion timeline analysis
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {timeAnalysis.map((period, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-cyan-400" />
-                        <div>
-                          <p className="font-medium zyphex-heading">{period.period}</p>
-                          <p className="text-sm zyphex-subheading">{period.conversions.toLocaleString()} conversions</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium zyphex-heading">{period.percentage}</p>
-                        <p className="text-xs zyphex-subheading">{period.avgValue} avg</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Device Performance */}
-            <Card className="zyphex-card">
-              <CardHeader>
-                <CardTitle className="zyphex-heading">Device Performance</CardTitle>
-                <CardDescription className="zyphex-subheading">
-                  Conversion rates by device type
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {devicePerformance.map((device, index) => (
-                    <div key={index} className="p-4 rounded-lg zyphex-glass-effect">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="font-semibold zyphex-heading">{device.device}</p>
-                        <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
-                          {device.change}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm mb-2">
-                        <div>
-                          <span className="zyphex-subheading">Visitors:</span>
-                          <span className="ml-2 zyphex-heading font-medium">{device.visitors.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span className="zyphex-subheading">Rate:</span>
-                          <span className="ml-2 zyphex-heading font-medium">{device.rate}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <div>
-                          <span className="zyphex-subheading">Conversions:</span>
-                          <span className="ml-2 zyphex-heading font-medium">{device.conversions.toLocaleString()}</span>
-                        </div>
-                        <div>
-                          <span className="zyphex-subheading">Value:</span>
-                          <span className="ml-2 zyphex-heading font-medium">{device.value}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Top Converting Pages */}
-            <Card className="zyphex-card">
-              <CardHeader>
-                <CardTitle className="zyphex-heading">Top Converting Pages</CardTitle>
-                <CardDescription className="zyphex-subheading">
-                  Best performing pages for conversions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {topPages.map((page, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gray-800/30">
-                      <div>
-                        <p className="font-medium zyphex-heading">{page.page}</p>
-                        <p className="text-sm zyphex-subheading">{page.conversions.toLocaleString()} conversions</p>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="outline" className="bg-purple-500/20 text-purple-400 border-purple-500/30 mb-1">
-                          {page.rate}
-                        </Badge>
-                        <p className="text-xs zyphex-subheading">{page.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+  if (isLoading) {
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading conversion analytics...</p>
           </div>
         </div>
       </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="ml-2">
+            {error}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => setRefreshKey(prev => prev + 1)} className="mt-4">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Retry
+        </Button>
+      </div>
+    )
+  }
+
+  if (!data) return null
+
+  const { funnel, conversionRates, leadSources, pipeline, metrics, monthlyTrend } = data
+
+  const funnelChartData = [
+    { stage: 'Leads', count: funnel.leads, rate: 100 },
+    { stage: 'Contacted', count: funnel.contacted, rate: conversionRates.leadToContacted },
+    { stage: 'Qualified', count: funnel.qualified, rate: conversionRates.contactedToQualified },
+    { stage: 'Proposal', count: funnel.proposal, rate: conversionRates.qualifiedToProposal },
+    { stage: 'Negotiation', count: funnel.negotiation, rate: conversionRates.proposalToNegotiation },
+    { stage: 'Won', count: funnel.won, rate: conversionRates.negotiationToWon },
+  ]
+
+  const pipelineChartData = [
+    { stage: 'Qualified', count: pipeline.stages.qualified, value: pipeline.value.qualified },
+    { stage: 'Proposal', count: pipeline.stages.proposal, value: pipeline.value.proposal },
+    { stage: 'Negotiation', count: pipeline.stages.negotiation, value: pipeline.value.negotiation },
+    { stage: 'Closed Won', count: pipeline.stages.closed, value: pipeline.value.closed },
+    { stage: 'Closed Lost', count: pipeline.stages.lost, value: pipeline.value.lost },
+  ]
+
+  return (
+    <div className="p-8 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Conversion Analytics</h1>
+          <p className="text-muted-foreground">
+            Track your sales funnel and conversion performance
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <Badge variant="default">
+            📊 Live Database Data
+          </Badge>
+          <Button variant="outline" onClick={exportData}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => setRefreshKey(prev => prev + 1)}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatNumber(metrics.totalLeads)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {conversionRates.overallConversion.toFixed(1)}% conversion rate
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Deals</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatNumber(metrics.totalDeals)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {metrics.winRate.toFixed(1)}% win rate
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Avg Deal Size</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatCurrency(metrics.avgDealSize)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {formatCurrency(metrics.totalPipelineValue)} pipeline
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Avg Conversion Time</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatDays(metrics.avgTimeToConversion)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Best: {metrics.bestSource}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Conversion Funnel</CardTitle>
+          <CardDescription>Lead progression through sales stages</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {funnelChartData.map((stage, index) => (
+              <div key={stage.stage}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="font-semibold text-lg">{stage.stage}</div>
+                    {index < funnelChartData.length - 1 && (
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-2xl font-bold">{formatNumber(stage.count)}</span>
+                    <Badge variant={stage.rate >= 50 ? 'default' : stage.rate >= 30 ? 'secondary' : 'destructive'}>
+                      {stage.rate.toFixed(1)}%
+                    </Badge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Progress value={stage.rate} className="h-3 flex-1" />
+                  <span className="text-sm text-muted-foreground min-w-[60px]">
+                    {index > 0 && `${((stage.count / funnelChartData[index - 1].count) * 100).toFixed(0)}% conv`}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8">
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={funnelChartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="stage" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="count" fill="#3b82f6" name="Count" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Lead Source Performance</CardTitle>
+            <CardDescription>Conversion rates by source</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Source</TableHead>
+                  <TableHead className="text-right">Leads</TableHead>
+                  <TableHead className="text-right">Conv Rate</TableHead>
+                  <TableHead className="text-right">Value</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {leadSources.map((source, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{source.source}</TableCell>
+                    <TableCell className="text-right">
+                      {formatNumber(source.leads)}
+                      <span className="text-xs text-muted-foreground ml-1">
+                        ({formatNumber(source.converted)} won)
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant={source.conversionRate >= 30 ? 'default' : source.conversionRate >= 20 ? 'secondary' : 'outline'}>
+                        {source.conversionRate.toFixed(1)}%
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {formatCurrency(source.totalValue)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Pipeline Overview</CardTitle>
+            <CardDescription>Deals by stage</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie
+                  data={pipelineChartData.filter(d => d.count > 0) as any}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ stage, count }: any) => `${stage}: ${count}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                >
+                  {pipelineChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            
+            <div className="mt-6 space-y-3">
+              {pipelineChartData.map((stage, index) => (
+                <div key={stage.stage} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    />
+                    <span className="text-sm font-medium">{stage.stage}</span>
+                    <Badge variant="outline" className="text-xs">{stage.count}</Badge>
+                  </div>
+                  <span className="text-sm font-semibold">
+                    {formatCurrency(stage.value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Monthly Trend</CardTitle>
+          <CardDescription>Lead and deal performance over time</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={350}>
+            <LineChart data={monthlyTrend}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis yAxisId="left" />
+              <YAxis yAxisId="right" orientation="right" />
+              <Tooltip />
+              <Legend />
+              <Line yAxisId="left" type="monotone" dataKey="leads" stroke="#3b82f6" strokeWidth={2} name="Leads" />
+              <Line yAxisId="left" type="monotone" dataKey="converted" stroke="#10b981" strokeWidth={2} name="Converted" />
+              <Line yAxisId="left" type="monotone" dataKey="deals" stroke="#f59e0b" strokeWidth={2} name="Deals" />
+              <Line yAxisId="left" type="monotone" dataKey="closed" stroke="#ef4444" strokeWidth={2} name="Closed" />
+            </LineChart>
+          </ResponsiveContainer>
+
+          <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4">
+            {monthlyTrend.slice(-5).map((month, index) => (
+              <Card key={index} className="p-4">
+                <div className="text-xs text-muted-foreground mb-1">{month.month}</div>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs">Leads:</span>
+                    <span className="text-sm font-semibold">{month.leads}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs">Closed:</span>
+                    <span className="text-sm font-semibold text-green-600">{month.closed}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs">Value:</span>
+                    <span className="text-sm font-semibold">{formatCurrency(month.value)}</span>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

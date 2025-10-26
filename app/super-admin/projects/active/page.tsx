@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -31,7 +31,8 @@ import {
   FileText,
   Timer,
   Target,
-  BarChart3
+  BarChart3,
+  Loader2
 } from "lucide-react"
 
 export default function SuperAdminActiveProjectsPage() {
@@ -39,213 +40,85 @@ export default function SuperAdminActiveProjectsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [sortBy, setSortBy] = useState("progress")
   const [_viewMode, _setViewMode] = useState("grid")
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const [activeProjects, setActiveProjects] = useState<any[]>([])
+  const [projectStats, setProjectStats] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
-  // Active Projects Data
-  const activeProjects = [
-    {
-      id: "PRJ-001",
-      name: "E-commerce Platform Redesign",
-      client: "TechCorp Inc.",
-      status: "on-track",
-      progress: 68,
-      phase: "Development",
-      sprint: "Sprint 8 of 12",
-      startDate: "2025-01-15",
-      dueDate: "2025-11-30",
-      budget: 125000,
-      spent: 78500,
-      team: [
-        { name: "John Doe", role: "Lead Developer", avatar: "JD" },
-        { name: "Jane Smith", role: "UI/UX Designer", avatar: "JS" },
-        { name: "Mike Johnson", role: "Backend Developer", avatar: "MJ" },
-        { name: "Sarah Williams", role: "QA Engineer", avatar: "SW" }
-      ],
-      tasks: {
-        total: 145,
-        completed: 98,
-        inProgress: 32,
-        todo: 15
-      },
-      health: "good",
-      priority: "high",
-      lastUpdate: "2 hours ago"
-    },
-    {
-      id: "PRJ-002",
-      name: "Mobile Banking App",
-      client: "FinanceHub Ltd.",
-      status: "at-risk",
-      progress: 45,
-      phase: "Design",
-      sprint: "Sprint 5 of 10",
-      startDate: "2025-03-01",
-      dueDate: "2025-12-15",
-      budget: 200000,
-      spent: 105000,
-      team: [
-        { name: "Alex Brown", role: "Project Manager", avatar: "AB" },
-        { name: "Emily Davis", role: "Mobile Developer", avatar: "ED" },
-        { name: "Chris Wilson", role: "UI Designer", avatar: "CW" }
-      ],
-      tasks: {
-        total: 98,
-        completed: 44,
-        inProgress: 28,
-        todo: 26
-      },
-      health: "at-risk",
-      priority: "high",
-      lastUpdate: "5 hours ago"
-    },
-    {
-      id: "PRJ-003",
-      name: "CRM System Integration",
-      client: "SalesPro Solutions",
-      status: "on-track",
-      progress: 82,
-      phase: "Testing",
-      sprint: "Sprint 10 of 11",
-      startDate: "2024-11-20",
-      dueDate: "2025-10-31",
-      budget: 85000,
-      spent: 68500,
-      team: [
-        { name: "David Lee", role: "Integration Specialist", avatar: "DL" },
-        { name: "Lisa Garcia", role: "Backend Developer", avatar: "LG" },
-        { name: "Tom Anderson", role: "QA Lead", avatar: "TA" },
-        { name: "Rachel Martinez", role: "DevOps Engineer", avatar: "RM" },
-        { name: "Kevin Taylor", role: "Technical Writer", avatar: "KT" }
-      ],
-      tasks: {
-        total: 120,
-        completed: 99,
-        inProgress: 15,
-        todo: 6
-      },
-      health: "excellent",
-      priority: "medium",
-      lastUpdate: "1 hour ago"
-    },
-    {
-      id: "PRJ-004",
-      name: "AI-Powered Analytics Dashboard",
-      client: "DataInsights Corp",
-      status: "delayed",
-      progress: 34,
-      phase: "Development",
-      sprint: "Sprint 6 of 15",
-      startDate: "2025-02-10",
-      dueDate: "2026-03-30",
-      budget: 350000,
-      spent: 142000,
-      team: [
-        { name: "Dr. James Chen", role: "AI Architect", avatar: "JC" },
-        { name: "Nina Patel", role: "Data Scientist", avatar: "NP" },
-        { name: "Ryan Foster", role: "Full Stack Developer", avatar: "RF" },
-        { name: "Olivia Brown", role: "ML Engineer", avatar: "OB" }
-      ],
-      tasks: {
-        total: 210,
-        completed: 71,
-        inProgress: 45,
-        todo: 94
-      },
-      health: "critical",
-      priority: "critical",
-      lastUpdate: "30 min ago"
-    },
-    {
-      id: "PRJ-005",
-      name: "Healthcare Portal Development",
-      client: "MediCare Systems",
-      status: "on-track",
-      progress: 56,
-      phase: "Development",
-      sprint: "Sprint 7 of 13",
-      startDate: "2025-01-05",
-      dueDate: "2025-12-20",
-      budget: 175000,
-      spent: 89250,
-      team: [
-        { name: "Dr. Sarah Johnson", role: "Healthcare IT Consultant", avatar: "SJ" },
-        { name: "Mark Thompson", role: "Security Engineer", avatar: "MT" },
-        { name: "Jennifer Lee", role: "Frontend Developer", avatar: "JL" },
-        { name: "Robert Kim", role: "Backend Developer", avatar: "RK" }
-      ],
-      tasks: {
-        total: 167,
-        completed: 93,
-        inProgress: 38,
-        todo: 36
-      },
-      health: "good",
-      priority: "high",
-      lastUpdate: "3 hours ago"
-    },
-    {
-      id: "PRJ-006",
-      name: "Inventory Management System",
-      client: "RetailMax Inc.",
-      status: "on-track",
-      progress: 91,
-      phase: "Deployment",
-      sprint: "Sprint 12 of 12",
-      startDate: "2024-10-01",
-      dueDate: "2025-10-28",
-      budget: 95000,
-      spent: 87250,
-      team: [
-        { name: "Amanda White", role: "Project Lead", avatar: "AW" },
-        { name: "Brian Scott", role: "Systems Analyst", avatar: "BS" },
-        { name: "Carol Evans", role: "DevOps Engineer", avatar: "CE" }
-      ],
-      tasks: {
-        total: 89,
-        completed: 81,
-        inProgress: 5,
-        todo: 3
-      },
-      health: "excellent",
-      priority: "medium",
-      lastUpdate: "15 min ago"
+  // Fetch dynamic data from API
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/super-admin/projects/active')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch projects')
+        }
+        
+        const data = await response.json()
+        setActiveProjects(data.projects || [])
+        
+        // Update statistics
+        const stats = data.statistics || {
+          totalProjects: 0,
+          onTrackProjects: 0,
+          atRiskProjects: 0,
+          totalTeamMembers: 0,
+        }
+        
+        setProjectStats([
+          {
+            title: "Total Active Projects",
+            value: stats.totalProjects.toString(),
+            change: `${stats.totalProjects} in total`,
+            trend: "up",
+            icon: Folder,
+            color: "blue"
+          },
+          {
+            title: "On-Track Projects",
+            value: stats.onTrackProjects.toString(),
+            change: `${Math.round((stats.onTrackProjects / Math.max(stats.totalProjects, 1)) * 100)}% success rate`,
+            trend: "up",
+            icon: CheckCircle,
+            color: "green"
+          },
+          {
+            title: "At-Risk Projects",
+            value: stats.atRiskProjects.toString(),
+            change: `${Math.round((stats.atRiskProjects / Math.max(stats.totalProjects, 1)) * 100)}% need attention`,
+            trend: stats.atRiskProjects > 0 ? "down" : "up",
+            icon: AlertCircle,
+            color: "orange"
+          },
+          {
+            title: "Total Team Members",
+            value: stats.totalTeamMembers.toString(),
+            change: "Across all projects",
+            trend: "up",
+            icon: Users,
+            color: "purple"
+          }
+        ])
+        
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching projects:', err)
+        setError('Failed to load projects. Please try again.')
+        setActiveProjects([])
+        setProjectStats([])
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ]
+    
+    fetchProjects()
+  }, [])
 
-  // Project Statistics
-  const projectStats = [
-    {
-      title: "Total Active Projects",
-      value: "24",
-      change: "+3 this month",
-      trend: "up",
-      icon: Folder,
-      color: "blue"
-    },
-    {
-      title: "On-Track Projects",
-      value: "18",
-      change: "75% success rate",
-      trend: "up",
-      icon: CheckCircle,
-      color: "green"
-    },
-    {
-      title: "At-Risk Projects",
-      value: "4",
-      change: "-2 from last month",
-      trend: "up",
-      icon: AlertCircle,
-      color: "orange"
-    },
-    {
-      title: "Total Team Members",
-      value: "156",
-      change: "+12 this quarter",
-      trend: "up",
-      icon: Users,
-      color: "purple"
-    }
-  ]
+
 
   // Get status badge styling
   const getStatusBadge = (status: string) => {
@@ -363,9 +236,38 @@ export default function SuperAdminActiveProjectsPage() {
             </div>
           </div>
 
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
+                <p className="text-lg zyphex-subheading">Loading projects...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !isLoading && (
+            <Card className="zyphex-card border-red-500/50">
+              <CardContent className="p-8 text-center">
+                <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold zyphex-heading mb-2">Error Loading Projects</h3>
+                <p className="zyphex-subheading mb-4">{error}</p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  className="zyphex-button-primary"
+                >
+                  Retry
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Project Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {projectStats.map((stat, index) => (
+          {!isLoading && !error && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {projectStats.map((stat, index) => (
               <Card key={index} className="zyphex-card hover-zyphex-lift transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -588,7 +490,8 @@ export default function SuperAdminActiveProjectsPage() {
                       </div>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="flex -space-x-2">
-                          {project.team.slice(0, 4).map((member, idx) => (
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          {project.team.slice(0, 4).map((member: any, idx: number) => (
                             <div
                               key={idx}
                               className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white border-2 border-gray-900"
@@ -605,7 +508,8 @@ export default function SuperAdminActiveProjectsPage() {
                         </div>
                       </div>
                       <div className="space-y-1">
-                        {project.team.slice(0, 2).map((member, idx) => (
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        {project.team.slice(0, 2).map((member: any, idx: number) => (
                           <div key={idx} className="flex items-center justify-between text-xs">
                             <span className="zyphex-subheading">{member.name}</span>
                             <span className="text-blue-400">{member.role}</span>
@@ -702,6 +606,8 @@ export default function SuperAdminActiveProjectsPage() {
               </div>
             </CardContent>
           </Card>
+            </>
+          )}
         </div>
       </div>
     </div>

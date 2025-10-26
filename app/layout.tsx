@@ -1,6 +1,7 @@
 import * as React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
+import Script from "next/script"
 import "./globals.css"
 import Header from "@/components/header"
 import ConditionalFooter from "@/components/conditional-footer"
@@ -86,7 +87,7 @@ export const metadata: Metadata = {
   },
   manifest: "/site.webmanifest",
   verification: {
-    google: "your-google-verification-code", // Add your Google Search Console verification code
+    google: "Xx8bp9kK4_61FWwvhZ_rONEWJm4ZEp-tZt_2UM_FCms",
   },
 }
 
@@ -156,11 +157,22 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/zyphex-logo.png" />
       </head>
       <body className={`${inter.className} dark`}>
-        {/* @ts-expect-error - Provider children are properly nested but TypeScript Language Server has display issues */}
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-8XVCWLN7YV"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-8XVCWLN7YV');
+          `}
+        </Script>
+
         <ErrorBoundary>
-          {/* @ts-expect-error - Provider children are properly nested but TypeScript Language Server has display issues */}
           <AuthProvider>
-            {/* @ts-expect-error - Provider children are properly nested but TypeScript Language Server has display issues */}
             <ReactQueryProvider>
               <Toaster position="top-right" theme="dark" />
               <ScrollProgressBar />

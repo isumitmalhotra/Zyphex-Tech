@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +34,9 @@ import {
   BarChart3,
   RefreshCw,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 export default function ClientLeadsPage() {
@@ -45,207 +47,85 @@ export default function ClientLeadsPage() {
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
-  // Mock data - Replace with actual API calls
-  const leads = [
-    {
-      id: 'LEAD-001',
-      name: 'Acme Corporation',
-      contactPerson: 'Jennifer Williams',
-      email: 'jennifer@acme.com',
-      phone: '+1 (555) 111-2222',
-      industry: 'Technology',
-      company: 'Acme Corporation',
-      stage: 'qualified',
-      score: 85,
-      source: 'Website',
-      estimatedValue: 150000,
-      probability: 75,
-      assignedTo: 'Sarah Johnson',
-      createdDate: '2025-10-10',
-      lastContact: '2025-10-25',
-      nextFollowUp: '2025-10-28',
-      notes: 'Very interested in our enterprise solutions. Ready for proposal.',
-      activities: [
-        { type: 'call', description: 'Discovery call completed', date: '2025-10-25' },
-        { type: 'email', description: 'Sent pricing information', date: '2025-10-22' },
-        { type: 'meeting', description: 'Initial meeting scheduled', date: '2025-10-20' }
-      ],
-      tags: ['Enterprise', 'High Priority', 'Decision Maker']
-    },
-    {
-      id: 'LEAD-002',
-      name: 'TechStart Solutions',
-      contactPerson: 'Michael Brown',
-      email: 'michael@techstart.com',
-      phone: '+1 (555) 222-3333',
-      industry: 'SaaS',
-      company: 'TechStart Solutions',
-      stage: 'proposal',
-      score: 92,
-      source: 'Referral',
-      estimatedValue: 200000,
-      probability: 85,
-      assignedTo: 'David Lee',
-      createdDate: '2025-09-15',
-      lastContact: '2025-10-26',
-      nextFollowUp: '2025-10-29',
-      notes: 'Proposal sent. Waiting for budget approval from board.',
-      activities: [
-        { type: 'email', description: 'Proposal sent', date: '2025-10-26' },
-        { type: 'meeting', description: 'Requirements discussion', date: '2025-10-24' },
-        { type: 'call', description: 'Follow-up call', date: '2025-10-20' }
-      ],
-      tags: ['Hot Lead', 'Proposal Sent', 'Referral']
-    },
-    {
-      id: 'LEAD-003',
-      name: 'Global Innovations Inc',
-      contactPerson: 'Sarah Martinez',
-      email: 'sarah@globalinnovations.com',
-      phone: '+1 (555) 333-4444',
-      industry: 'Manufacturing',
-      company: 'Global Innovations Inc',
-      stage: 'negotiation',
-      score: 88,
-      source: 'LinkedIn',
-      estimatedValue: 180000,
-      probability: 80,
-      assignedTo: 'Michael Chen',
-      createdDate: '2025-09-20',
-      lastContact: '2025-10-24',
-      nextFollowUp: '2025-10-30',
-      notes: 'In final negotiations. Minor pricing concerns to address.',
-      activities: [
-        { type: 'meeting', description: 'Contract review meeting', date: '2025-10-24' },
-        { type: 'email', description: 'Revised proposal sent', date: '2025-10-22' },
-        { type: 'call', description: 'Pricing discussion', date: '2025-10-18' }
-      ],
-      tags: ['Negotiation', 'Price Sensitive', 'Large Deal']
-    },
-    {
-      id: 'LEAD-004',
-      name: 'NextGen Enterprises',
-      contactPerson: 'Robert Taylor',
-      email: 'robert@nextgen.com',
-      phone: '+1 (555) 444-5555',
-      industry: 'E-Commerce',
-      company: 'NextGen Enterprises',
-      stage: 'new',
-      score: 65,
-      source: 'Cold Outreach',
-      estimatedValue: 95000,
-      probability: 40,
-      assignedTo: 'Lisa Anderson',
-      createdDate: '2025-10-22',
-      lastContact: '2025-10-23',
-      nextFollowUp: '2025-10-27',
-      notes: 'Initial contact made. Need to schedule discovery call.',
-      activities: [
-        { type: 'email', description: 'Introduction email sent', date: '2025-10-23' },
-        { type: 'call', description: 'Cold call - left voicemail', date: '2025-10-22' }
-      ],
-      tags: ['New Lead', 'E-Commerce', 'Cold Outreach']
-    },
-    {
-      id: 'LEAD-005',
-      name: 'Digital Dynamics',
-      contactPerson: 'Emily Chen',
-      email: 'emily@digitaldynamics.com',
-      phone: '+1 (555) 555-6666',
-      industry: 'Marketing',
-      company: 'Digital Dynamics',
-      stage: 'contacted',
-      score: 72,
-      source: 'Trade Show',
-      estimatedValue: 120000,
-      probability: 60,
-      assignedTo: 'James Martinez',
-      createdDate: '2025-10-01',
-      lastContact: '2025-10-21',
-      nextFollowUp: '2025-11-01',
-      notes: 'Met at industry conference. Interested in digital transformation services.',
-      activities: [
-        { type: 'meeting', description: 'Coffee meeting at conference', date: '2025-10-21' },
-        { type: 'email', description: 'Follow-up email sent', date: '2025-10-15' },
-        { type: 'meeting', description: 'Trade show booth visit', date: '2025-10-01' }
-      ],
-      tags: ['Conference Lead', 'Marketing Agency', 'Warm Lead']
-    },
-    {
-      id: 'LEAD-006',
-      name: 'CloudFirst Systems',
-      contactPerson: 'David Wilson',
-      email: 'david@cloudfirst.com',
-      phone: '+1 (555) 666-7777',
-      industry: 'Cloud Services',
-      company: 'CloudFirst Systems',
-      stage: 'disqualified',
-      score: 35,
-      source: 'Website',
-      estimatedValue: 50000,
-      probability: 10,
-      assignedTo: 'Sarah Johnson',
-      createdDate: '2025-09-25',
-      lastContact: '2025-10-10',
-      nextFollowUp: null,
-      notes: 'Budget constraints. Not a good fit at this time. Follow up in Q2 2026.',
-      activities: [
-        { type: 'call', description: 'Budget discussion - disqualified', date: '2025-10-10' },
-        { type: 'email', description: 'Initial inquiry response', date: '2025-09-26' }
-      ],
-      tags: ['Disqualified', 'Budget Issues', 'Future Opportunity']
-    },
-    {
-      id: 'LEAD-007',
-      name: 'InnovateCo',
-      contactPerson: 'Anna Johnson',
-      email: 'anna@innovateco.com',
-      phone: '+1 (555) 777-8888',
-      industry: 'Healthcare',
-      company: 'InnovateCo',
-      stage: 'qualified',
-      score: 78,
-      source: 'Referral',
-      estimatedValue: 135000,
-      probability: 70,
-      assignedTo: 'David Lee',
-      createdDate: '2025-10-05',
-      lastContact: '2025-10-26',
-      nextFollowUp: '2025-10-31',
-      notes: 'Strong interest in healthcare compliance solutions. Decision timeline: Q4 2025.',
-      activities: [
-        { type: 'meeting', description: 'Demo presentation', date: '2025-10-26' },
-        { type: 'call', description: 'Qualification call', date: '2025-10-18' },
-        { type: 'email', description: 'Initial contact via referral', date: '2025-10-05' }
-      ],
-      tags: ['Healthcare', 'Compliance', 'Qualified']
-    },
-    {
-      id: 'LEAD-008',
-      name: 'FutureTech Labs',
-      contactPerson: 'Chris Anderson',
-      email: 'chris@futuretech.com',
-      phone: '+1 (555) 888-9999',
-      industry: 'Research',
-      company: 'FutureTech Labs',
-      stage: 'contacted',
-      score: 68,
-      source: 'LinkedIn',
-      estimatedValue: 110000,
-      probability: 55,
-      assignedTo: 'Lisa Anderson',
-      createdDate: '2025-10-12',
-      lastContact: '2025-10-24',
-      nextFollowUp: '2025-10-29',
-      notes: 'Exploring options for R&D management platform. Multiple stakeholders involved.',
-      activities: [
-        { type: 'email', description: 'Case studies shared', date: '2025-10-24' },
-        { type: 'call', description: 'Initial discovery call', date: '2025-10-19' },
-        { type: 'email', description: 'LinkedIn connection accepted', date: '2025-10-12' }
-      ],
-      tags: ['Research', 'Multiple Stakeholders', 'Long Sales Cycle']
+  // Data fetching states
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [leads, setLeads] = useState<any[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  const [_leadStats, _setLeadStats] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch data from API
+  useEffect(() => {
+    async function fetchLeads() {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/super-admin/clients/leads')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch leads')
+        }
+        
+        const data = await response.json()
+        setLeads(data.leads || [])
+        _setLeadStats(data.stats || null)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching leads:', err)
+        setError('Failed to load leads. Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ];
+
+    fetchLeads()
+  }, [])
+  
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" />
+            <p className="text-lg text-slate-600">Loading leads...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6">
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <CardTitle className="text-red-900">Error Loading Leads</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-700 mb-4">{error}</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-100"
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+
 
   const stages = [
     { id: 'new', name: 'New', color: 'bg-gray-500', count: leads.filter(l => l.stage === 'new').length },
@@ -716,7 +596,8 @@ export default function ClientLeadsPage() {
 
                       {/* Tags */}
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {lead.tags.map((tag, index) => (
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        {lead.tags?.map((tag: any, index: number) => (
                           <Badge key={index} variant="outline" className="text-xs">
                             {tag}
                           </Badge>
@@ -829,7 +710,8 @@ export default function ClientLeadsPage() {
                       <div className="space-y-4">
                         <ScrollArea className="h-[200px]">
                           <div className="space-y-3 pr-4">
-                            {lead.activities.map((activity, index) => (
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {lead.activities?.map((activity: any, index: number) => (
                               <div key={index} className="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
                                 <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
                                   {getActivityIcon(activity.type)}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +35,9 @@ import {
   Clock,
   Zap,
   Plus,
-  Download
+  Download,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 export default function ClientPortalPage() {
@@ -43,266 +45,90 @@ export default function ClientPortalPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
 
-  // Mock data - Replace with actual API calls
-  const portalClients = [
-    {
-      id: 'CLT-001',
-      name: 'TechMart Inc.',
-      portalEnabled: true,
-      username: 'techmart',
-      lastLogin: '2025-10-25 14:32',
-      loginCount: 142,
-      activeUsers: 5,
-      totalUsers: 8,
-      projects: 3,
-      documents: 23,
-      messages: 45,
-      customBranding: true,
-      customDomain: 'portal.techmart.com',
-      theme: 'Blue & White',
-      logo: 'TM',
-      features: {
-        projects: true,
-        documents: true,
-        messaging: true,
-        analytics: true,
-        invoices: true,
-        timeTracking: false
-      },
-      permissions: {
-        viewProjects: true,
-        downloadDocuments: true,
-        uploadDocuments: false,
-        createTasks: true,
-        viewTeam: true,
-        viewBudget: false
-      },
-      analytics: {
-        pageViews: 1245,
-        avgSessionDuration: '8m 32s',
-        topPage: 'Projects Dashboard',
-        engagement: 87
-      },
-      createdDate: '2023-01-15',
-      lastUpdated: '2025-10-20'
-    },
-    {
-      id: 'CLT-002',
-      name: 'GlobalTech Solutions',
-      portalEnabled: true,
-      username: 'globaltech',
-      lastLogin: '2025-10-24 09:15',
-      loginCount: 89,
-      activeUsers: 3,
-      totalUsers: 5,
-      projects: 2,
-      documents: 18,
-      messages: 32,
-      customBranding: false,
-      customDomain: null,
-      theme: 'Default',
-      logo: 'GT',
-      features: {
-        projects: true,
-        documents: true,
-        messaging: true,
-        analytics: false,
-        invoices: true,
-        timeTracking: false
-      },
-      permissions: {
-        viewProjects: true,
-        downloadDocuments: true,
-        uploadDocuments: true,
-        createTasks: false,
-        viewTeam: true,
-        viewBudget: true
-      },
-      analytics: {
-        pageViews: 687,
-        avgSessionDuration: '6m 18s',
-        topPage: 'Documents',
-        engagement: 72
-      },
-      createdDate: '2023-06-20',
-      lastUpdated: '2025-10-18'
-    },
-    {
-      id: 'CLT-003',
-      name: 'DataInsights Corp',
-      portalEnabled: true,
-      username: 'datainsights',
-      lastLogin: '2025-10-26 11:45',
-      loginCount: 234,
-      activeUsers: 8,
-      totalUsers: 10,
-      projects: 1,
-      documents: 15,
-      messages: 28,
-      customBranding: true,
-      customDomain: 'client.datainsights.com',
-      theme: 'Dark Mode',
-      logo: 'DI',
-      features: {
-        projects: true,
-        documents: true,
-        messaging: true,
-        analytics: true,
-        invoices: true,
-        timeTracking: true
-      },
-      permissions: {
-        viewProjects: true,
-        downloadDocuments: true,
-        uploadDocuments: true,
-        createTasks: true,
-        viewTeam: true,
-        viewBudget: true
-      },
-      analytics: {
-        pageViews: 2156,
-        avgSessionDuration: '12m 45s',
-        topPage: 'Analytics Dashboard',
-        engagement: 94
-      },
-      createdDate: '2024-02-10',
-      lastUpdated: '2025-10-25'
-    },
-    {
-      id: 'CLT-004',
-      name: 'FitLife Health',
-      portalEnabled: false,
-      username: 'fitlife',
-      lastLogin: '2025-10-15 16:20',
-      loginCount: 45,
-      activeUsers: 0,
-      totalUsers: 4,
-      projects: 2,
-      documents: 20,
-      messages: 38,
-      customBranding: false,
-      customDomain: null,
-      theme: 'Default',
-      logo: 'FH',
-      features: {
-        projects: true,
-        documents: true,
-        messaging: false,
-        analytics: false,
-        invoices: true,
-        timeTracking: false
-      },
-      permissions: {
-        viewProjects: true,
-        downloadDocuments: true,
-        uploadDocuments: false,
-        createTasks: false,
-        viewTeam: false,
-        viewBudget: false
-      },
-      analytics: {
-        pageViews: 312,
-        avgSessionDuration: '4m 12s',
-        topPage: 'Projects',
-        engagement: 45
-      },
-      createdDate: '2023-09-05',
-      lastUpdated: '2025-10-10'
-    },
-    {
-      id: 'CLT-005',
-      name: 'StartupHub Technologies',
-      portalEnabled: true,
-      username: 'startuphub',
-      lastLogin: '2025-10-26 15:10',
-      loginCount: 312,
-      activeUsers: 12,
-      totalUsers: 15,
-      projects: 4,
-      documents: 31,
-      messages: 52,
-      customBranding: true,
-      customDomain: 'portal.startuphub.io',
-      theme: 'Purple & Gold',
-      logo: 'SH',
-      features: {
-        projects: true,
-        documents: true,
-        messaging: true,
-        analytics: true,
-        invoices: true,
-        timeTracking: true
-      },
-      permissions: {
-        viewProjects: true,
-        downloadDocuments: true,
-        uploadDocuments: true,
-        createTasks: true,
-        viewTeam: true,
-        viewBudget: true
-      },
-      analytics: {
-        pageViews: 3421,
-        avgSessionDuration: '15m 28s',
-        topPage: 'Projects Dashboard',
-        engagement: 96
-      },
-      createdDate: '2024-05-12',
-      lastUpdated: '2025-10-26'
-    },
-    {
-      id: 'CLT-006',
-      name: 'Enterprise Solutions Ltd',
-      portalEnabled: true,
-      username: 'enterprise',
-      lastLogin: '2025-10-22 13:05',
-      loginCount: 67,
-      activeUsers: 4,
-      totalUsers: 10,
-      projects: 1,
-      documents: 19,
-      messages: 24,
-      customBranding: false,
-      customDomain: null,
-      theme: 'Default',
-      logo: 'ES',
-      features: {
-        projects: true,
-        documents: true,
-        messaging: true,
-        analytics: false,
-        invoices: true,
-        timeTracking: false
-      },
-      permissions: {
-        viewProjects: true,
-        downloadDocuments: true,
-        uploadDocuments: false,
-        createTasks: false,
-        viewTeam: true,
-        viewBudget: false
-      },
-      analytics: {
-        pageViews: 523,
-        avgSessionDuration: '5m 47s',
-        topPage: 'Documents',
-        engagement: 58
-      },
-      createdDate: '2022-11-20',
-      lastUpdated: '2025-10-15'
+  // Data fetching states
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [portalClients, setPortalClients] = useState<any[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+  const [_portalStats, _setPortalStats] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch data from API
+  useEffect(() => {
+    async function fetchPortalData() {
+      try {
+        const response = await fetch('/api/super-admin/clients/portal')
+        if (!response.ok) throw new Error('Failed to fetch portal data')
+        const data = await response.json()
+        setPortalClients(data.clients || [])
+        _setPortalStats(data.stats || null)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ];
+    fetchPortalData()
+  }, [])
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" />
+            <p className="text-lg text-slate-600">Loading client portal data...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6">
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <CardTitle className="text-red-900">Error Loading Portal Data</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-700 mb-4">{error}</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-100"
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Mock data - Now from API
 
   const filteredClients = portalClients.filter(client =>
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.id.toLowerCase().includes(searchTerm.toLowerCase())
+    client.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPortals = portalClients.length;
   const activePortals = portalClients.filter(c => c.portalEnabled).length;
-  const totalLogins = portalClients.reduce((sum, c) => sum + c.loginCount, 0);
-  const avgEngagement = portalClients.reduce((sum, c) => sum + c.analytics.engagement, 0) / portalClients.length;
+  const totalLogins = portalClients.reduce((sum, c) => sum + (c.loginCount || 0), 0);
+  const avgEngagement = portalClients.length > 0 
+    ? portalClients.reduce((sum, c) => sum + (c.analytics?.engagement || 0), 0) / portalClients.length 
+    : 0;
 
   const handleTogglePortal = (clientId: string, currentState: boolean) => {
     toast({
@@ -617,7 +443,8 @@ export default function ClientPortalPage() {
                       <div className="mb-4">
                         <Label className="text-xs font-semibold mb-2 block">Enabled Features</Label>
                         <div className="flex flex-wrap gap-2">
-                          {Object.entries(client.features).map(([feature, enabled]) => (
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          {Object.entries(client.features || {}).map(([feature, enabled]: [string, any]) => (
                             enabled && (
                               <Badge key={feature} variant="outline" className="text-xs">
                                 <Check className="h-3 w-3 mr-1 text-green-600" />
@@ -754,12 +581,13 @@ export default function ClientPortalPage() {
                             Features
                           </Label>
                           <div className="space-y-2">
-                            {Object.entries(client.features).map(([feature, enabled]) => (
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {Object.entries(client.features || {}).map(([feature, enabled]: [string, any]) => (
                               <div key={feature} className="flex items-center justify-between p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
                                 <span className="text-sm">
                                   {feature.charAt(0).toUpperCase() + feature.slice(1).replace(/([A-Z])/g, ' $1')}
                                 </span>
-                                <Switch checked={enabled} />
+                                <Switch checked={!!enabled} />
                               </div>
                             ))}
                           </div>

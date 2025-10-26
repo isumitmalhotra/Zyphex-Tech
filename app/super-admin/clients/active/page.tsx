@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,7 @@ import {
   Download,
   Eye,
   CheckCircle,
+  Loader2,
   AlertCircle,
   Clock,
   Award,
@@ -45,189 +46,85 @@ export default function ActiveClientsPage() {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [healthFilter, setHealthFilter] = useState('all');
 
-  // Mock data - Replace with actual API calls
-  const clients = [
-    {
-      id: 'CLT-001',
-      name: 'TechMart Inc.',
-      logo: 'TM',
-      industry: 'E-Commerce',
-      status: 'active',
-      healthScore: 95,
-      activeProjects: 3,
-      completedProjects: 8,
-      totalRevenue: 450000,
-      currentValue: 125000,
-      contactPerson: 'John Smith',
-      email: 'john@techmart.com',
-      phone: '+1 (555) 123-4567',
-      location: 'San Francisco, CA',
-      since: '2023-01-15',
-      lastContact: '2025-10-24',
-      nextMeeting: '2025-10-28',
-      satisfaction: 4.8,
-      projectSuccessRate: 92,
-      avgResponseTime: '2 hours',
-      notes: 'Premium client with high engagement. Interested in expanding services.',
-      recentActivities: [
-        { type: 'meeting', description: 'Quarterly review meeting', date: '2025-10-24' },
-        { type: 'project', description: 'E-Commerce platform phase 2 started', date: '2025-10-20' },
-        { type: 'payment', description: 'Invoice #1234 paid', date: '2025-10-18' }
-      ],
-      communications: 45,
-      documents: 23
-    },
-    {
-      id: 'CLT-002',
-      name: 'GlobalTech Solutions',
-      logo: 'GT',
-      industry: 'Technology',
-      status: 'active',
-      healthScore: 78,
-      activeProjects: 2,
-      completedProjects: 5,
-      totalRevenue: 320000,
-      currentValue: 85000,
-      contactPerson: 'Robert Wilson',
-      email: 'robert@globaltech.com',
-      phone: '+1 (555) 234-5678',
-      location: 'New York, NY',
-      since: '2023-06-20',
-      lastContact: '2025-10-22',
-      nextMeeting: '2025-11-02',
-      satisfaction: 4.3,
-      projectSuccessRate: 85,
-      avgResponseTime: '4 hours',
-      notes: 'Regular client with consistent project pipeline.',
-      recentActivities: [
-        { type: 'email', description: 'Project update sent', date: '2025-10-22' },
-        { type: 'project', description: 'Website revamp completed', date: '2025-10-15' },
-        { type: 'call', description: 'Status call conducted', date: '2025-10-10' }
-      ],
-      communications: 32,
-      documents: 18
-    },
-    {
-      id: 'CLT-003',
-      name: 'DataInsights Corp',
-      logo: 'DI',
-      industry: 'Analytics',
-      status: 'active',
-      healthScore: 88,
-      activeProjects: 1,
-      completedProjects: 3,
-      totalRevenue: 280000,
-      currentValue: 95000,
-      contactPerson: 'Mark Thompson',
-      email: 'mark@datainsights.com',
-      phone: '+1 (555) 345-6789',
-      location: 'Austin, TX',
-      since: '2024-02-10',
-      lastContact: '2025-10-25',
-      nextMeeting: '2025-10-30',
-      satisfaction: 4.6,
-      projectSuccessRate: 88,
-      avgResponseTime: '3 hours',
-      notes: 'Fast-growing startup with high potential for expansion.',
-      recentActivities: [
-        { type: 'meeting', description: 'Sprint planning meeting', date: '2025-10-25' },
-        { type: 'project', description: 'Analytics dashboard milestone reached', date: '2025-10-22' },
-        { type: 'email', description: 'Feature request received', date: '2025-10-20' }
-      ],
-      communications: 28,
-      documents: 15
-    },
-    {
-      id: 'CLT-004',
-      name: 'FitLife Health',
-      logo: 'FH',
-      industry: 'Healthcare',
-      status: 'active',
-      healthScore: 82,
-      activeProjects: 2,
-      completedProjects: 4,
-      totalRevenue: 195000,
-      currentValue: 75000,
-      contactPerson: 'Emily Davis',
-      email: 'emily@fitlife.com',
-      phone: '+1 (555) 456-7890',
-      location: 'Los Angeles, CA',
-      since: '2023-09-05',
-      lastContact: '2025-10-23',
-      nextMeeting: '2025-11-01',
-      satisfaction: 4.5,
-      projectSuccessRate: 87,
-      avgResponseTime: '3.5 hours',
-      notes: 'Health app client with focus on user experience.',
-      recentActivities: [
-        { type: 'project', description: 'Mobile app redesign approved', date: '2025-10-23' },
-        { type: 'call', description: 'Weekly sync call', date: '2025-10-21' },
-        { type: 'payment', description: 'Monthly retainer received', date: '2025-10-01' }
-      ],
-      communications: 38,
-      documents: 20
-    },
-    {
-      id: 'CLT-005',
-      name: 'StartupHub Technologies',
-      logo: 'SH',
-      industry: 'SaaS',
-      status: 'active',
-      healthScore: 91,
-      activeProjects: 4,
-      completedProjects: 2,
-      totalRevenue: 580000,
-      currentValue: 200000,
-      contactPerson: 'Chris Taylor',
-      email: 'chris@startuphub.com',
-      phone: '+1 (555) 567-8901',
-      location: 'Seattle, WA',
-      since: '2024-05-12',
-      lastContact: '2025-10-26',
-      nextMeeting: '2025-10-29',
-      satisfaction: 4.9,
-      projectSuccessRate: 94,
-      avgResponseTime: '1.5 hours',
-      notes: 'Strategic partner with multiple concurrent projects. High priority.',
-      recentActivities: [
-        { type: 'meeting', description: 'Product roadmap discussion', date: '2025-10-26' },
-        { type: 'project', description: 'SaaS platform phase 1 completed', date: '2025-10-25' },
-        { type: 'email', description: 'Expansion proposal sent', date: '2025-10-24' }
-      ],
-      communications: 52,
-      documents: 31
-    },
-    {
-      id: 'CLT-006',
-      name: 'Enterprise Solutions Ltd',
-      logo: 'ES',
-      industry: 'Enterprise',
-      status: 'active',
-      healthScore: 65,
-      activeProjects: 1,
-      completedProjects: 6,
-      totalRevenue: 420000,
-      currentValue: 150000,
-      contactPerson: 'Anna Brown',
-      email: 'anna@enterprise.com',
-      phone: '+1 (555) 678-9012',
-      location: 'Chicago, IL',
-      since: '2022-11-20',
-      lastContact: '2025-10-15',
-      nextMeeting: '2025-11-05',
-      satisfaction: 3.8,
-      projectSuccessRate: 78,
-      avgResponseTime: '6 hours',
-      notes: 'Needs attention. Recent communication gaps. Schedule check-in call.',
-      recentActivities: [
-        { type: 'email', description: 'Project delay notification', date: '2025-10-15' },
-        { type: 'project', description: 'Cloud migration paused', date: '2025-10-10' },
-        { type: 'call', description: 'Escalation call', date: '2025-10-08' }
-      ],
-      communications: 24,
-      documents: 19
+  // Data fetching states
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [clients, setClients] = useState<any[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [clientStats, setClientStats] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Fetch data from API
+  useEffect(() => {
+    async function fetchActiveClients() {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/super-admin/clients/active')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch active clients')
+        }
+        
+        const data = await response.json()
+        setClients(data.clients || [])
+        setClientStats(data.stats || null)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching active clients:', err)
+        setError('Failed to load active clients. Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ];
+
+    fetchActiveClients()
+  }, [])
+  
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" />
+            <p className="text-lg text-slate-600">Loading active clients...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6">
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <CardTitle className="text-red-900">Error Loading Clients</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-700 mb-4">{error}</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-100"
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Mock data - Now from API (removed ~175 lines of mock data)
 
   const getHealthColor = (score: number) => {
     if (score >= 85) return 'text-green-600';
@@ -261,10 +158,14 @@ export default function ActiveClientsPage() {
     return matchesSearch && matchesHealth;
   });
 
-  const totalRevenue = clients.reduce((sum, c) => sum + c.totalRevenue, 0);
-  const avgHealthScore = clients.reduce((sum, c) => sum + c.healthScore, 0) / clients.length;
-  const totalActiveProjects = clients.reduce((sum, c) => sum + c.activeProjects, 0);
-  const avgSatisfaction = clients.reduce((sum, c) => sum + c.satisfaction, 0) / clients.length;
+  // Stats now come from API (clientStats)
+  const totalActiveProjects = clientStats?.totalActiveProjects || 0;
+  // Calculate avg satisfaction from filtered clients (not in API yet)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const avgSatisfaction = clients.length > 0 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ? clients.reduce((sum: number, c: any) => sum + (c.satisfaction || 0), 0) / clients.length 
+    : 0;
 
   const handleEditClient = (clientId: string) => {
     toast({
@@ -353,7 +254,7 @@ export default function ActiveClientsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-green-600">
-                    ${(totalRevenue / 1000).toFixed(0)}K
+                    ${((clientStats?.totalRevenue || 0) / 1000).toFixed(0)}K
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Lifetime value
@@ -374,7 +275,7 @@ export default function ActiveClientsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-purple-600">
-                    {avgHealthScore.toFixed(0)}%
+                    {clientStats?.avgHealthScore || 0}%
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Overall health
@@ -703,7 +604,8 @@ export default function ActiveClientsPage() {
                       <div className="space-y-4">
                         <ScrollArea className="h-[200px]">
                           <div className="space-y-3 pr-4">
-                            {client.recentActivities.map((activity, index) => (
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {client.recentActivities?.map((activity: any, index: number) => (
                               <div key={index} className="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
                                 <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                                   {getActivityIcon(activity.type)}

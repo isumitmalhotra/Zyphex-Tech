@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +31,9 @@ import {
   Award,
   ArrowRight,
   MoreVertical,
-  Mail
+  Mail,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 export default function ProjectProposalsPage() {
@@ -40,126 +42,86 @@ export default function ProjectProposalsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedProposal, setSelectedProposal] = useState<string | null>(null);
 
-  // Mock data - Replace with actual API calls
-  const proposals = [
-    {
-      id: 'PROP-001',
-      title: 'E-Commerce Platform Development',
-      client: 'TechMart Inc.',
-      status: 'pending',
-      submittedDate: '2025-10-20',
-      value: 125000,
-      duration: '6 months',
-      team: 8,
-      description: 'Full-stack e-commerce platform with payment integration, inventory management, and analytics dashboard.',
-      scope: ['Custom shopping cart', 'Payment gateway integration', 'Admin dashboard', 'Mobile responsive design', 'SEO optimization'],
-      attachments: 3,
-      dueDate: '2025-10-30',
-      proposalBy: 'Sarah Johnson',
-      clientContact: 'John Smith',
-      clientEmail: 'john@techmart.com',
-      priority: 'high',
-      template: 'E-Commerce Standard'
-    },
-    {
-      id: 'PROP-002',
-      title: 'Mobile App Redesign',
-      client: 'FitLife Health',
-      status: 'approved',
-      submittedDate: '2025-10-15',
-      value: 75000,
-      duration: '4 months',
-      team: 5,
-      description: 'Complete UI/UX redesign of fitness tracking mobile application with new features.',
-      scope: ['UI/UX design', 'Frontend development', 'API integration', 'User testing', 'App store deployment'],
-      attachments: 5,
-      approvedDate: '2025-10-22',
-      proposalBy: 'Michael Chen',
-      clientContact: 'Emily Davis',
-      clientEmail: 'emily@fitlife.com',
-      priority: 'medium',
-      template: 'Mobile App Standard'
-    },
-    {
-      id: 'PROP-003',
-      title: 'Corporate Website Revamp',
-      client: 'GlobalTech Solutions',
-      status: 'revision',
-      submittedDate: '2025-10-18',
-      value: 45000,
-      duration: '3 months',
-      team: 4,
-      description: 'Modern corporate website with content management system and multilingual support.',
-      scope: ['Website design', 'CMS integration', 'Multi-language support', 'Blog functionality', 'Contact forms'],
-      attachments: 2,
-      revisionRequested: '2025-10-24',
-      revisionNotes: 'Client requested additional SEO optimization package and extended support period.',
-      proposalBy: 'David Lee',
-      clientContact: 'Robert Wilson',
-      clientEmail: 'robert@globaltech.com',
-      priority: 'medium',
-      template: 'Website Standard'
-    },
-    {
-      id: 'PROP-004',
-      title: 'Data Analytics Dashboard',
-      client: 'DataInsights Corp',
-      status: 'pending',
-      submittedDate: '2025-10-22',
-      value: 95000,
-      duration: '5 months',
-      team: 6,
-      description: 'Real-time data analytics dashboard with AI-powered insights and predictive modeling.',
-      scope: ['Dashboard UI design', 'Data visualization', 'AI/ML integration', 'Real-time updates', 'Export functionality'],
-      attachments: 4,
-      dueDate: '2025-11-05',
-      proposalBy: 'Lisa Anderson',
-      clientContact: 'Mark Thompson',
-      clientEmail: 'mark@datainsights.com',
-      priority: 'high',
-      template: 'Analytics Platform'
-    },
-    {
-      id: 'PROP-005',
-      title: 'Cloud Migration Service',
-      client: 'Enterprise Solutions Ltd',
-      status: 'rejected',
-      submittedDate: '2025-10-10',
-      value: 150000,
-      duration: '8 months',
-      team: 10,
-      description: 'Complete infrastructure migration from on-premise to AWS cloud with DevOps implementation.',
-      scope: ['Infrastructure audit', 'Cloud architecture', 'Data migration', 'DevOps setup', 'Training'],
-      attachments: 6,
-      rejectedDate: '2025-10-19',
-      rejectionReason: 'Client decided to handle migration internally with their IT team.',
-      proposalBy: 'James Martinez',
-      clientContact: 'Anna Brown',
-      clientEmail: 'anna@enterprise.com',
-      priority: 'low',
-      template: 'Cloud Services'
-    },
-    {
-      id: 'PROP-006',
-      title: 'SaaS Platform Development',
-      client: 'StartupHub Technologies',
-      status: 'approved',
-      submittedDate: '2025-10-12',
-      value: 200000,
-      duration: '10 months',
-      team: 12,
-      description: 'Multi-tenant SaaS platform for project management with subscription billing.',
-      scope: ['Platform architecture', 'Multi-tenancy', 'Subscription management', 'API development', 'Security implementation'],
-      attachments: 8,
-      approvedDate: '2025-10-20',
-      proposalBy: 'Sarah Johnson',
-      clientContact: 'Chris Taylor',
-      clientEmail: 'chris@startuphub.com',
-      priority: 'high',
-      template: 'SaaS Platform'
-    }
-  ];
+  // Data fetching states
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [proposals, setProposals] = useState<any[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [proposalStats, setProposalStats] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
+  // Fetch data from API
+  useEffect(() => {
+    async function fetchProposals() {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/super-admin/projects/proposals')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch proposals')
+        }
+        
+        const data = await response.json()
+        setProposals(data.proposals || [])
+        setProposalStats(data.stats || null)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching proposals:', err)
+        setError('Failed to load proposals. Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProposals()
+  }, [])
+  
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" />
+            <p className="text-lg text-slate-600">Loading proposals...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6">
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <CardTitle className="text-red-900">Error Loading Proposals</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-700 mb-4">{error}</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-100"
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Mock data - Now from API
+  // Templates kept for UI (could be moved to database later)
   const templates = [
     { id: 'template-1', name: 'E-Commerce Standard', category: 'Web Development', usageCount: 12 },
     { id: 'template-2', name: 'Mobile App Standard', category: 'Mobile Development', usageCount: 8 },
@@ -189,24 +151,37 @@ export default function ProjectProposalsPage() {
   };
 
   const filteredProposals = proposals.filter(proposal => {
-    const matchesSearch = proposal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         proposal.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         proposal.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = proposal.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         proposal.client?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         proposal.proposalId?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || proposal.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const statusCounts = {
+  // Use stats from API or calculate from filtered data
+  const statusCounts = proposalStats ? {
+    all: proposalStats.totalProposals || 0,
+    pending: proposalStats.pending || 0,
+    approved: proposalStats.approved || 0,
+    rejected: proposalStats.rejected || 0,
+    'under-review': proposalStats.underReview || 0
+  } : {
     all: proposals.length,
-    pending: proposals.filter(p => p.status === 'pending').length,
-    approved: proposals.filter(p => p.status === 'approved').length,
-    rejected: proposals.filter(p => p.status === 'rejected').length,
-    revision: proposals.filter(p => p.status === 'revision').length
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    pending: proposals.filter((p: any) => p.status === 'pending').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    approved: proposals.filter((p: any) => p.status === 'approved').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rejected: proposals.filter((p: any) => p.status === 'rejected').length,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    'under-review': proposals.filter((p: any) => p.status === 'under-review').length
   };
 
-  const totalValue = proposals.reduce((sum, p) => sum + p.value, 0);
-  const approvedValue = proposals.filter(p => p.status === 'approved').reduce((sum, p) => sum + p.value, 0);
-  const pendingValue = proposals.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.value, 0);
+  const totalValue = proposalStats?.totalValue || 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const approvedValue = proposals.filter((p: any) => p.status === 'approved').reduce((sum: number, p: any) => sum + (p.value || 0), 0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pendingValue = proposals.filter((p: any) => p.status === 'pending').reduce((sum: number, p: any) => sum + (p.value || 0), 0);
 
   const handleApprove = (proposalId: string) => {
     toast({
@@ -407,11 +382,11 @@ export default function ProjectProposalsPage() {
                 <Button
                   variant={statusFilter === 'revision' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setStatusFilter('revision')}
-                  className={statusFilter === 'revision' ? 'bg-blue-500 hover:bg-blue-600' : ''}
+                  onClick={() => setStatusFilter('under-review')}
+                  className={statusFilter === 'under-review' ? 'bg-blue-500 hover:bg-blue-600' : ''}
                 >
                   <RefreshCw className="h-3 w-3 mr-1" />
-                  Revision ({statusCounts.revision})
+                  Under Review ({statusCounts['under-review'] || 0})
                 </Button>
                 <Button
                   variant={statusFilter === 'rejected' ? 'default' : 'outline'}
@@ -679,7 +654,8 @@ export default function ProjectProposalsPage() {
                             Scope of Work
                           </Label>
                           <div className="space-y-2">
-                            {proposal.scope.map((item, index) => (
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {proposal.scope?.map((item: any, index: number) => (
                               <div key={index} className="flex items-start gap-2 text-sm">
                                 <Target className="h-4 w-4 text-purple-500 mt-0.5 flex-shrink-0" />
                                 <span>{item}</span>

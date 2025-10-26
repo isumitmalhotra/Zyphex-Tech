@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -31,7 +31,9 @@ import {
   Briefcase,
   FolderOpen,
   Timer,
-  Archive
+  Archive,
+  Loader2,
+  AlertCircle
 } from "lucide-react"
 
 export default function SuperAdminCompletedProjectsPage() {
@@ -39,317 +41,120 @@ export default function SuperAdminCompletedProjectsPage() {
   const [satisfactionFilter, setSatisfactionFilter] = useState("all")
   const [sortBy, setSortBy] = useState("completion-date")
   const [dateRange, setDateRange] = useState("all")
+  
+  // Data fetching states
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [completedProjects, setCompletedProjects] = useState<any[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [projectStats, setProjectStats] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Completed Projects Data
-  const completedProjects = [
-    {
-      id: "PRJ-087",
-      name: "Enterprise Resource Planning System",
-      client: "GlobalTech Solutions",
-      completionDate: "2025-09-15",
-      startDate: "2024-08-01",
-      duration: "13 months",
-      durationDays: 410,
-      budget: 450000,
-      actualCost: 438500,
-      budgetVariance: -2.56,
-      plannedDuration: 365,
-      actualDuration: 410,
-      scheduleVariance: 12.3,
-      onTime: false,
-      team: [
-        { name: "Michael Chang", role: "Project Lead", avatar: "MC" },
-        { name: "Sarah Johnson", role: "Solution Architect", avatar: "SJ" },
-        { name: "Robert Kim", role: "Senior Developer", avatar: "RK" },
-        { name: "Jennifer Lee", role: "QA Manager", avatar: "JL" },
-        { name: "David Chen", role: "UX Designer", avatar: "DC" }
-      ],
-      satisfaction: {
-        score: 4.8,
-        rating: "excellent",
-        feedback: "Outstanding delivery with exceptional quality"
-      },
-      deliverables: {
-        total: 15,
-        delivered: 15,
-        onTime: 13,
-        delayed: 2
-      },
-      metrics: {
-        tasksCompleted: 287,
-        hoursLogged: 3420,
-        codeCommits: 1245,
-        bugsFixed: 89
-      },
-      lessonsLearned: [
-        "Better resource allocation in planning phase",
-        "More frequent client check-ins improved satisfaction",
-        "Automated testing saved significant QA time"
-      ],
-      finalStatus: "success"
-    },
-    {
-      id: "PRJ-091",
-      name: "Mobile Commerce Application",
-      client: "RetailPro Inc.",
-      completionDate: "2025-10-05",
-      startDate: "2025-03-10",
-      duration: "7 months",
-      durationDays: 209,
-      budget: 180000,
-      actualCost: 176800,
-      budgetVariance: -1.78,
-      plannedDuration: 210,
-      actualDuration: 209,
-      scheduleVariance: -0.48,
-      onTime: true,
-      team: [
-        { name: "Emily Rodriguez", role: "Mobile Lead", avatar: "ER" },
-        { name: "James Wilson", role: "iOS Developer", avatar: "JW" },
-        { name: "Lisa Anderson", role: "Android Developer", avatar: "LA" },
-        { name: "Kevin Brown", role: "Backend Engineer", avatar: "KB" }
-      ],
-      satisfaction: {
-        score: 5.0,
-        rating: "excellent",
-        feedback: "Exceeded expectations in every aspect"
-      },
-      deliverables: {
-        total: 8,
-        delivered: 8,
-        onTime: 8,
-        delayed: 0
-      },
-      metrics: {
-        tasksCompleted: 156,
-        hoursLogged: 1890,
-        codeCommits: 687,
-        bugsFixed: 45
-      },
-      lessonsLearned: [
-        "Cross-platform code sharing reduced development time",
-        "Early performance testing prevented bottlenecks",
-        "Agile methodology worked perfectly for this project"
-      ],
-      finalStatus: "success"
-    },
-    {
-      id: "PRJ-078",
-      name: "Data Analytics Dashboard",
-      client: "FinanceHub Analytics",
-      completionDate: "2025-08-20",
-      startDate: "2025-01-15",
-      duration: "7 months",
-      durationDays: 217,
-      budget: 225000,
-      actualCost: 234500,
-      budgetVariance: 4.22,
-      plannedDuration: 180,
-      actualDuration: 217,
-      scheduleVariance: 20.56,
-      onTime: false,
-      team: [
-        { name: "Dr. Alex Thompson", role: "Data Architect", avatar: "AT" },
-        { name: "Nina Patel", role: "Frontend Developer", avatar: "NP" },
-        { name: "Marcus Johnson", role: "Data Engineer", avatar: "MJ" },
-        { name: "Rachel Green", role: "BI Specialist", avatar: "RG" }
-      ],
-      satisfaction: {
-        score: 4.2,
-        rating: "good",
-        feedback: "Good results but timeline could have been better"
-      },
-      deliverables: {
-        total: 12,
-        delivered: 12,
-        onTime: 9,
-        delayed: 3
-      },
-      metrics: {
-        tasksCompleted: 198,
-        hoursLogged: 2340,
-        codeCommits: 892,
-        bugsFixed: 67
-      },
-      lessonsLearned: [
-        "Complex data integrations need more time in planning",
-        "Client requirements changed mid-project affecting timeline",
-        "Need better estimation for data migration tasks"
-      ],
-      finalStatus: "success-with-issues"
-    },
-    {
-      id: "PRJ-065",
-      name: "Healthcare Patient Portal",
-      client: "MediCare Systems",
-      completionDate: "2025-07-10",
-      startDate: "2024-10-01",
-      duration: "9 months",
-      durationDays: 282,
-      budget: 320000,
-      actualCost: 298000,
-      budgetVariance: -6.88,
-      plannedDuration: 270,
-      actualDuration: 282,
-      scheduleVariance: 4.44,
-      onTime: false,
-      team: [
-        { name: "Dr. Sarah Mitchell", role: "Healthcare IT Lead", avatar: "SM" },
-        { name: "Tom Anderson", role: "Security Engineer", avatar: "TA" },
-        { name: "Maria Garcia", role: "Full Stack Developer", avatar: "MG" },
-        { name: "John Davis", role: "Compliance Officer", avatar: "JD" },
-        { name: "Amy White", role: "UI/UX Designer", avatar: "AW" }
-      ],
-      satisfaction: {
-        score: 4.7,
-        rating: "excellent",
-        feedback: "High-quality secure system with excellent support"
-      },
-      deliverables: {
-        total: 18,
-        delivered: 18,
-        onTime: 15,
-        delayed: 3
-      },
-      metrics: {
-        tasksCompleted: 245,
-        hoursLogged: 3120,
-        codeCommits: 1034,
-        bugsFixed: 78
-      },
-      lessonsLearned: [
-        "HIPAA compliance requirements need dedicated time",
-        "Security audits should be scheduled earlier",
-        "Patient data migration more complex than anticipated"
-      ],
-      finalStatus: "success"
-    },
-    {
-      id: "PRJ-053",
-      name: "Inventory Management System",
-      client: "LogisticsPro Ltd.",
-      completionDate: "2025-06-05",
-      startDate: "2024-12-01",
-      duration: "6 months",
-      durationDays: 186,
-      budget: 155000,
-      actualCost: 148200,
-      budgetVariance: -4.39,
-      plannedDuration: 180,
-      actualDuration: 186,
-      scheduleVariance: 3.33,
-      onTime: true,
-      team: [
-        { name: "Brian Scott", role: "Systems Analyst", avatar: "BS" },
-        { name: "Carol Evans", role: "Backend Developer", avatar: "CE" },
-        { name: "Daniel Moore", role: "Database Admin", avatar: "DM" }
-      ],
-      satisfaction: {
-        score: 4.5,
-        rating: "very-good",
-        feedback: "Solid implementation with good documentation"
-      },
-      deliverables: {
-        total: 10,
-        delivered: 10,
-        onTime: 9,
-        delayed: 1
-      },
-      metrics: {
-        tasksCompleted: 134,
-        hoursLogged: 1680,
-        codeCommits: 534,
-        bugsFixed: 42
-      },
-      lessonsLearned: [
-        "Warehouse integration simpler than expected",
-        "Real-time tracking features well-received",
-        "Training materials should be more comprehensive"
-      ],
-      finalStatus: "success"
-    },
-    {
-      id: "PRJ-042",
-      name: "Customer Relationship Management",
-      client: "SalesPro Solutions",
-      completionDate: "2025-05-15",
-      startDate: "2024-09-01",
-      duration: "8.5 months",
-      durationDays: 256,
-      budget: 275000,
-      actualCost: 289500,
-      budgetVariance: 5.27,
-      plannedDuration: 240,
-      actualDuration: 256,
-      scheduleVariance: 6.67,
-      onTime: false,
-      team: [
-        { name: "Jessica Taylor", role: "CRM Specialist", avatar: "JT" },
-        { name: "Ryan Foster", role: "Integration Engineer", avatar: "RF" },
-        { name: "Olivia Martinez", role: "Frontend Developer", avatar: "OM" },
-        { name: "Nathan Clark", role: "Backend Developer", avatar: "NC" }
-      ],
-      satisfaction: {
-        score: 3.9,
-        rating: "good",
-        feedback: "Functional system but initial bugs caused delays"
-      },
-      deliverables: {
-        total: 14,
-        delivered: 13,
-        onTime: 10,
-        delayed: 3
-      },
-      metrics: {
-        tasksCompleted: 203,
-        hoursLogged: 2560,
-        codeCommits: 876,
-        bugsFixed: 94
-      },
-      lessonsLearned: [
-        "Better QA process needed before releases",
-        "Integration testing should start earlier",
-        "More buffer time for third-party integrations"
-      ],
-      finalStatus: "success-with-issues"
+  // Fetch data from API
+  useEffect(() => {
+    async function fetchCompletedProjects() {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/super-admin/projects/completed')
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch completed projects')
+        }
+        
+        const data = await response.json()
+        setCompletedProjects(data.projects || [])
+        setProjectStats(data.stats || null)
+        setError(null)
+      } catch (err) {
+        console.error('Error fetching completed projects:', err)
+        setError('Failed to load completed projects. Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
     }
-  ]
 
-  // Overall Statistics
-  const overallStats = [
+    fetchCompletedProjects()
+  }, [])
+  
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" />
+            <p className="text-lg text-slate-600">Loading completed projects...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
+        <SubtleBackground />
+        <div className="container mx-auto p-6">
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+                <CardTitle className="text-red-900">Error Loading Projects</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-700 mb-4">{error}</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                variant="outline"
+                className="border-red-300 text-red-700 hover:bg-red-100"
+              >
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Overall Statistics (now from API stats)
+  const overallStats = projectStats ? [
     {
       title: "Total Completed",
-      value: "47",
+      value: projectStats.totalCompleted?.toString() || "0",
       change: "+12 this quarter",
       trend: "up",
       icon: CheckCircle,
       color: "green"
     },
     {
-      title: "Avg Satisfaction",
-      value: "4.52/5",
-      change: "+0.3 from last year",
+      title: "Excellent Projects",
+      value: projectStats.excellentProjects?.toString() || "0",
+      change: "High satisfaction",
       trend: "up",
       icon: Star,
       color: "yellow"
     },
     {
-      title: "On-Time Rate",
-      value: "68%",
-      change: "+5% improvement",
-      trend: "up",
-      icon: Clock,
-      color: "blue"
-    },
-    {
-      title: "Budget Adherence",
-      value: "92%",
-      change: "Within budget",
-      trend: "up",
+      title: "Over Budget",
+      value: projectStats.overBudget?.toString() || "0",
+      change: "Budget tracking",
+      trend: "neutral",
       icon: DollarSign,
       color: "purple"
+    },
+    {
+      title: "Avg Budget Used",
+      value: `${projectStats.avgBudgetPercent?.toFixed(1) || "0"}%`,
+      change: "Of total budget",
+      trend: projectStats.avgBudgetPercent > 100 ? "down" : "up",
+      icon: Target,
+      color: "blue"
     }
-  ]
+  ] : []
 
   // Get satisfaction badge
   const getSatisfactionBadge = (rating: string) => {
@@ -475,7 +280,8 @@ export default function SuperAdminCompletedProjectsPage() {
 
           {/* Overall Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {overallStats.map((stat, index) => (
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            {overallStats.map((stat: any, index: number) => (
               <Card key={index} className="zyphex-card hover-zyphex-lift transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -719,7 +525,8 @@ export default function SuperAdminCompletedProjectsPage() {
                       Team Members ({project.team.length})
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {project.team.map((member, idx) => (
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {project.team.map((member: any, idx: number) => (
                         <div key={idx} className="flex items-center gap-3 p-2 rounded-lg bg-gray-800/30">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white">
                             {member.avatar}
@@ -752,7 +559,8 @@ export default function SuperAdminCompletedProjectsPage() {
                       Lessons Learned
                     </h4>
                     <ul className="space-y-2">
-                      {project.lessonsLearned.map((lesson, idx) => (
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {project.lessonsLearned.map((lesson: any, idx: number) => (
                         <li key={idx} className="flex items-start gap-2 text-sm zyphex-subheading">
                           <span className="text-blue-400 mt-0.5">•</span>
                           <span>{lesson}</span>
