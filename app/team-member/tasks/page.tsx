@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,10 +23,10 @@ import {
   Search,
   Plus,
   Edit,
-  Trash2,
   PlayCircle,
   PauseCircle,
   MoreHorizontal,
+  Loader2,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -34,58 +34,36 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
 
-// Mock data for tasks
-const tasks = [
-  {
-    id: "1",
-    title: "Implement user authentication",
-    description: "Set up NextAuth.js with Google and email providers",
-    status: "IN_PROGRESS",
-    priority: "HIGH",
-    project: "E-commerce Platform",
-    dueDate: "2025-10-05",
-    estimatedHours: 8,
-    actualHours: 5.5,
-    assignedDate: "2025-09-28",
-  },
-  {
-    id: "2", 
-    title: "Design product catalog UI",
-    description: "Create responsive product grid with filters",
-    status: "TODO",
-    priority: "MEDIUM",
-    project: "E-commerce Platform",
-    dueDate: "2025-10-08",
-    estimatedHours: 12,
-    actualHours: 0,
-    assignedDate: "2025-09-29",
-  },
-  {
-    id: "3",
-    title: "Fix mobile responsiveness",
-    description: "Address layout issues on mobile devices",
-    status: "REVIEW",
-    priority: "HIGH",
-    project: "Mobile App Development",
-    dueDate: "2025-10-02",
-    estimatedHours: 6,
-    actualHours: 6,
-    assignedDate: "2025-09-25",
-  },
-  {
-    id: "4",
-    title: "Write unit tests",
-    description: "Add test coverage for authentication module",
-    status: "DONE",
-    priority: "MEDIUM",
-    project: "Data Analytics Dashboard",
-    dueDate: "2025-09-30",
-    estimatedHours: 4,
-    actualHours: 4.5,
-    assignedDate: "2025-09-26",
-  },
-]
+interface Task {
+  id: string
+  title: string
+  description: string | null
+  status: string
+  priority: string
+  dueDate: Date | null
+  estimatedHours: number | null
+  actualHours: number | null
+  createdAt: Date
+  project: {
+    id: string
+    name: string
+  } | null
+}
+
+interface TaskStats {
+  total: number
+  todo: number
+  inProgress: number
+  review: number
+  testing: number
+  done: number
+  cancelled: number
+  highPriority: number
+  overdue: number
+  completedThisWeek: number
+}
 
 const statusColors = {
   TODO: "bg-gray-500",
@@ -107,22 +85,79 @@ export default function MyTasksPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("ALL")
   const [priorityFilter, setPriorityFilter] = useState("ALL")
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [stats, setStats] = useState<TaskStats | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const { toast } = useToast()
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         task.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "ALL" || task.status === statusFilter
-    const matchesPriority = priorityFilter === "ALL" || task.priority === priorityFilter
-    
-    return matchesSearch && matchesStatus && matchesPriority
-  })
+  useEffect(() => {
+    fetchTasks()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, priorityFilter, searchTerm])
 
-  const taskStats = {
-    total: tasks.length,
-    todo: tasks.filter(t => t.status === "TODO").length,
-    inProgress: tasks.filter(t => t.status === "IN_PROGRESS").length,
-    review: tasks.filter(t => t.status === "REVIEW").length,
-    done: tasks.filter(t => t.status === "DONE").length,
+  const fetchTasks = async () => {
+    try {
+      setIsLoading(true)
+      const params = new URLSearchParams()
+      
+      if (statusFilter !== 'ALL') {
+        params.append('status', statusFilter)
+      }
+      
+      if (priorityFilter !== 'ALL') {
+        params.append('priority', priorityFilter)
+      }
+      
+      if (searchTerm) {
+        params.append('search', searchTerm)
+      }
+
+      const response = await fetch(`/api/team-member/tasks?${params.toString()}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks')
+      }
+
+      const data = await response.json()
+      setTasks(data.tasks || [])
+      setStats(data.stats || null)
+    } catch (_error) {
+      toast({
+        title: "Error",
+        description: "Failed to load tasks",
+        variant: "destructive"
+      })
+      setTasks([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const updateTaskStatus = async (taskId: string, newStatus: string) => {
+    try {
+      const response = await fetch('/api/team-member/tasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: taskId, status: newStatus })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update task')
+      }
+
+      toast({
+        title: "Success",
+        description: "Task status updated successfully"
+      })
+
+      fetchTasks()
+    } catch (_error) {
+      toast({
+        title: "Error",
+        description: "Failed to update task status",
+        variant: "destructive"
+      })
+    }
   }
 
   const getStatusIcon = (status: string) => {
@@ -134,6 +169,27 @@ export default function MyTasksPage() {
       case "DONE": return <CheckCircle className="h-4 w-4 text-green-500" />
       default: return <Clock className="h-4 w-4" />
     }
+  }
+
+  const formatDate = (date: Date | null) => {
+    if (!date) return 'No due date'
+    return new Date(date).toLocaleDateString()
+  }
+
+  const isOverdue = (dueDate: Date | null, status: string) => {
+    if (!dueDate || status === 'DONE') return false
+    return new Date(dueDate) < new Date()
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-500 mb-4" />
+          <p className="text-muted-foreground">Loading tasks...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -153,38 +209,40 @@ export default function MyTasksPage() {
       </div>
 
       {/* Task Statistics */}
-      <div className="grid gap-4 md:grid-cols-5">
-        <Card className="bg-gray-900/50 border-gray-700">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-white">{taskStats.total}</div>
-            <p className="text-xs text-muted-foreground">Total Tasks</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-gray-900/50 border-gray-700">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-gray-400">{taskStats.todo}</div>
-            <p className="text-xs text-muted-foreground">To Do</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-blue-900/20 border-blue-700">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-blue-400">{taskStats.inProgress}</div>
-            <p className="text-xs text-muted-foreground">In Progress</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-yellow-900/20 border-yellow-700">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-yellow-400">{taskStats.review}</div>
-            <p className="text-xs text-muted-foreground">In Review</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-green-900/20 border-green-700">
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-green-400">{taskStats.done}</div>
-            <p className="text-xs text-muted-foreground">Completed</p>
-          </CardContent>
-        </Card>
-      </div>
+      {stats && (
+        <div className="grid gap-4 md:grid-cols-5">
+          <Card className="bg-gray-900/50 border-gray-700">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-white">{stats.total}</div>
+              <p className="text-xs text-muted-foreground">Total Tasks</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-gray-900/50 border-gray-700">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-gray-400">{stats.todo}</div>
+              <p className="text-xs text-muted-foreground">To Do</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-blue-900/20 border-blue-700">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-blue-400">{stats.inProgress}</div>
+              <p className="text-xs text-muted-foreground">In Progress</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-yellow-900/20 border-yellow-700">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-yellow-400">{stats.review}</div>
+              <p className="text-xs text-muted-foreground">In Review</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-green-900/20 border-green-700">
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-green-400">{stats.done}</div>
+              <p className="text-xs text-muted-foreground">Completed</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Filters */}
       <Card className="bg-gray-900/50 border-gray-700">
@@ -235,104 +293,110 @@ export default function MyTasksPage() {
         <CardHeader>
           <CardTitle className="text-white">Task List</CardTitle>
           <CardDescription>
-            {filteredTasks.length} of {tasks.length} tasks
+            {tasks.length} task{tasks.length !== 1 ? 's' : ''} assigned
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-700">
-                <TableHead className="text-gray-300">Task</TableHead>
-                <TableHead className="text-gray-300">Project</TableHead>
-                <TableHead className="text-gray-300">Status</TableHead>
-                <TableHead className="text-gray-300">Priority</TableHead>
-                <TableHead className="text-gray-300">Due Date</TableHead>
-                <TableHead className="text-gray-300">Progress</TableHead>
-                <TableHead className="text-gray-300">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTasks.map((task) => {
-                const progress = task.estimatedHours > 0 
-                  ? Math.min((task.actualHours / task.estimatedHours) * 100, 100)
-                  : 0
-                const isOverdue = new Date(task.dueDate) < new Date() && task.status !== "DONE"
-                
-                return (
-                  <TableRow key={task.id} className="border-gray-700">
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(task.status)}
-                          <span className="font-medium text-white">{task.title}</span>
-                          {isOverdue && <Badge variant="destructive" className="text-xs">Overdue</Badge>}
+          {tasks.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No tasks found
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-700">
+                  <TableHead className="text-gray-300">Task</TableHead>
+                  <TableHead className="text-gray-300">Project</TableHead>
+                  <TableHead className="text-gray-300">Status</TableHead>
+                  <TableHead className="text-gray-300">Priority</TableHead>
+                  <TableHead className="text-gray-300">Due Date</TableHead>
+                  <TableHead className="text-gray-300">Progress</TableHead>
+                  <TableHead className="text-gray-300">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tasks.map((task) => {
+                  const progress = task.estimatedHours && task.estimatedHours > 0 
+                    ? Math.min(((task.actualHours || 0) / task.estimatedHours) * 100, 100)
+                    : 0
+                  const overdue = isOverdue(task.dueDate, task.status)
+                  
+                  return (
+                    <TableRow key={task.id} className="border-gray-700">
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(task.status)}
+                            <span className="font-medium text-white">{task.title}</span>
+                            {overdue && <Badge variant="destructive" className="text-xs">Overdue</Badge>}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{task.description || 'No description'}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">{task.description}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-blue-400">{task.project}</span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="secondary"
-                        className={`${statusColors[task.status as keyof typeof statusColors]} text-white`}
-                      >
-                        {task.status.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="outline"
-                        className={priorityColors[task.priority as keyof typeof priorityColors]}
-                      >
-                        {task.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className={isOverdue ? "text-red-400" : "text-gray-300"}>
-                          {new Date(task.dueDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <Progress value={progress} className="w-20" />
-                        <span className="text-xs text-muted-foreground">
-                          {task.actualHours}h / {task.estimatedHours}h
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit Task
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <PlayCircle className="h-4 w-4 mr-2" />
-                            Start Timer
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-blue-400">{task.project?.name || 'No Project'}</span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="secondary"
+                          className={`${statusColors[task.status as keyof typeof statusColors]} text-white`}
+                        >
+                          {task.status.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="outline"
+                          className={priorityColors[task.priority as keyof typeof priorityColors]}
+                        >
+                          {task.priority}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className={overdue ? "text-red-400" : "text-gray-300"}>
+                            {formatDate(task.dueDate)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <Progress value={progress} className="w-20" />
+                          <span className="text-xs text-muted-foreground">
+                            {task.actualHours || 0}h / {task.estimatedHours || 0}h
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => updateTaskStatus(task.id, 'IN_PROGRESS')}>
+                              <PlayCircle className="h-4 w-4 mr-2" />
+                              Start Task
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateTaskStatus(task.id, 'REVIEW')}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Mark for Review
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => updateTaskStatus(task.id, 'DONE')}>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Complete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

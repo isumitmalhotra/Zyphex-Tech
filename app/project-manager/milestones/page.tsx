@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,46 +21,91 @@ import {
 import { SubtleBackground } from "@/components/subtle-background"
 import Link from "next/link"
 
-const milestones = [
-  {
-    id: 1,
-    title: "Project Kickoff",
-    description: "Initial project planning and team alignment",
-    dueDate: "2024-01-15",
-    status: "completed",
-    project: "E-commerce Platform",
-    progress: 100,
-  },
-  {
-    id: 2,
-    title: "MVP Development",
-    description: "Core features development and testing",
-    dueDate: "2024-02-28",
-    status: "in_progress",
-    project: "E-commerce Platform",
-    progress: 75,
-  },
-  {
-    id: 3,
-    title: "User Testing Phase",
-    description: "Comprehensive user testing and feedback collection",
-    dueDate: "2024-03-15",
-    status: "pending",
-    project: "Mobile App",
-    progress: 0,
-  },
-  {
-    id: 4,
-    title: "Client Review",
-    description: "Final client review and approval",
-    dueDate: "2024-03-30",
-    status: "pending",
-    project: "Website Redesign",
-    progress: 0,
-  },
-]
+interface Milestone {
+  id: string;
+  title: string;
+  description: string | null;
+  targetDate: string;
+  actualDate: string | null;
+  status: string;
+  order: number;
+  isKey: boolean;
+  project: {
+    id: string;
+    name: string;
+    status: string;
+  };
+}
 
 function MilestonesContent() {
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [statistics, setStatistics] = useState({
+    total: 0,
+    pending: 0,
+    inProgress: 0,
+    completed: 0,
+    delayed: 0,
+    upcomingMilestones: 0,
+  });
+
+  useEffect(() => {
+    fetchMilestones();
+  }, []);
+
+  const fetchMilestones = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/project-manager/milestones");
+      if (!response.ok) throw new Error("Failed to fetch milestones");
+
+      const data = await response.json();
+      setMilestones(data.milestones);
+      setStatistics(data.statistics);
+    } catch (error) {
+      console.error("Error fetching milestones:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "COMPLETED":
+        return "default";
+      case "IN_PROGRESS":
+        return "secondary";
+      case "DELAYED":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
+
+  const calculateProgress = (milestone: Milestone): number => {
+    if (milestone.status === "COMPLETED") return 100;
+    if (milestone.status === "IN_PROGRESS") return 50;
+    if (milestone.status === "PENDING") return 0;
+    if (milestone.status === "DELAYED") return 75;
+    return 0;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <SubtleBackground />
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Clock className="h-12 w-12 mx-auto mb-3 animate-spin text-blue-600" />
+              <p className="zyphex-subheading">Loading milestones...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
       <SubtleBackground />
@@ -71,7 +117,7 @@ function MilestonesContent() {
             <p className="zyphex-subheading">Track and manage project milestones and deadlines</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="zyphex-button">
+            <Button variant="outline" size="sm" className="zyphex-button" onClick={fetchMilestones}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
@@ -90,7 +136,7 @@ function MilestonesContent() {
               <Flag className="h-4 w-4 text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold zyphex-heading">{milestones.length}</div>
+              <div className="text-2xl font-bold zyphex-heading">{statistics.total}</div>
               <p className="text-xs zyphex-subheading">All milestones</p>
             </CardContent>
           </Card>
@@ -101,9 +147,7 @@ function MilestonesContent() {
               <CheckCircle className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold zyphex-heading">
-                {milestones.filter(m => m.status === 'completed').length}
-              </div>
+              <div className="text-2xl font-bold zyphex-heading">{statistics.completed}</div>
               <p className="text-xs zyphex-subheading">Finished milestones</p>
             </CardContent>
           </Card>
@@ -114,9 +158,7 @@ function MilestonesContent() {
               <CircleDot className="h-4 w-4 text-yellow-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold zyphex-heading">
-                {milestones.filter(m => m.status === 'in_progress').length}
-              </div>
+              <div className="text-2xl font-bold zyphex-heading">{statistics.inProgress}</div>
               <p className="text-xs zyphex-subheading">Active milestones</p>
             </CardContent>
           </Card>
@@ -127,10 +169,8 @@ function MilestonesContent() {
               <Clock className="h-4 w-4 text-purple-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold zyphex-heading">
-                {milestones.filter(m => m.status === 'pending').length}
-              </div>
-              <p className="text-xs zyphex-subheading">Pending milestones</p>
+              <div className="text-2xl font-bold zyphex-heading">{statistics.upcomingMilestones}</div>
+              <p className="text-xs zyphex-subheading">Next 30 days</p>
             </CardContent>
           </Card>
         </div>
@@ -144,46 +184,55 @@ function MilestonesContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {milestones.map((milestone) => (
-                <div key={milestone.id} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold zyphex-heading">{milestone.title}</h3>
-                        <Badge variant={
-                          milestone.status === 'completed' ? 'default' :
-                          milestone.status === 'in_progress' ? 'secondary' :
-                          'outline'
-                        }>
-                          {milestone.status.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      <p className="text-sm zyphex-subheading mb-2">{milestone.description}</p>
-                      <div className="flex items-center gap-4 text-sm zyphex-subheading">
-                        <div className="flex items-center gap-1">
-                          <Target className="h-4 w-4" />
-                          <span>{milestone.project}</span>
+            {milestones.length === 0 ? (
+              <div className="text-center py-12 text-muted-foreground">
+                <Flag className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>No milestones found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {milestones.map((milestone) => (
+                  <div key={milestone.id} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold zyphex-heading">{milestone.title}</h3>
+                          <Badge variant={getStatusBadgeVariant(milestone.status)}>
+                            {milestone.status.replace('_', ' ')}
+                          </Badge>
+                          {milestone.isKey && (
+                            <Badge variant="outline" className="text-yellow-400 border-yellow-400">
+                              <Flag className="h-3 w-3 mr-1" />
+                              Key
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(milestone.dueDate).toLocaleDateString()}</span>
+                        <p className="text-sm zyphex-subheading mb-2">{milestone.description || "No description"}</p>
+                        <div className="flex items-center gap-4 text-sm zyphex-subheading">
+                          <div className="flex items-center gap-1">
+                            <Target className="h-4 w-4" />
+                            <span>{milestone.project.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-4 w-4" />
+                            <span>{new Date(milestone.targetDate).toLocaleDateString()}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right ml-4">
-                      <p className="text-sm font-medium zyphex-heading">{milestone.progress}%</p>
-                      <div className="w-20 h-2 bg-slate-700 rounded-full mt-1">
-                        <div 
-                          className="h-full bg-blue-500 rounded-full transition-all"
-                          style={{ width: `${milestone.progress}%` }}
-                        />
+                      <div className="text-right ml-4">
+                        <p className="text-sm font-medium zyphex-heading">{calculateProgress(milestone)}%</p>
+                        <div className="w-20 h-2 bg-slate-700 rounded-full mt-1">
+                          <div 
+                            className="h-full bg-blue-500 rounded-full transition-all"
+                            style={{ width: `${calculateProgress(milestone)}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

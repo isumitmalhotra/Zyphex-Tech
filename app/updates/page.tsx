@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -10,89 +11,58 @@ import { useScrollAnimation } from "@/components/scroll-animations"
 import { SubtleBackground, MinimalParticles } from "@/components/subtle-background"
 import { generateGradientPlaceholder } from "@/lib/utils/images"
 
+interface BlogPost {
+  id: string
+  title: string
+  excerpt: string
+  author: string
+  date: string
+  category: string
+  readTime: string
+  views: string
+  image: string
+  featured: boolean
+}
+
 export default function UpdatesPage() {
   useScrollAnimation()
 
-  const blogPosts = [
-    {
-      id: 1,
-      title: "The Future of Remote Work: Technology Trends Shaping 2024",
-      excerpt:
-        "Exploring emerging trends in remote work technology including AI collaboration tools, virtual reality meetings, and advanced project management platforms that are transforming how distributed teams operate.",
-      author: "Ishan Garg",
-      date: "December 15, 2024",
-      category: "Remote Work",
-      readTime: "8 min read",
-      views: "1.2k",
-      image: generateGradientPlaceholder(600, 300, "remote-work-1"),
-      featured: true,
-    },
-    {
-      id: 2,
-      title: "AI Integration in Business Applications: A Practical Guide",
-      excerpt:
-        "How artificial intelligence is transforming business processes and creating new opportunities for growth. Learn practical implementation strategies and real-world use cases.",
-      author: "Sumit Malhotra",
-      date: "December 10, 2024",
-      category: "Artificial Intelligence",
-      readTime: "12 min read",
-      views: "2.1k",
-      image: generateGradientPlaceholder(600, 300, "ai-integration-2"),
-      featured: true,
-    },
-    {
-      id: 3,
-      title: "Cybersecurity Best Practices for Remote Teams",
-      excerpt:
-        "Essential security measures every remote team should implement to protect their digital assets. A comprehensive guide covering everything from VPNs to zero-trust architecture.",
-      author: "Security Team",
-      date: "December 5, 2024",
-      category: "Security",
-      readTime: "10 min read",
-      views: "1.8k",
-      image: generateGradientPlaceholder(600, 300, "cybersecurity-3"),
-      featured: false,
-    },
-    {
-      id: 4,
-      title: "Modern Web Development: React vs Vue vs Angular in 2024",
-      excerpt:
-        "A comprehensive comparison of the three leading frontend frameworks. Which one should you choose for your next project? We break down the pros, cons, and use cases.",
-      author: "Development Team",
-      date: "November 28, 2024",
-      category: "Web Development",
-      readTime: "15 min read",
-      views: "3.2k",
-      image: generateGradientPlaceholder(600, 300, "web-dev-4"),
-      featured: false,
-    },
-    {
-      id: 5,
-      title: "Database Performance Optimization: Tips and Techniques",
-      excerpt:
-        "Learn how to optimize database performance for better application speed and user experience. Covering indexing strategies, query optimization, and scaling techniques.",
-      author: "Ishan Garg",
-      date: "November 20, 2024",
-      category: "Database",
-      readTime: "11 min read",
-      views: "1.5k",
-      image: generateGradientPlaceholder(600, 300, "database-5"),
-      featured: false,
-    },
-    {
-      id: 6,
-      title: "Mobile App Development Trends: Native vs Cross-Platform",
-      excerpt:
-        "Exploring the latest trends in mobile development. Should you go native or choose a cross-platform solution? We analyze the trade-offs and help you decide.",
-      author: "Mobile Team",
-      date: "November 15, 2024",
-      category: "Mobile Development",
-      readTime: "9 min read",
-      views: "2.3k",
-      image: generateGradientPlaceholder(600, 300, "mobile-dev-6"),
-      featured: false,
-    },
-  ]
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
+  const [_loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchBlogPosts() {
+      try {
+        const response = await fetch('/api/content?type=Blog')
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Transform CMS content items to blog post format
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const posts = (data.items || []).map((item: any, index: number) => ({
+            id: item.id || String(index + 1),
+            title: item.title || 'Untitled Post',
+            excerpt: item.data?.excerpt || item.data?.description || 'No excerpt available',
+            author: item.author || 'Zyphex Team',
+            date: item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recently',
+            category: (item.categories && item.categories[0]) || 'Technology',
+            readTime: item.data?.readTime || '5 min read',
+            views: item.data?.views || '1k',
+            image: item.data?.image || item.data?.imageUrl || generateGradientPlaceholder(600, 300, `blog-${index}`),
+            featured: item.featured || false,
+          }))
+          
+          setBlogPosts(posts)
+        }
+      } catch (error) {
+        console.error('Error fetching blog posts:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBlogPosts()
+  }, [])
 
   const categories = [
     "All",
@@ -358,7 +328,7 @@ export default function UpdatesPage() {
           <div className="max-w-3xl mx-auto space-y-8 scroll-reveal">
             <h2 className="text-3xl lg:text-4xl font-bold zyphex-heading">Ready to Implement These Ideas?</h2>
             <p className="text-xl zyphex-subheading">
-              Our remote team can help you implement the strategies and technologies discussed in our articles. Let's
+              Our remote team can help you implement the strategies and technologies discussed in our articles. Let&apos;s
               turn insights into action for your business.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

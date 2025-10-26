@@ -25,20 +25,37 @@ import { useState, useEffect } from "react"
 
 interface Document {
   id: string
-  name: string
+  name?: string
+  filename?: string
   type: string
-  size: string
-  uploadedDate: string
+  size?: string
+  fileSize?: number
+  uploadedDate?: string
+  createdAt?: string
   category: string
-  status: string
-  shared: boolean
+  status?: string
+  isPublic?: boolean
+  shared?: boolean
   url?: string
   projectId?: string
+}
+
+interface DocumentStats {
+  total: number
+  uploaded: number
+  shared: number
+  recent: number
+  totalSize: number
+  avgFileSize: number
+  byCategory: Record<string, number>
+  byMimeType: Record<string, number>
+  largestFile: number
 }
 
 export default function UserDocuments() {
   const [searchQuery, setSearchQuery] = useState("")
   const [documents, setDocuments] = useState<Document[]>([])
+  const [stats, setStats] = useState<DocumentStats | null>(null)
 
   // Fetch documents on component mount
   useEffect(() => {
@@ -51,21 +68,43 @@ export default function UserDocuments() {
       if (response.ok) {
         const data = await response.json()
         setDocuments(data.documents || [])
+        setStats(data.stats || null)
       }
-    } catch (error) {
+    } catch (_error) {
       // Error fetching documents - handle silently
     }
   }
 
+  // Generate folders from document categories
+  const folders = stats?.byCategory
+    ? Object.entries(stats.byCategory).map(([name, count]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1).toLowerCase(),
+        count,
+        color: getFolderColor(name)
+      }))
+    : []
 
+  function getFolderColor(category: string): string {
+    const colors: Record<string, string> = {
+      projects: "bg-blue-500/20 text-blue-400",
+      design: "bg-purple-500/20 text-purple-400",
+      meetings: "bg-green-500/20 text-green-400",
+      technical: "bg-orange-500/20 text-orange-400",
+      legal: "bg-red-500/20 text-red-400",
+      general: "bg-gray-500/20 text-gray-400",
+      contracts: "bg-yellow-500/20 text-yellow-400",
+      proposals: "bg-pink-500/20 text-pink-400",
+      deliverables: "bg-cyan-500/20 text-cyan-400"
+    }
+    return colors[category.toLowerCase()] || "bg-blue-500/20 text-blue-400"
+  }
 
-  const folders = [
-    { name: "Projects", count: 12, color: "bg-blue-500/20 text-blue-400" },
-    { name: "Design", count: 8, color: "bg-purple-500/20 text-purple-400" },
-    { name: "Meetings", count: 15, color: "bg-green-500/20 text-green-400" },
-    { name: "Technical", count: 6, color: "bg-orange-500/20 text-orange-400" },
-    { name: "Legal", count: 4, color: "bg-red-500/20 text-red-400" },
-  ]
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+  }
 
   const getFileIcon = (type: string) => {
     switch (type) {
@@ -95,10 +134,13 @@ export default function UserDocuments() {
     }
   }
 
-  const filteredDocuments = documents.filter(doc =>
-    doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.category.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredDocuments = documents.filter(doc => {
+    const docName = doc.name || doc.filename || ''
+    return (
+      docName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      doc.category.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })
 
   return (
     <div className="space-y-8">
@@ -229,107 +271,127 @@ export default function UserDocuments() {
             </TabsList>
 
             <TabsContent value="all" className="space-y-2">
-              {filteredDocuments.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-gray-800/50 hover-zyphex-glow transition-all duration-200"
-                >
-                  <div className="flex items-center gap-4">
-                    {getFileIcon(doc.type)}
-                    <div>
-                      <h3 className="font-medium zyphex-heading truncate max-w-md">{doc.name}</h3>
-                      <div className="flex items-center gap-4 text-sm zyphex-subheading">
-                        <span>{doc.size}</span>
-                        <span>{new Date(doc.uploadedDate).toLocaleDateString()}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {doc.category}
+              {filteredDocuments.map((doc) => {
+                const docName = doc.name || doc.filename || 'Unnamed'
+                const docSize = doc.size || (doc.fileSize ? formatFileSize(doc.fileSize) : 'Unknown size')
+                const docDate = doc.uploadedDate || doc.createdAt || new Date().toISOString()
+                const docStatus = doc.status || (doc.isPublic ? 'Active' : 'Private')
+                const isShared = doc.shared !== undefined ? doc.shared : doc.isPublic || false
+                
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 rounded-lg border border-gray-800/50 hover-zyphex-glow transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-4">
+                      {getFileIcon(doc.type)}
+                      <div>
+                        <h3 className="font-medium zyphex-heading truncate max-w-md">{docName}</h3>
+                        <div className="flex items-center gap-4 text-sm zyphex-subheading">
+                          <span>{docSize}</span>
+                          <span>{new Date(docDate).toLocaleDateString()}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {doc.category}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={`${getStatusColor(docStatus)} border text-xs`}>
+                        {docStatus}
+                      </Badge>
+                      {isShared && (
+                        <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-400">
+                          Shared
                         </Badge>
+                      )}
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" className="zyphex-button-secondary">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="zyphex-button-secondary">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="zyphex-button-secondary">
+                          <Share className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="zyphex-button-secondary">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${getStatusColor(doc.status)} border text-xs`}>
-                      {doc.status}
-                    </Badge>
-                    {doc.shared && (
-                      <Badge variant="outline" className="text-xs bg-purple-500/20 text-purple-400">
-                        Shared
-                      </Badge>
-                    )}
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" className="zyphex-button-secondary">
-                        <Eye className="h-4 w-4" />
+                )
+              })}
+            </TabsContent>
+
+            <TabsContent value="shared" className="space-y-2">
+              {filteredDocuments.filter(doc => doc.shared || doc.isPublic).map((doc) => {
+                const docName = doc.name || doc.filename || 'Unnamed'
+                const docSize = doc.size || (doc.fileSize ? formatFileSize(doc.fileSize) : 'Unknown size')
+                const docDate = doc.uploadedDate || doc.createdAt || new Date().toISOString()
+                
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 rounded-lg border border-gray-800/50 hover-zyphex-glow transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-4">
+                      {getFileIcon(doc.type)}
+                      <div>
+                        <h3 className="font-medium zyphex-heading truncate max-w-md">{docName}</h3>
+                        <div className="flex items-center gap-4 text-sm zyphex-subheading">
+                          <span>{docSize}</span>
+                          <span>{new Date(docDate).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="zyphex-button-secondary hover-zyphex-glow">
+                        <Share className="h-4 w-4 mr-2" />
+                        Manage Access
                       </Button>
                       <Button variant="ghost" size="sm" className="zyphex-button-secondary">
                         <Download className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="zyphex-button-secondary">
-                        <Share className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" className="zyphex-button-secondary">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </TabsContent>
-
-            <TabsContent value="shared" className="space-y-2">
-              {filteredDocuments.filter(doc => doc.shared).map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-gray-800/50 hover-zyphex-glow transition-all duration-200"
-                >
-                  <div className="flex items-center gap-4">
-                    {getFileIcon(doc.type)}
-                    <div>
-                      <h3 className="font-medium zyphex-heading truncate max-w-md">{doc.name}</h3>
-                      <div className="flex items-center gap-4 text-sm zyphex-subheading">
-                        <span>{doc.size}</span>
-                        <span>{new Date(doc.uploadedDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="zyphex-button-secondary hover-zyphex-glow">
-                      <Share className="h-4 w-4 mr-2" />
-                      Manage Access
-                    </Button>
-                    <Button variant="ghost" size="sm" className="zyphex-button-secondary">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </TabsContent>
 
             <TabsContent value="archived" className="space-y-2">
-              {filteredDocuments.filter(doc => doc.status === "Archived").map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-gray-800/50 opacity-60"
-                >
-                  <div className="flex items-center gap-4">
-                    {getFileIcon(doc.type)}
-                    <div>
-                      <h3 className="font-medium zyphex-heading truncate max-w-md">{doc.name}</h3>
-                      <div className="flex items-center gap-4 text-sm zyphex-subheading">
-                        <span>{doc.size}</span>
-                        <span>{new Date(doc.uploadedDate).toLocaleDateString()}</span>
+              {filteredDocuments.filter(doc => doc.status === "Archived").map((doc) => {
+                const docName = doc.name || doc.filename || 'Unnamed'
+                const docSize = doc.size || (doc.fileSize ? formatFileSize(doc.fileSize) : 'Unknown size')
+                const docDate = doc.uploadedDate || doc.createdAt || new Date().toISOString()
+                
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 rounded-lg border border-gray-800/50 opacity-60"
+                  >
+                    <div className="flex items-center gap-4">
+                      {getFileIcon(doc.type)}
+                      <div>
+                        <h3 className="font-medium zyphex-heading truncate max-w-md">{docName}</h3>
+                        <div className="flex items-center gap-4 text-sm zyphex-subheading">
+                          <span>{docSize}</span>
+                          <span>{new Date(docDate).toLocaleDateString()}</span>
+                        </div>
                       </div>
                     </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="zyphex-button-secondary hover-zyphex-glow">
+                        Restore
+                      </Button>
+                      <Button variant="ghost" size="sm" className="zyphex-button-secondary text-red-400">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="zyphex-button-secondary hover-zyphex-glow">
-                      Restore
-                    </Button>
-                    <Button variant="ghost" size="sm" className="zyphex-button-secondary text-red-400">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </TabsContent>
           </Tabs>
         </CardContent>

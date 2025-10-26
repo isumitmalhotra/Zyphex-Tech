@@ -128,101 +128,86 @@ export default function BudgetTrackingPage() {
     date: new Date().toISOString().split('T')[0],
   })
 
-  // Mock data - Replace with API calls
+  // Fetch data from API
   useEffect(() => {
-    const loadData = async () => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+    fetchBudgetData();
+  }, []);
+
+  const fetchBudgetData = async () => {
+    try {
+      setLoading(true);
       
-      const mockProjects: Project[] = [
-        {
-          id: "1",
-          name: "E-Commerce Platform",
-          totalBudget: 150000,
-          spent: 95000,
-          remaining: 55000,
-          status: "yellow",
-        },
-        {
-          id: "2",
-          name: "Mobile App Development",
-          totalBudget: 80000,
-          spent: 45000,
-          remaining: 35000,
-          status: "green",
-        },
-        {
-          id: "3",
-          name: "CRM System Integration",
-          totalBudget: 120000,
-          spent: 115000,
-          remaining: 5000,
-          status: "red",
-        },
-      ]
-
-      const mockEntries: BudgetEntry[] = [
-        {
-          id: "1",
-          projectId: "1",
-          projectName: "E-Commerce Platform",
-          category: "Labor",
-          description: "Frontend Development",
-          plannedAmount: 50000,
-          actualAmount: 48000,
-          date: "2024-10-15",
-          status: "on-track",
-          createdAt: "2024-10-01",
-          updatedAt: "2024-10-15",
-        },
-        {
-          id: "2",
-          projectId: "1",
-          projectName: "E-Commerce Platform",
-          category: "Software",
-          description: "Cloud Services",
-          plannedAmount: 15000,
-          actualAmount: 18000,
-          date: "2024-10-20",
-          status: "over",
-          createdAt: "2024-10-01",
-          updatedAt: "2024-10-20",
-        },
-        {
-          id: "3",
-          projectId: "2",
-          projectName: "Mobile App Development",
-          category: "Labor",
-          description: "Mobile Development",
-          plannedAmount: 40000,
-          actualAmount: 35000,
-          date: "2024-10-18",
-          status: "under",
-          createdAt: "2024-10-01",
-          updatedAt: "2024-10-18",
-        },
-        {
-          id: "4",
-          projectId: "3",
-          projectName: "CRM System Integration",
-          category: "Software",
-          description: "CRM Licenses",
-          plannedAmount: 30000,
-          actualAmount: 35000,
-          date: "2024-10-22",
-          status: "critical",
-          createdAt: "2024-10-01",
-          updatedAt: "2024-10-22",
-        },
-      ]
-
-      setProjects(mockProjects)
-      setBudgetEntries(mockEntries)
-      setLoading(false)
+      // Fetch expenses
+      const response = await fetch("/api/project-manager/budget");
+      if (!response.ok) throw new Error("Failed to fetch budget data");
+      
+      const data = await response.json();
+      
+      // Transform expenses to budget entries
+      const transformedEntries: BudgetEntry[] = data.expenses.map((expense: Record<string, unknown>) => {
+        const amount = expense.amount as number;
+        // For this UI, we'll use the same amount for both planned and actual
+        // In a real scenario, you might have separate planned amounts
+        const status: "under" | "on-track" | "over" | "critical" = 
+          amount === 0 ? "on-track" : 
+          amount < 1000 ? "under" : 
+          amount < 10000 ? "on-track" : 
+          amount < 50000 ? "over" : "critical";
+          
+        return {
+          id: expense.id as string,
+          projectId: expense.projectId as string,
+          projectName: expense.project ? (expense.project as Record<string, unknown>).name as string : "No Project",
+          category: expense.category as string,
+          description: expense.description as string || "",
+          plannedAmount: amount,
+          actualAmount: amount,
+          date: new Date(expense.date as string).toISOString().split('T')[0],
+          status,
+          createdAt: expense.createdAt as string,
+          updatedAt: expense.updatedAt as string,
+        };
+      });
+      
+      setBudgetEntries(transformedEntries);
+      
+      // Transform project budget data
+      const projectsMap = new Map<string, Project>();
+      
+      // Get unique projects from expenses with budget info
+      data.expenses.forEach((expense: Record<string, unknown>) => {
+        const project = expense.project as Record<string, unknown> | null;
+        if (project) {
+          const projectId = project.id as string;
+          if (!projectsMap.has(projectId)) {
+            const budget = (project.budget as number) || 0;
+            const budgetUsed = (project.budgetUsed as number) || 0;
+            const remaining = budget - budgetUsed;
+            const percentUsed = budget > 0 ? (budgetUsed / budget) * 100 : 0;
+            
+            const status: "green" | "yellow" | "red" = 
+              percentUsed < 75 ? "green" : 
+              percentUsed < 90 ? "yellow" : "red";
+            
+            projectsMap.set(projectId, {
+              id: projectId,
+              name: project.name as string,
+              totalBudget: budget,
+              spent: budgetUsed,
+              remaining,
+              status,
+            });
+          }
+        }
+      });
+      
+      setProjects(Array.from(projectsMap.values()));
+    } catch (error) {
+      console.error("Error fetching budget data:", error);
+    } finally {
+      setLoading(false);
     }
-
-    loadData()
-  }, [])
+  };
 
   // Calculations
   const totalBudget = projects.reduce((sum, p) => sum + p.totalBudget, 0)
@@ -253,14 +238,35 @@ export default function BudgetTrackingPage() {
     return { name: cat, value: total }
   }).filter(item => item.value > 0)
 
-  const monthlyTrend = [
-    { month: "Jun", planned: 45000, actual: 42000 },
-    { month: "Jul", planned: 52000, actual: 55000 },
-    { month: "Aug", planned: 48000, actual: 46000 },
-    { month: "Sep", planned: 58000, actual: 62000 },
-    { month: "Oct", planned: 65000, actual: 60000 },
-    { month: "Nov", planned: 55000, actual: 0 },
-  ]
+  // Generate monthly trend from budget entries
+  const monthlyTrend = (() => {
+    const monthsData: Record<string, { planned: number; actual: number }> = {};
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    // Get last 6 months
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = months[date.getMonth()];
+      monthsData[monthKey] = { planned: 0, actual: 0 };
+    }
+    
+    // Aggregate expenses by month
+    budgetEntries.forEach(entry => {
+      const entryDate = new Date(entry.date);
+      const monthKey = months[entryDate.getMonth()];
+      if (monthsData[monthKey] !== undefined) {
+        monthsData[monthKey].planned += entry.plannedAmount;
+        monthsData[monthKey].actual += entry.actualAmount;
+      }
+    });
+    
+    return Object.entries(monthsData).map(([month, data]) => ({
+      month,
+      planned: Math.round(data.planned),
+      actual: Math.round(data.actual),
+    }));
+  })();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -281,55 +287,85 @@ export default function BudgetTrackingPage() {
     }
   }
 
-  const handleAddEntry = () => {
-    const newEntry: BudgetEntry = {
-      id: Date.now().toString(),
-      projectId: formData.projectId,
-      projectName: projects.find(p => p.id === formData.projectId)?.name || "",
-      category: formData.category,
-      description: formData.description,
-      plannedAmount: parseFloat(formData.plannedAmount),
-      actualAmount: parseFloat(formData.actualAmount),
-      date: formData.date,
-      status: "on-track",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  const handleAddEntry = async () => {
+    try {
+      const payload = {
+        projectId: formData.projectId,
+        category: formData.category,
+        description: formData.description,
+        amount: parseFloat(formData.actualAmount),
+        date: formData.date,
+        billable: true, // Default to billable
+        reimbursed: false,
+      };
+
+      const response = await fetch("/api/project-manager/budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Failed to create expense");
+
+      await fetchBudgetData();
+      setShowAddDialog(false);
+      resetForm();
+    } catch (error) {
+      console.error("Error adding expense:", error);
     }
-    setBudgetEntries([...budgetEntries, newEntry])
-    setShowAddDialog(false)
-    resetForm()
-  }
+  };
 
-  const handleEditEntry = () => {
-    if (!selectedEntry) return
+  const handleEditEntry = async () => {
+    if (!selectedEntry) return;
     
-    const updatedEntries = budgetEntries.map(entry => 
-      entry.id === selectedEntry.id 
-        ? {
-            ...entry,
-            projectId: formData.projectId,
-            projectName: projects.find(p => p.id === formData.projectId)?.name || "",
-            category: formData.category,
-            description: formData.description,
-            plannedAmount: parseFloat(formData.plannedAmount),
-            actualAmount: parseFloat(formData.actualAmount),
-            date: formData.date,
-            updatedAt: new Date().toISOString(),
-          }
-        : entry
-    )
-    setBudgetEntries(updatedEntries)
-    setShowEditDialog(false)
-    setSelectedEntry(null)
-    resetForm()
-  }
+    try {
+      const payload = {
+        id: selectedEntry.id,
+        projectId: formData.projectId,
+        category: formData.category,
+        description: formData.description,
+        amount: parseFloat(formData.actualAmount),
+        date: formData.date,
+        billable: true,
+        reimbursed: false,
+      };
 
-  const handleDeleteEntry = () => {
-    if (!selectedEntry) return
-    setBudgetEntries(budgetEntries.filter(e => e.id !== selectedEntry.id))
-    setShowDeleteDialog(false)
-    setSelectedEntry(null)
-  }
+      const response = await fetch("/api/project-manager/budget", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error("Failed to update expense");
+
+      await fetchBudgetData();
+      setShowEditDialog(false);
+      setSelectedEntry(null);
+      resetForm();
+    } catch (error) {
+      console.error("Error updating expense:", error);
+    }
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!selectedEntry) return;
+    
+    try {
+      const response = await fetch("/api/project-manager/budget", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedEntry.id }),
+      });
+
+      if (!response.ok) throw new Error("Failed to delete expense");
+
+      await fetchBudgetData();
+      setShowDeleteDialog(false);
+      setSelectedEntry(null);
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+    }
+  };
 
   const openEditDialog = (entry: BudgetEntry) => {
     setSelectedEntry(entry)

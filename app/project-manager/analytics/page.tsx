@@ -156,34 +156,152 @@ export default function ProjectAnalyticsPage() {
         endDate: endDate.toISOString()
       });
 
-      const [
-        overviewRes,
-        projectPerfRes,
-        resourceUtilRes,
-        timeRes,
-        financialRes,
-        teamPerfRes,
-        clientRes
-      ] = await Promise.all([
-        fetch(`/api/project-manager/analytics/overview`),
-        fetch(`/api/project-manager/analytics/project-performance?${params}`),
-        fetch(`/api/project-manager/analytics/resource-utilization?${params}`),
-        fetch(`/api/project-manager/analytics/time-analytics?${params}`),
-        fetch(`/api/project-manager/analytics/financial?${params}`),
-        fetch(`/api/project-manager/analytics/team-performance?${params}`),
-        fetch(`/api/project-manager/analytics/client-analytics?${params}`)
-      ]);
-
-      if (overviewRes.ok) {
-        const data = await overviewRes.json();
-        setOverview(data.overview);
+      const response = await fetch(`/api/project-manager/analytics?${params}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch analytics");
       }
-      if (projectPerfRes.ok) setProjectPerf(await projectPerfRes.json());
-      if (resourceUtilRes.ok) setResourceUtil(await resourceUtilRes.json());
-      if (timeRes.ok) setTimeAnalytics(await timeRes.json());
-      if (financialRes.ok) setFinancial(await financialRes.json());
-      if (teamPerfRes.ok) setTeamPerf(await teamPerfRes.json());
-      if (clientRes.ok) setClientAnalytics(await clientRes.json());
+
+      const data = await response.json();
+      
+      // Map API response to component state
+      // Overview data
+      setOverview({
+        totalProjects: data.projects.total,
+        activeProjects: data.projects.active,
+        completedProjects: data.projects.completed,
+        overdueProjects: data.tasks.overdue,
+        productivityScore: data.tasks.completionRate,
+        budgetUtilization: data.budget.avgBudgetUtilization,
+        healthScore: data.healthScore.score,
+      });
+
+      // Project performance (mock structure from existing data)
+      setProjectPerf({
+        projectsByStatus: [
+          { status: 'Active', count: data.projects.active },
+          { status: 'Completed', count: data.projects.completed },
+          { status: 'On Hold', count: data.projects.onHold },
+          { status: 'Cancelled', count: data.projects.cancelled },
+        ],
+        onTimeVsDelayed: {
+          onTime: data.milestones.onTimeCount || 0,
+          delayed: data.milestones.delayedCount || 0,
+          total: data.milestones.total,
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        budgetVariance: data.budget.projectBudgets.slice(0, 10).map((p: any) => ({
+          projectName: p.projectName,
+          budget: p.budget,
+          used: p.used,
+          variance: p.budget - p.used,
+        })),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        completionTrend: data.velocity.weeklyData.map((w: any) => ({
+          month: `Week ${w.week}`,
+          count: w.tasksCompleted,
+        })),
+      });
+
+      // Resource utilization (mock from team performance data)
+      setResourceUtil({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        teamWorkload: data.teamPerformance.map((m: any) => ({
+          name: m.userName,
+          totalTasks: 0, // Not available in API
+          completedTasks: m.tasksCompleted,
+          inProgressTasks: 0, // Not available in API
+          estimatedHours: m.hoursLogged,
+          utilization: (m.hoursLogged / 160) * 100, // Assume 160 hours/month
+        })),
+        resourceAllocation: [
+          { status: 'To Do', count: data.tasks.todo },
+          { status: 'In Progress', count: data.tasks.inProgress },
+          { status: 'Review', count: data.tasks.review },
+          { status: 'Done', count: data.tasks.done },
+        ],
+        capacity: {
+          total: data.teamPerformance.length * 160, // 160 hours per person
+          utilized: data.timeTracking.totalHours,
+          utilization: data.timeTracking.billabilityRate,
+          available: (data.teamPerformance.length * 160) - data.timeTracking.totalHours,
+        },
+      });
+
+      // Time analytics
+      setTimeAnalytics({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        timeByProject: data.budget.projectBudgets.slice(0, 10).map((p: any) => ({
+          name: p.projectName,
+          billable: data.timeTracking.billableHours / data.budget.projectBudgets.length, // Average
+          nonBillable: data.timeTracking.nonBillableHours / data.budget.projectBudgets.length,
+        })),
+        billableVsNonBillable: {
+          billable: data.timeTracking.billableHours,
+          nonBillable: data.timeTracking.nonBillableHours,
+          total: data.timeTracking.totalHours,
+          billablePercentage: data.timeTracking.billabilityRate,
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        weeklyTrend: data.velocity.weeklyData.map((w: any) => ({
+          week: `Week ${w.week}`,
+          hours: w.hoursLogged,
+        })),
+        estimatedVsActual: [], // Not available in API
+      });
+
+      // Financial analytics
+      setFinancial({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        revenueByProject: data.budget.projectBudgets.slice(0, 10).map((p: any) => ({
+          projectName: p.projectName,
+          budget: p.budget,
+          used: p.used,
+          remaining: p.remaining,
+          profitMargin: ((p.budget - p.used) / p.budget) * 100,
+        })),
+        financialSummary: {
+          totalBudget: data.budget.totalBudget,
+          totalRevenue: data.timeTracking.totalRevenue,
+          totalUsed: data.budget.totalBudgetUsed,
+          totalProfit: data.timeTracking.totalRevenue - data.budget.totalBudgetUsed,
+          profitMargin: ((data.timeTracking.totalRevenue - data.budget.totalBudgetUsed) / data.timeTracking.totalRevenue) * 100,
+          budgetComplianceRate: 100 - data.budget.avgBudgetUtilization,
+        },
+        costBreakdown: [
+          { category: 'Labor', amount: data.timeTracking.billableHours * 100 },
+          { category: 'Expenses', amount: data.budget.totalExpenses },
+        ],
+      });
+
+      // Team performance
+      setTeamPerf({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        teamPerformance: data.teamPerformance.map((m: any) => ({
+          name: m.userName,
+          totalTasks: m.tasksCompleted, // Only completed available
+          completedTasks: m.tasksCompleted,
+          productivity: (m.tasksCompleted / (m.hoursLogged || 1)) * 10, // Tasks per 10 hours
+          avgCompletionTime: m.hoursLogged / (m.tasksCompleted || 1),
+        })),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        performanceTrend: data.velocity.weeklyData.map((w: any) => ({
+          month: `Week ${w.week}`,
+          tasksCompleted: w.tasksCompleted,
+        })),
+      });
+
+      // Client analytics (mock - not available in API)
+      setClientAnalytics({
+        clientAnalytics: [],
+        summary: {
+          totalClients: 0,
+          repeatClientRate: 0,
+          averageProjectsPerClient: 0,
+          totalRevenue: data.timeTracking.totalRevenue,
+        },
+        revenueDistribution: [],
+      });
 
     } catch (error) {
       console.error("Error fetching analytics:", error);

@@ -37,7 +37,7 @@ async function fetchServices(): Promise<Service[]> {
     }
     
     return await response.json()
-  } catch (error) {
+  } catch (_error) {
     return []
   }
 }
@@ -56,104 +56,7 @@ function parseFeatures(features: string[] | string | null): string[] {
 export const dynamic = 'force-dynamic';
 
 export default async function ServicesPage() {
-  const apiServices = await fetchServices()
-
-  // Fallback services in case API fails or returns empty data
-  const fallbackServices: Service[] = [
-    {
-      id: '1',
-      title: "Custom Software Development",
-      description: "Tailored applications built with cutting-edge technologies to solve your specific business challenges and drive growth.",
-      icon: "Code",
-      imageUrl: null,
-      features: ["Web Application Development", "Enterprise Software Solutions", "API Development & Integration", "Legacy System Modernization", "Microservices Architecture", "Progressive Web Apps (PWA)"],
-      technologies: ["React", "Node.js", "Python", "Java", ".NET", "PHP"],
-      pricing: "Starting from $5,000",
-      timeline: "4-12 weeks",
-      isActive: true,
-      order: 1,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '2',
-      title: "Cloud Solutions & Migration",
-      description: "Seamless cloud adoption strategies that enhance scalability, security, and cost-effectiveness for your business operations.",
-      icon: "Globe",
-      imageUrl: null,
-      features: ["Cloud Strategy & Planning", "AWS/Azure/GCP Migration", "Cloud Architecture Design", "DevOps Implementation", "Container Orchestration", "Cloud Security & Compliance"],
-      technologies: ["AWS", "Azure", "Google Cloud", "Docker", "Kubernetes", "Terraform"],
-      pricing: "Starting from $8,000",
-      timeline: "6-16 weeks",
-      isActive: true,
-      order: 2,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '3',
-      title: "Data Analytics & Business Intelligence",
-      description: "Transform raw data into actionable insights with advanced analytics and business intelligence solutions.",
-      icon: "Database",
-      imageUrl: null,
-      features: ["Data Warehouse Design", "ETL Pipeline Development", "Real-time Analytics", "Custom Dashboard Creation", "Machine Learning Integration", "Data Visualization"],
-      technologies: ["Python", "R", "Tableau", "Power BI", "Apache Spark", "Elasticsearch"],
-      pricing: "Starting from $6,000",
-      timeline: "6-14 weeks",
-      isActive: true,
-      order: 3,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '4',
-      title: "Mobile App Development",
-      description: "Native and cross-platform mobile applications that deliver exceptional user experiences across all devices.",
-      icon: "Smartphone",
-      imageUrl: null,
-      features: ["iOS App Development", "Android App Development", "Cross-platform Solutions", "UI/UX Design", "App Store Optimization", "Mobile Backend Services"],
-      technologies: ["React Native", "Flutter", "Swift", "Kotlin", "Xamarin", "Ionic"],
-      pricing: "Starting from $10,000",
-      timeline: "8-20 weeks",
-      isActive: true,
-      order: 4,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '5',
-      title: "IT Consulting & Digital Strategy",
-      description: "Strategic technology guidance to align your IT infrastructure with business objectives and drive digital transformation.",
-      icon: "Zap",
-      imageUrl: null,
-      features: ["Technology Roadmap Planning", "Digital Transformation Strategy", "IT Infrastructure Assessment", "Process Optimization", "Technology Stack Evaluation", "Change Management Support"],
-      technologies: ["Various based on needs", "Industry best practices", "Proven methodologies"],
-      pricing: "Starting from $2,500",
-      timeline: "2-8 weeks",
-      isActive: true,
-      order: 5,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    },
-    {
-      id: '6',
-      title: "Dedicated Development Teams",
-      description: "Skilled remote teams that integrate seamlessly with your existing workflows and scale according to your project needs.",
-      icon: "Users",
-      imageUrl: null,
-      features: ["Remote Development Teams", "Staff Augmentation", "Project Management", "Quality Assurance", "Agile Methodology", "24/7 Communication"],
-      technologies: ["Full-stack capabilities", "Multiple technology stacks", "Agile tools"],
-      pricing: "Starting from $3,000/month per developer",
-      timeline: "Ongoing engagement",
-      isActive: true,
-      order: 6,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ]
-
-  // Use API data if available, otherwise fallback to static data
-  const services = apiServices.length > 0 ? apiServices : fallbackServices
+  const services = await fetchServices()
 
   return (
     <ServicesGrid>

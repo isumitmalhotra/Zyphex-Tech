@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,167 +61,97 @@ export default function MediaLibraryPage() {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [currentFolder] = useState('root');
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    totalSize: 0,
+    images: 0,
+    videos: 0,
+    documents: 0,
+    unused: 0
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Mock data - Replace with actual API calls
-  const mediaFiles: MediaFile[] = [
-    {
-      id: 'MED-001',
-      name: 'hero-banner.jpg',
-      type: 'image',
-      size: 2456789,
-      dimensions: '1920x1080',
-      url: '/media/hero-banner.jpg',
-      thumbnail: '/media/thumbs/hero-banner.jpg',
-      uploadedBy: 'Admin User',
-      uploadedDate: '2025-10-25',
-      lastModified: '2025-10-25',
-      tags: ['hero', 'banner', 'homepage'],
-      folder: 'root',
-      usageCount: 45,
-      starred: true
-    },
-    {
-      id: 'MED-002',
-      name: 'team-photo.jpg',
-      type: 'image',
-      size: 1893456,
-      dimensions: '1600x900',
-      url: '/media/team-photo.jpg',
-      thumbnail: '/media/thumbs/team-photo.jpg',
-      uploadedBy: 'John Smith',
-      uploadedDate: '2025-10-24',
-      lastModified: '2025-10-24',
-      tags: ['team', 'about', 'company'],
-      folder: 'root',
-      usageCount: 23,
-      starred: true
-    },
-    {
-      id: 'MED-003',
-      name: 'product-demo.mp4',
-      type: 'video',
-      size: 15678912,
-      dimensions: '1280x720',
-      url: '/media/product-demo.mp4',
-      thumbnail: '/media/thumbs/product-demo.jpg',
-      uploadedBy: 'Sarah Johnson',
-      uploadedDate: '2025-10-23',
-      lastModified: '2025-10-23',
-      tags: ['demo', 'product', 'video'],
-      folder: 'root',
-      usageCount: 12,
-      starred: false
-    },
-    {
-      id: 'MED-004',
-      name: 'company-profile.pdf',
-      type: 'document',
-      size: 456789,
-      url: '/media/company-profile.pdf',
-      thumbnail: '/media/thumbs/pdf-icon.png',
-      uploadedBy: 'Admin User',
-      uploadedDate: '2025-10-22',
-      lastModified: '2025-10-22',
-      tags: ['profile', 'company', 'document'],
-      folder: 'root',
-      usageCount: 34,
-      starred: false
-    },
-    {
-      id: 'MED-005',
-      name: 'logo-variants.zip',
-      type: 'archive',
-      size: 3456789,
-      url: '/media/logo-variants.zip',
-      thumbnail: '/media/thumbs/zip-icon.png',
-      uploadedBy: 'Design Team',
-      uploadedDate: '2025-10-21',
-      lastModified: '2025-10-21',
-      tags: ['logo', 'branding', 'design'],
-      folder: 'root',
-      usageCount: 8,
-      starred: false
-    },
-    {
-      id: 'MED-006',
-      name: 'services-illustration.svg',
-      type: 'image',
-      size: 123456,
-      dimensions: 'Vector',
-      url: '/media/services-illustration.svg',
-      thumbnail: '/media/thumbs/services-illustration.svg',
-      uploadedBy: 'Design Team',
-      uploadedDate: '2025-10-20',
-      lastModified: '2025-10-20',
-      tags: ['illustration', 'services', 'svg'],
-      folder: 'root',
-      usageCount: 18,
-      starred: true
-    },
-    {
-      id: 'MED-007',
-      name: 'client-testimonial.mp4',
-      type: 'video',
-      size: 8934567,
-      dimensions: '1920x1080',
-      url: '/media/client-testimonial.mp4',
-      thumbnail: '/media/thumbs/client-testimonial.jpg',
-      uploadedBy: 'Marketing Team',
-      uploadedDate: '2025-10-19',
-      lastModified: '2025-10-19',
-      tags: ['testimonial', 'client', 'video'],
-      folder: 'root',
-      usageCount: 15,
-      starred: false
-    },
-    {
-      id: 'MED-008',
-      name: 'pricing-table.png',
-      type: 'image',
-      size: 678912,
-      dimensions: '1200x800',
-      url: '/media/pricing-table.png',
-      thumbnail: '/media/thumbs/pricing-table.png',
-      uploadedBy: 'Admin User',
-      uploadedDate: '2025-10-18',
-      lastModified: '2025-10-18',
-      tags: ['pricing', 'table', 'screenshot'],
-      folder: 'root',
-      usageCount: 0,
-      starred: false
-    },
-    {
-      id: 'MED-009',
-      name: 'whitepaper.pdf',
-      type: 'document',
-      size: 2345678,
-      url: '/media/whitepaper.pdf',
-      thumbnail: '/media/thumbs/pdf-icon.png',
-      uploadedBy: 'Content Team',
-      uploadedDate: '2025-10-17',
-      lastModified: '2025-10-17',
-      tags: ['whitepaper', 'research', 'document'],
-      folder: 'root',
-      usageCount: 27,
-      starred: false
-    },
-    {
-      id: 'MED-010',
-      name: 'office-tour.mp4',
-      type: 'video',
-      size: 12345678,
-      dimensions: '1920x1080',
-      url: '/media/office-tour.mp4',
-      thumbnail: '/media/thumbs/office-tour.jpg',
-      uploadedBy: 'HR Team',
-      uploadedDate: '2025-10-16',
-      lastModified: '2025-10-16',
-      tags: ['office', 'tour', 'careers'],
-      folder: 'root',
-      usageCount: 9,
-      starred: false
+  // Fetch media files from API
+  useEffect(() => {
+    fetchMedia();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchMedia = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/super-admin/content/media');
+      
+      if (!response.ok) throw new Error('Failed to fetch media');
+
+      const data = await response.json();
+      setMediaFiles(data.mediaFiles);
+      setStats(data.stats);
+
+      toast({
+        title: 'Media Loaded',
+        description: `Loaded ${data.stats.total} media files from database`
+      });
+    } catch (error) {
+      console.error('Error fetching media:', error);
+      toast({
+        title: 'Error Loading Media',
+        description: 'Failed to load media files from database',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleUpload = async () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      setUploading(true);
+      
+      for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('category', 'general');
+        formData.append('alt', file.name);
+
+        const response = await fetch('/api/super-admin/content/media', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error(`Failed to upload ${file.name}`);
+      }
+
+      toast({
+        title: 'Upload Successful',
+        description: `${files.length} file(s) uploaded successfully`
+      });
+      
+      fetchMedia();
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      toast({
+        title: 'Upload Failed',
+        description: 'Failed to upload one or more files',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const filteredFiles = mediaFiles.filter(file => {
     const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -231,12 +161,6 @@ export default function MediaLibraryPage() {
     return matchesSearch && matchesType && matchesFolder;
   });
 
-  const totalFiles = mediaFiles.length;
-  const totalSize = mediaFiles.reduce((sum, file) => sum + file.size, 0);
-  const imageFiles = mediaFiles.filter(f => f.type === 'image').length;
-  const videoFiles = mediaFiles.filter(f => f.type === 'video').length;
-  const unusedFiles = mediaFiles.filter(f => f.usageCount === 0).length;
-
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -245,28 +169,55 @@ export default function MediaLibraryPage() {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const handleUpload = () => {
-    toast({
-      title: 'Upload Started',
-      description: 'Your files are being uploaded'
-    });
+  const handleDelete = async (fileId: string) => {
+    if (!confirm('Are you sure you want to delete this file?')) return;
+
+    try {
+      const response = await fetch(`/api/super-admin/content/media?id=${fileId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'File Deleted',
+          description: `File has been deleted successfully`
+        });
+        fetchMedia();
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete file',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleDelete = (fileId: string) => {
-    toast({
-      title: 'File Deleted',
-      description: `File ${fileId} has been deleted`,
-      variant: 'destructive'
-    });
-  };
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selectedFiles.length} file(s)?`)) return;
 
-  const handleBulkDelete = () => {
-    toast({
-      title: 'Files Deleted',
-      description: `${selectedFiles.length} file(s) deleted`,
-      variant: 'destructive'
-    });
-    setSelectedFiles([]);
+    try {
+      for (const fileId of selectedFiles) {
+        await fetch(`/api/super-admin/content/media?id=${fileId}`, {
+          method: 'DELETE'
+        });
+      }
+      
+      toast({
+        title: 'Files Deleted',
+        description: `${selectedFiles.length} file(s) deleted successfully`
+      });
+      setSelectedFiles([]);
+      fetchMedia();
+    } catch (error) {
+      console.error('Error deleting files:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete files',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleDownload = (fileId: string) => {
@@ -348,6 +299,26 @@ export default function MediaLibraryPage() {
               </p>
             </div>
           </div>
+
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            accept="image/*,video/*,application/*"
+            onChange={handleFileSelect}
+          />
+
+          {/* Uploading indicator */}
+          {uploading && (
+            <div className="fixed top-4 right-4 z-50 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg border border-pink-500">
+              <div className="flex items-center space-x-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-pink-600"></div>
+                <span className="text-sm font-medium">Uploading files...</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Statistics Overview */}
@@ -362,7 +333,7 @@ export default function MediaLibraryPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading">
-                    {totalFiles}
+                    {stats.total}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Media files
@@ -383,7 +354,7 @@ export default function MediaLibraryPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-blue-600">
-                    {formatFileSize(totalSize)}
+                    {formatFileSize(stats.totalSize)}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Of 10 GB
@@ -391,7 +362,7 @@ export default function MediaLibraryPage() {
                 </div>
                 <HardDrive className="h-10 w-10 text-blue-500 opacity-20" />
               </div>
-              <Progress value={(totalSize / 10737418240) * 100} className="mt-3" />
+              <Progress value={(stats.totalSize / 10737418240) * 100} className="mt-3" />
             </CardContent>
           </Card>
 
@@ -405,7 +376,7 @@ export default function MediaLibraryPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-purple-600">
-                    {imageFiles}/{videoFiles}
+                    {stats.images}/{stats.videos}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Media breakdown
@@ -426,7 +397,7 @@ export default function MediaLibraryPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-orange-600">
-                    {unusedFiles}
+                    {stats.unused}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Not in use
@@ -547,7 +518,14 @@ export default function MediaLibraryPage() {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[calc(100vh-550px)]">
-              {viewMode === 'grid' ? (
+              {loading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto"></div>
+                    <p className="mt-4 text-gray-600 dark:text-gray-400">Loading media files...</p>
+                  </div>
+                </div>
+              ) : viewMode === 'grid' ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredFiles.map((file) => (
                     <div

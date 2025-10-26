@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -83,161 +83,81 @@ export default function PageContentManagementPage() {
   const [selectedPage, setSelectedPage] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [pages, setPages] = useState<PageContent[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    published: 0,
+    draft: 0,
+    totalViews: 0
+  });
 
-  // Mock data - Replace with actual API calls
-  const pages: PageContent[] = [
-    {
-      id: 'PAGE-001',
-      title: 'About Us',
-      slug: 'about-us',
-      status: 'published',
-      author: 'Admin User',
-      lastModified: '2025-10-25 14:30',
-      publishDate: '2025-01-15 09:00',
-      description: 'Learn about Zyphex Tech and our mission',
-      seoTitle: 'About Zyphex Tech - Leading Web Development Agency',
-      seoDescription: 'Discover how Zyphex Tech delivers innovative web solutions for businesses worldwide.',
-      seoKeywords: ['about', 'company', 'zyphex', 'web development'],
-      blocks: [
-        { id: 'B1', type: 'heading', content: 'Welcome to Zyphex Tech', order: 1 },
-        { id: 'B2', type: 'paragraph', content: 'We are a leading web development agency...', order: 2 },
-        { id: 'B3', type: 'image', content: '/images/team.jpg', order: 3 }
-      ],
-      versions: [
-        { id: 'V1', version: 3, date: '2025-10-25 14:30', author: 'Admin User', changes: 'Updated team section' },
-        { id: 'V2', version: 2, date: '2025-09-10 11:20', author: 'John Smith', changes: 'Added new paragraph' },
-        { id: 'V3', version: 1, date: '2025-01-15 09:00', author: 'Admin User', changes: 'Initial creation' }
-      ],
-      category: 'Company',
-      tags: ['about', 'company', 'team'],
-      featured: true,
-      views: 15234
-    },
-    {
-      id: 'PAGE-002',
-      title: 'Services',
-      slug: 'services',
-      status: 'published',
-      author: 'John Smith',
-      lastModified: '2025-10-24 16:45',
-      publishDate: '2025-02-01 10:00',
-      description: 'Explore our comprehensive service offerings',
-      seoTitle: 'Our Services - Web Development, Design & More',
-      seoDescription: 'Professional web development, design, and digital marketing services.',
-      seoKeywords: ['services', 'web development', 'design', 'marketing'],
-      blocks: [
-        { id: 'B1', type: 'heading', content: 'Our Services', order: 1 },
-        { id: 'B2', type: 'paragraph', content: 'We offer a wide range of services...', order: 2 },
-        { id: 'B3', type: 'list', content: 'Web Development\nUI/UX Design\nDigital Marketing', order: 3 }
-      ],
-      versions: [
-        { id: 'V1', version: 2, date: '2025-10-24 16:45', author: 'John Smith', changes: 'Updated service list' },
-        { id: 'V2', version: 1, date: '2025-02-01 10:00', author: 'Admin User', changes: 'Initial creation' }
-      ],
-      category: 'Services',
-      tags: ['services', 'offerings'],
-      featured: true,
-      views: 12890
-    },
-    {
-      id: 'PAGE-003',
-      title: 'Blog Post: React Best Practices',
-      slug: 'blog/react-best-practices',
-      status: 'published',
-      author: 'Sarah Johnson',
-      lastModified: '2025-10-20 09:15',
-      publishDate: '2025-10-20 08:00',
-      description: 'Learn the best practices for React development',
-      seoTitle: 'React Best Practices 2025 - Complete Guide',
-      seoDescription: 'Master React development with these essential best practices and tips.',
-      seoKeywords: ['react', 'best practices', 'javascript', 'development'],
-      blocks: [
-        { id: 'B1', type: 'heading', content: 'React Best Practices', order: 1 },
-        { id: 'B2', type: 'paragraph', content: 'React has become the most popular...', order: 2 },
-        { id: 'B3', type: 'code', content: 'const MyComponent = () => { return <div>Hello</div> }', order: 3 }
-      ],
-      versions: [
-        { id: 'V1', version: 1, date: '2025-10-20 09:15', author: 'Sarah Johnson', changes: 'Initial creation' }
-      ],
-      category: 'Blog',
-      tags: ['react', 'tutorial', 'javascript'],
-      featured: false,
-      views: 3456
-    },
-    {
-      id: 'PAGE-004',
-      title: 'Contact Us',
-      slug: 'contact',
-      status: 'draft',
-      author: 'Admin User',
-      lastModified: '2025-10-26 10:00',
-      publishDate: '',
-      description: 'Get in touch with our team',
-      seoTitle: 'Contact Zyphex Tech - Reach Out Today',
-      seoDescription: 'Contact us for inquiries about our services and solutions.',
-      seoKeywords: ['contact', 'get in touch', 'support'],
-      blocks: [
-        { id: 'B1', type: 'heading', content: 'Contact Us', order: 1 },
-        { id: 'B2', type: 'paragraph', content: 'We would love to hear from you...', order: 2 }
-      ],
-      versions: [
-        { id: 'V1', version: 1, date: '2025-10-26 10:00', author: 'Admin User', changes: 'Initial draft' }
-      ],
-      category: 'Contact',
-      tags: ['contact', 'support'],
-      featured: false,
-      views: 0
-    },
-    {
-      id: 'PAGE-005',
-      title: 'Pricing Plans',
-      slug: 'pricing',
-      status: 'scheduled',
-      author: 'John Smith',
-      lastModified: '2025-10-23 15:30',
-      publishDate: '2025-11-01 09:00',
-      description: 'View our pricing plans and packages',
-      seoTitle: 'Affordable Pricing Plans - Zyphex Tech',
-      seoDescription: 'Choose the perfect plan for your business needs.',
-      seoKeywords: ['pricing', 'plans', 'packages', 'cost'],
-      blocks: [
-        { id: 'B1', type: 'heading', content: 'Pricing Plans', order: 1 },
-        { id: 'B2', type: 'paragraph', content: 'Choose the plan that fits your needs...', order: 2 }
-      ],
-      versions: [
-        { id: 'V1', version: 1, date: '2025-10-23 15:30', author: 'John Smith', changes: 'Initial creation' }
-      ],
-      category: 'Pricing',
-      tags: ['pricing', 'plans'],
-      featured: true,
-      views: 0
-    },
-    {
-      id: 'PAGE-006',
-      title: 'Privacy Policy',
-      slug: 'privacy-policy',
-      status: 'published',
-      author: 'Legal Team',
-      lastModified: '2025-09-15 11:00',
-      publishDate: '2025-01-01 00:00',
-      description: 'Our privacy policy and data handling practices',
-      seoTitle: 'Privacy Policy - Zyphex Tech',
-      seoDescription: 'Read our privacy policy to understand how we protect your data.',
-      seoKeywords: ['privacy', 'policy', 'legal', 'data protection'],
-      blocks: [
-        { id: 'B1', type: 'heading', content: 'Privacy Policy', order: 1 },
-        { id: 'B2', type: 'paragraph', content: 'Last updated: September 15, 2025...', order: 2 }
-      ],
-      versions: [
-        { id: 'V1', version: 2, date: '2025-09-15 11:00', author: 'Legal Team', changes: 'Updated GDPR compliance' },
-        { id: 'V2', version: 1, date: '2025-01-01 00:00', author: 'Legal Team', changes: 'Initial version' }
-      ],
-      category: 'Legal',
-      tags: ['privacy', 'legal', 'policy'],
-      featured: false,
-      views: 8723
+  // Fetch content from API
+  useEffect(() => {
+    fetchContent();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchContent = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/super-admin/content/manage');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch content');
+      }
+
+      const data = await response.json();
+      
+      // Transform API data to match frontend interface
+      const transformedPages: PageContent[] = data.contentItems.map((item: Record<string, unknown>) => ({
+        id: item.id as string,
+        title: item.title as string,
+        slug: item.slug as string,
+        status: item.status as 'published' | 'draft' | 'scheduled',
+        author: item.author as string,
+        lastModified: new Date(item.lastModified as string).toISOString().replace('T', ' ').slice(0, 16),
+        publishDate: item.publishDate ? new Date(item.publishDate as string).toISOString().replace('T', ' ').slice(0, 16) : '',
+        description: item.description as string || '',
+        seoTitle: item.seoTitle as string || item.title as string,
+        seoDescription: item.seoDescription as string || '',
+        seoKeywords: Array.isArray(item.seoKeywords) ? item.seoKeywords as string[] : [],
+        blocks: [], // Could be enhanced
+        versions: [], // Could be enhanced with version tracking
+        category: Array.isArray(item.categories) && (item.categories as string[]).length > 0 
+          ? (item.categories as string[])[0] 
+          : 'General',
+        tags: Array.isArray(item.tags) ? item.tags as string[] : [],
+        featured: item.featured as boolean,
+        views: 0 // Could be enhanced with analytics
+      }));
+
+      setPages(transformedPages);
+      
+      // Set statistics
+      setStats({
+        total: data.stats.total,
+        published: data.stats.published,
+        draft: data.stats.draft,
+        totalViews: transformedPages.reduce((sum: number, p: PageContent) => sum + p.views, 0)
+      });
+
+      toast({
+        title: 'Content Loaded',
+        description: `Loaded ${data.stats.total} content items from database`
+      });
+
+    } catch (error) {
+      console.error('Error fetching content:', error);
+      toast({
+        title: 'Error Loading Content',
+        description: 'Failed to load content from database. Using fallback.',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const filteredPages = pages.filter(page =>
     page.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -246,11 +166,6 @@ export default function PageContentManagementPage() {
   );
 
   const selectedPageData = pages.find(p => p.id === selectedPage);
-
-  const totalPages = pages.length;
-  const publishedPages = pages.filter(p => p.status === 'published').length;
-  const draftPages = pages.filter(p => p.status === 'draft').length;
-  const totalViews = pages.reduce((sum, p) => sum + p.views, 0);
 
   const handleSavePage = () => {
     toast({
@@ -382,7 +297,7 @@ export default function PageContentManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading">
-                    {totalPages}
+                    {loading ? '-' : stats.total}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     All content pages
@@ -403,7 +318,7 @@ export default function PageContentManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-green-600">
-                    {publishedPages}
+                    {loading ? '-' : stats.published}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Live pages
@@ -424,7 +339,7 @@ export default function PageContentManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-yellow-600">
-                    {draftPages}
+                    {loading ? '-' : stats.draft}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Work in progress
@@ -445,7 +360,7 @@ export default function PageContentManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-blue-600">
-                    {totalViews.toLocaleString()}
+                    {loading ? '-' : stats.totalViews.toLocaleString()}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Page views

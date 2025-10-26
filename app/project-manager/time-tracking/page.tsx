@@ -65,102 +65,89 @@ export default function TimeTrackingPage() {
   const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
   const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<Array<{ id: string; name: string; client?: string }>>([]);
+  const [tasks, setTasks] = useState<Array<{ id: string; name: string; projectId: string }>>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Mock Data
-  const projects = [
-    { id: "proj-1", name: "Website Redesign", client: "Acme Corp" },
-    { id: "proj-2", name: "Mobile App", client: "TechStart" },
-    { id: "proj-3", name: "API Integration", client: "DataFlow" },
-  ];
-
-  const tasks = [
-    { id: "task-1", name: "Homepage Design", projectId: "proj-1" },
-    { id: "task-2", name: "Database Setup", projectId: "proj-1" },
-    { id: "task-3", name: "UI Development", projectId: "proj-2" },
-    { id: "task-4", name: "API Endpoints", projectId: "proj-3" },
-  ];
-
-  const teamMembers = [
-    { id: "user-1", name: "John Doe", role: "Developer" },
-    { id: "user-2", name: "Jane Smith", role: "Designer" },
-    { id: "user-3", name: "Mike Johnson", role: "PM" },
-  ];
-
-  // Initialize mock time entries
+  // Fetch data from API
   useEffect(() => {
-    const mockEntries: TimeEntry[] = [
-      {
-        id: "entry-1",
-        taskId: "task-1",
-        taskName: "Homepage Design",
-        projectId: "proj-1",
-        projectName: "Website Redesign",
-        startTime: new Date(2025, 9, 23, 9, 0),
-        endTime: new Date(2025, 9, 23, 11, 30),
-        duration: 9000,
-        description: "Designed hero section and navigation",
-        billable: true,
-        rate: 75,
-        status: "approved",
-        userId: "user-1",
-        userName: "John Doe",
-        date: new Date(2025, 9, 23),
-      },
-      {
-        id: "entry-2",
-        taskId: "task-2",
-        taskName: "Database Setup",
-        projectId: "proj-1",
-        projectName: "Website Redesign",
-        startTime: new Date(2025, 9, 23, 13, 0),
-        endTime: new Date(2025, 9, 23, 17, 0),
-        duration: 14400,
-        description: "Set up PostgreSQL and migrations",
-        billable: true,
-        rate: 85,
-        status: "submitted",
-        userId: "user-1",
-        userName: "John Doe",
-        date: new Date(2025, 9, 23),
-      },
-      {
-        id: "entry-3",
-        taskId: "task-3",
-        taskName: "UI Development",
-        projectId: "proj-2",
-        projectName: "Mobile App",
-        startTime: new Date(2025, 9, 24, 10, 0),
-        endTime: new Date(2025, 9, 24, 12, 0),
-        duration: 7200,
-        description: "Implemented login screen",
-        billable: true,
-        rate: 80,
-        status: "approved",
-        userId: "user-2",
-        userName: "Jane Smith",
-        date: new Date(2025, 9, 24),
-      },
-      {
-        id: "entry-4",
-        taskId: "task-4",
-        taskName: "API Endpoints",
-        projectId: "proj-3",
-        projectName: "API Integration",
-        startTime: new Date(2025, 9, 24, 14, 0),
-        endTime: new Date(2025, 9, 24, 16, 30),
-        duration: 9000,
-        description: "Created REST API endpoints",
-        billable: false,
-        status: "draft",
-        userId: "user-1",
-        userName: "John Doe",
-        date: new Date(2025, 9, 24),
-      },
-    ];
-    setTimeEntries(mockEntries);
-    setFilteredEntries(mockEntries);
+    fetchTimeEntries();
+    fetchProjects();
+    fetchTasks();
   }, []);
+
+  const fetchTimeEntries = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/project-manager/time-tracking");
+      if (!response.ok) throw new Error("Failed to fetch time entries");
+      
+      const data = await response.json();
+      
+      // Transform API data to match component interface
+      const transformedEntries: TimeEntry[] = data.entries.map((entry: Record<string, unknown>) => ({
+        id: entry.id as string,
+        taskId: entry.taskId as string,
+        taskName: entry.task ? (entry.task as Record<string, unknown>).name as string : "No Task",
+        projectId: entry.projectId as string,
+        projectName: entry.project ? (entry.project as Record<string, unknown>).name as string : "No Project",
+        startTime: new Date(entry.date as string),
+        endTime: entry.date ? new Date(entry.date as string) : undefined,
+        duration: ((entry.hours as number) * 3600) || 0, // Convert hours to seconds
+        description: entry.description as string || "",
+        billable: entry.billable as boolean,
+        rate: entry.rate as number || 0,
+        status: entry.status as "draft" | "submitted" | "approved" | "rejected",
+        userId: entry.userId as string,
+        userName: entry.user ? (entry.user as Record<string, unknown>).name as string : "Unknown User",
+        date: new Date(entry.date as string),
+      }));
+      
+      setTimeEntries(transformedEntries);
+      setFilteredEntries(transformedEntries);
+    } catch (error) {
+      console.error("Error fetching time entries:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch("/api/project-manager/projects");
+      if (!response.ok) throw new Error("Failed to fetch projects");
+      
+      const data = await response.json();
+      const transformedProjects = data.projects.map((project: Record<string, unknown>) => ({
+        id: project.id as string,
+        name: project.name as string,
+        client: project.client ? (project.client as Record<string, unknown>).name as string : undefined,
+      }));
+      
+      setProjects(transformedProjects);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch("/api/project-manager/tasks");
+      if (!response.ok) throw new Error("Failed to fetch tasks");
+      
+      const data = await response.json();
+      const transformedTasks = data.tasks.map((task: Record<string, unknown>) => ({
+        id: task.id as string,
+        name: task.name as string,
+        projectId: task.projectId as string,
+      }));
+      
+      setTasks(transformedTasks);
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+    }
+  };
 
   // Timer Logic
   useEffect(() => {
@@ -299,57 +286,157 @@ export default function TimeTrackingPage() {
   }, [searchQuery, filterProject, filterBillable, timeEntries]);
 
   // Manual Time Entry
-  const handleAddEntry = (entryData: Partial<TimeEntry>) => {
-    const newEntry: TimeEntry = {
-      id: `entry-${Date.now()}`,
-      taskId: entryData.taskId || "",
-      taskName: tasks.find((t) => t.id === entryData.taskId)?.name || "",
-      projectId: entryData.projectId || "",
-      projectName: projects.find((p) => p.id === entryData.projectId)?.name || "",
-      startTime: entryData.startTime || new Date(),
-      endTime: entryData.endTime,
-      duration: entryData.duration || 0,
-      description: entryData.description || "",
-      billable: entryData.billable || false,
-      rate: entryData.rate,
-      status: "draft",
-      userId: "user-1",
-      userName: "Current User",
-      date: entryData.date || new Date(),
-    };
+  const handleAddEntry = async (entryData: Partial<TimeEntry>) => {
+    try {
+      const payload = {
+        taskId: entryData.taskId,
+        projectId: entryData.projectId,
+        date: entryData.date?.toISOString() || new Date().toISOString(),
+        hours: (entryData.duration || 0) / 3600, // Convert seconds to hours
+        description: entryData.description || "",
+        billable: entryData.billable || false,
+        rate: entryData.rate,
+        status: "DRAFT",
+      };
 
-    if (editingEntry) {
-      setTimeEntries((prev) => prev.map((e) => (e.id === editingEntry.id ? { ...newEntry, id: editingEntry.id } : e)));
-      setFilteredEntries((prev) => prev.map((e) => (e.id === editingEntry.id ? { ...newEntry, id: editingEntry.id } : e)));
-    } else {
-      setTimeEntries((prev) => [newEntry, ...prev]);
-      setFilteredEntries((prev) => [newEntry, ...prev]);
+      if (editingEntry) {
+        // Update existing entry
+        const response = await fetch("/api/project-manager/time-tracking", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: editingEntry.id, ...payload }),
+        });
+        
+        if (!response.ok) throw new Error("Failed to update time entry");
+      } else {
+        // Create new entry
+        const response = await fetch("/api/project-manager/time-tracking", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        
+        if (!response.ok) throw new Error("Failed to create time entry");
+      }
+
+      // Refresh data
+      await fetchTimeEntries();
+    } catch (error) {
+      console.error("Error saving time entry:", error);
+    } finally {
+      setIsEntryDialogOpen(false);
+      setEditingEntry(null);
     }
-
-    setIsEntryDialogOpen(false);
-    setEditingEntry(null);
   };
 
-  const handleDeleteEntry = (id: string) => {
-    setTimeEntries((prev) => prev.filter((e) => e.id !== id));
-    setFilteredEntries((prev) => prev.filter((e) => e.id !== id));
+  const handleDeleteEntry = async (id: string) => {
+    try {
+      const response = await fetch("/api/project-manager/time-tracking", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to delete time entry");
+      
+      // Refresh data
+      await fetchTimeEntries();
+    } catch (error) {
+      console.error("Error deleting time entry:", error);
+    }
   };
 
-  const handleApproveEntry = (id: string) => {
-    setTimeEntries((prev) => prev.map((e) => (e.id === id ? { ...e, status: "approved" as const } : e)));
-    setFilteredEntries((prev) => prev.map((e) => (e.id === id ? { ...e, status: "approved" as const } : e)));
+  const handleApproveEntry = async (id: string) => {
+    try {
+      const entry = timeEntries.find((e) => e.id === id);
+      if (!entry) return;
+
+      const response = await fetch("/api/project-manager/time-tracking", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          id, 
+          status: "APPROVED",
+          taskId: entry.taskId,
+          projectId: entry.projectId,
+          date: entry.date.toISOString(),
+          hours: entry.duration / 3600,
+          description: entry.description,
+          billable: entry.billable,
+          rate: entry.rate,
+        }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to approve time entry");
+      
+      // Refresh data
+      await fetchTimeEntries();
+    } catch (error) {
+      console.error("Error approving time entry:", error);
+    }
   };
 
-  const handleRejectEntry = (id: string) => {
-    setTimeEntries((prev) => prev.map((e) => (e.id === id ? { ...e, status: "rejected" as const } : e)));
-    setFilteredEntries((prev) => prev.map((e) => (e.id === id ? { ...e, status: "rejected" as const } : e)));
+  const handleRejectEntry = async (id: string) => {
+    try {
+      const entry = timeEntries.find((e) => e.id === id);
+      if (!entry) return;
+
+      const response = await fetch("/api/project-manager/time-tracking", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          id, 
+          status: "REJECTED",
+          taskId: entry.taskId,
+          projectId: entry.projectId,
+          date: entry.date.toISOString(),
+          hours: entry.duration / 3600,
+          description: entry.description,
+          billable: entry.billable,
+          rate: entry.rate,
+        }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to reject time entry");
+      
+      // Refresh data
+      await fetchTimeEntries();
+    } catch (error) {
+      console.error("Error rejecting time entry:", error);
+    }
   };
 
-  const handleSubmitTimesheet = () => {
-    const updatedEntries = timeEntries.map((e) => (e.status === "draft" ? { ...e, status: "submitted" as const } : e));
-    setTimeEntries(updatedEntries);
-    setFilteredEntries(updatedEntries);
-    setIsApprovalDialogOpen(false);
+  const handleSubmitTimesheet = async () => {
+    try {
+      // Update all draft entries to submitted status
+      const draftEntries = timeEntries.filter((e) => e.status === "draft");
+      
+      await Promise.all(
+        draftEntries.map((entry) =>
+          fetch("/api/project-manager/time-tracking", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: entry.id,
+              status: "SUBMITTED",
+              taskId: entry.taskId,
+              projectId: entry.projectId,
+              date: entry.date.toISOString(),
+              hours: entry.duration / 3600,
+              description: entry.description,
+              billable: entry.billable,
+              rate: entry.rate,
+            }),
+          })
+        )
+      );
+      
+      // Refresh data
+      await fetchTimeEntries();
+      setIsApprovalDialogOpen(false);
+    } catch (error) {
+      console.error("Error submitting timesheet:", error);
+    }
   };
 
   // Analytics Calculations
@@ -396,7 +483,11 @@ export default function TimeTrackingPage() {
     };
   });
 
-  const teamData = teamMembers.map((member) => {
+  // Get unique team members from time entries
+  const teamData = Array.from(
+    new Map(timeEntries.map(entry => [entry.userId, { id: entry.userId, name: entry.userName }]))
+      .values()
+  ).map((member) => {
     const memberEntries = timeEntries.filter((e) => e.userId === member.id);
     const hours = memberEntries.reduce((sum, e) => sum + e.duration / 3600, 0);
     return {
@@ -441,13 +532,13 @@ export default function TimeTrackingPage() {
           <p className="text-muted-foreground">Track time, manage timesheets, and analyze productivity</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={exportToCSV} variant="outline">
+          <Button onClick={exportToCSV} variant="outline" disabled={loading}>
             <Download className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
           <Dialog open={isEntryDialogOpen} onOpenChange={setIsEntryDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingEntry(null)}>
+              <Button onClick={() => setEditingEntry(null)} disabled={loading}>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Time Entry
               </Button>
@@ -457,8 +548,17 @@ export default function TimeTrackingPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Clock className="h-12 w-12 mx-auto mb-3 animate-spin text-blue-600" />
+            <p className="text-muted-foreground">Loading time tracking data...</p>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
@@ -910,6 +1010,8 @@ export default function TimeTrackingPage() {
           </Card>
         </TabsContent>
       </Tabs>
+        </>
+      )}
 
       {/* Approval Dialog */}
       <Dialog open={isApprovalDialogOpen} onOpenChange={setIsApprovalDialogOpen}>

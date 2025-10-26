@@ -53,7 +53,7 @@ export default function UserNotifications() {
         const data = await response.json()
         setNotifications(data.notifications || [])
       }
-    } catch (error) {
+    } catch (_error) {
       // Error fetching notifications - handle silently or show user notification
     } finally {
       setIsLoading(false)
@@ -88,14 +88,14 @@ export default function UserNotifications() {
           )
         )
       }
-    } catch (error) {
+    } catch (_error) {
       // Error marking notification as read - handle silently
     }
   }
 
   // Initialize with empty array if no data from API
   if (notifications.length === 0 && !isLoading) {
-    // Mock data would be set here from the API fallback
+    // No notifications to display
   }
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -160,7 +160,7 @@ export default function UserNotifications() {
           .filter(notif => !notif.read)
           .map(notif => markAsRead(notif.id))
       )
-    } catch (error) {
+    } catch (_error) {
       // Error marking all notifications as read - handle silently
     }
   }

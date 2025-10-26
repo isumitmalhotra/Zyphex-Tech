@@ -274,42 +274,14 @@ export default function ClientCommunicationsPage() {
       if (!response.ok) throw new Error('Failed to fetch clients')
       
       const data = await response.json()
-      setClients(data.clients)
-    } catch (_error) {
-      // Fallback to mock data if API fails
-      const mockClients: Client[] = [
-        {
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          company: 'Tech Corp',
-          unreadCount: 3,
-          lastMessage: 'Thanks for the update!',
-          lastMessageTime: '2 hours ago',
-          status: 'active'
-        },
-        {
-          id: '2',
-          name: 'Jane Smith',
-          email: 'jane@company.com',
-          company: 'Digital Solutions',
-          unreadCount: 0,
-          lastMessage: 'Looking forward to the meeting',
-          lastMessageTime: '1 day ago',
-          status: 'active'
-        },
-        {
-          id: '3',
-          name: 'Bob Johnson',
-          email: 'bob@startup.io',
-          company: 'Startup Inc',
-          unreadCount: 1,
-          lastMessage: 'Can we schedule a call?',
-          lastMessageTime: '3 hours ago',
-          status: 'active'
-        }
-      ]
-      setClients(mockClients)
+      setClients(data.clients || data)
+    } catch (error) {
+      console.error('Error fetching clients:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load clients. Please refresh the page.",
+        variant: "destructive"
+      })
     } finally {
       setLoading(false)
     }
@@ -327,30 +299,14 @@ export default function ClientCommunicationsPage() {
       if (!response.ok) throw new Error('Failed to fetch messages')
       
       const data = await response.json()
-      setMessages(data.messages)
-    } catch (_error) {
-      // Fallback to mock data
-      const mockMessages: Message[] = [
-        {
-          id: '1',
-          senderId: 'client',
-          senderName: selectedClient.name,
-          content: 'Hi, can we schedule a meeting to discuss the project progress?',
-          timestamp: new Date(Date.now() - 3600000).toISOString(),
-          type: 'message',
-          read: true
-        },
-        {
-          id: '2',
-          senderId: session?.user?.id || 'me',
-          senderName: 'You',
-          content: 'Of course! How about tomorrow at 2 PM?',
-          timestamp: new Date(Date.now() - 1800000).toISOString(),
-          type: 'message',
-          read: true
-        }
-      ]
-      setMessages(mockMessages)
+      setMessages(data.messages || data)
+    } catch (error) {
+      console.error('Error fetching messages:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load messages. Please try again.",
+        variant: "destructive"
+      })
     }
   }
 
@@ -360,14 +316,15 @@ export default function ClientCommunicationsPage() {
       if (!response.ok) throw new Error('Failed to fetch stats')
       
       const data = await response.json()
-      setStats(data.stats)
-    } catch (_error) {
-      // Fallback to mock stats
+      setStats(data.stats || data)
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+      // Set empty stats on error
       setStats({
-        emailsSent: 45,
-        messagesSent: 128,
-        calls: 12,
-        meetings: 8
+        emailsSent: 0,
+        messagesSent: 0,
+        calls: 0,
+        meetings: 0
       })
     }
   }

@@ -67,87 +67,38 @@ export default function TaskAssignmentPage() {
   const [priorityFilter, setPriorityFilter] = useState("ALL")
   const [projectFilter, setProjectFilter] = useState("ALL")
   const [assigneeFilter, setAssigneeFilter] = useState("ALL")
+  const [stats, setStats] = useState({
+    total: 0,
+    todo: 0,
+    inProgress: 0,
+    review: 0,
+    done: 0,
+    blocked: 0,
+    highPriority: 0,
+    overdue: 0,
+    unassigned: 0,
+  })
 
   useEffect(() => {
-    // Mock data for tasks
-    const mockTasks: Task[] = [
-      {
-        id: "1",
-        title: "Implement user authentication",
-        description: "Create login/logout functionality with JWT tokens",
-        status: "IN_PROGRESS",
-        priority: "HIGH",
-        project: { id: "p1", name: "E-commerce Platform" },
-        assignee: { id: "u1", name: "Alice Johnson", email: "alice@zyphextech.com" },
-        dueDate: "2025-10-15",
-        estimatedHours: 16,
-        actualHours: 12,
-        createdAt: "2025-10-01",
-        updatedAt: "2025-10-02"
-      },
-      {
-        id: "2", 
-        title: "Design payment gateway integration",
-        description: "Create UI/UX for payment processing",
-        status: "TODO",
-        priority: "MEDIUM",
-        project: { id: "p1", name: "E-commerce Platform" },
-        assignee: { id: "u2", name: "Bob Smith", email: "bob@zyphextech.com" },
-        dueDate: "2025-10-20",
-        estimatedHours: 24,
-        actualHours: 0,
-        createdAt: "2025-10-01",
-        updatedAt: "2025-10-01"
-      },
-      {
-        id: "3",
-        title: "Database migration script",
-        description: "Create migration for new user fields",
-        status: "DONE",
-        priority: "LOW",
-        project: { id: "p2", name: "Mobile App" },
-        assignee: { id: "u3", name: "Carol Davis", email: "carol@zyphextech.com" },
-        dueDate: "2025-10-10",
-        estimatedHours: 8,
-        actualHours: 6,
-        createdAt: "2025-09-25",
-        updatedAt: "2025-10-01"
-      },
-      {
-        id: "4",
-        title: "API documentation update",
-        description: "Update API docs for new endpoints",
-        status: "REVIEW",
-        priority: "MEDIUM",
-        project: { id: "p2", name: "Mobile App" },
-        assignee: { id: "u1", name: "Alice Johnson", email: "alice@zyphextech.com" },
-        dueDate: "2025-10-12",
-        estimatedHours: 4,
-        actualHours: 4,
-        createdAt: "2025-09-28",
-        updatedAt: "2025-10-02"
-      },
-      {
-        id: "5",
-        title: "Security audit",
-        description: "Perform security review of authentication system",
-        status: "BLOCKED",
-        priority: "CRITICAL",
-        project: { id: "p1", name: "E-commerce Platform" },
-        assignee: null,
-        dueDate: "2025-10-18",
-        estimatedHours: 20,
-        actualHours: 0,
-        createdAt: "2025-10-01",
-        updatedAt: "2025-10-02"
-      }
-    ]
-    
-    setTimeout(() => {
-      setTasks(mockTasks)
-      setLoading(false)
-    }, 1000)
+    fetchTasks()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const fetchTasks = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/project-manager/tasks')
+      if (response.ok) {
+        const data = await response.json()
+        setTasks(data.tasks || [])
+        setStats(data.statistics || stats)
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -176,17 +127,6 @@ export default function TaskAssignmentPage() {
     MEDIUM: "bg-blue-100 text-blue-800",
     HIGH: "bg-orange-100 text-orange-800",
     CRITICAL: "bg-red-100 text-red-800",
-  }
-
-  const stats = {
-    total: tasks.length,
-    todo: tasks.filter(t => t.status === 'TODO').length,
-    inProgress: tasks.filter(t => t.status === 'IN_PROGRESS').length,
-    review: tasks.filter(t => t.status === 'REVIEW').length,
-    done: tasks.filter(t => t.status === 'DONE').length,
-    blocked: tasks.filter(t => t.status === 'BLOCKED').length,
-    unassigned: tasks.filter(t => !t.assignee).length,
-    overdue: tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'DONE').length,
   }
 
   const projects = [...new Set(tasks.map(t => t.project))]

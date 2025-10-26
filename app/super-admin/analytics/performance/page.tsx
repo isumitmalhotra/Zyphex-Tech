@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,497 +8,225 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { SubtleBackground } from "@/components/subtle-background"
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Activity,
   Zap,
   TrendingUp,
   TrendingDown,
   Download,
-  Clock,
   Server,
   Database,
-  Cpu,
-  HardDrive,
   AlertTriangle,
   CheckCircle,
   Timer,
   Eye,
   Layers,
   MonitorCheck,
-  Network,
   Signal
 } from "lucide-react"
 
+interface PerformanceData {
+  success: boolean
+  source: 'database' | 'mock'
+  message?: string
+  systemMetrics: SystemMetric[]
+  pageMetrics: PageMetric[]
+  apiEndpoints: ApiEndpoint[]
+  databaseMetrics: DatabaseMetric[]
+  cacheMetrics: CacheMetric[]
+  serverResources: ServerResource[]
+  healthIndicators: HealthIndicator[]
+  webVitals: WebVital[]
+  errorTracking: ErrorTracking[]
+  slowQueries: SlowQuery[]
+  performanceTimeline: PerformanceTimelineItem[]
+}
+
+interface SystemMetric {
+  title: string
+  value: string
+  change: string
+  trend: string
+  icon: string
+  description: string
+  color: string
+  status: string
+}
+
+interface PageMetric {
+  page: string
+  loadTime: string
+  ttfb: string
+  fcp: string
+  lcp: string
+  cls: string
+  tti: string
+  requests: number
+  size: string
+}
+
+interface ApiEndpoint {
+  endpoint: string
+  avgResponse: string
+  p95: string
+  p99: string
+  successRate: string
+  requestsPerMin: number
+  errorCount: number
+  status: string
+}
+
+interface DatabaseMetric {
+  metric: string
+  value: string
+  target: string
+  percentage: number
+  status: string
+  change: string
+}
+
+interface CacheMetric {
+  cache: string
+  hitRate: string
+  size: string
+  entries: string
+  evictions: string
+}
+
+interface ServerResource {
+  resource: string
+  current: string
+  avg: string
+  peak: string
+  status: string
+  icon: string
+  color: string
+}
+
+interface HealthIndicator {
+  component: string
+  status: string
+  uptime: string
+  lastCheck: string
+  responseTime: string
+}
+
+interface WebVital {
+  metric: string
+  value: string
+  threshold: string
+  score: string
+  description: string
+  percentage: number
+}
+
+interface ErrorTracking {
+  errorType: string
+  count: number
+  percentage: string
+  trend: string
+  change: string
+  severity: string
+}
+
+interface SlowQuery {
+  query: string
+  avgTime: string
+  executions: number
+  totalTime: string
+  impact: string
+}
+
+interface PerformanceTimelineItem {
+  time: string
+  loadTime: number
+  apiTime: number
+  errorRate: number
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export default function SuperAdminPerformanceAnalyticsPage() {
+  const [data, setData] = useState<PerformanceData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState("24h")
   const [_metricView, _setMetricView] = useState("all")
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  // System Performance Overview
-  const systemMetrics = [
-    {
-      title: "Avg Page Load Time",
-      value: "1.24s",
-      change: "-0.15s",
-      trend: "up",
-      icon: Clock,
-      description: "Last 24 hours",
-      color: "blue",
-      status: "good"
-    },
-    {
-      title: "API Response Time",
-      value: "142ms",
-      change: "-18ms",
-      trend: "up",
-      icon: Zap,
-      description: "Average response time",
-      color: "cyan",
-      status: "good"
-    },
-    {
-      title: "Server Uptime",
-      value: "99.98%",
-      change: "+0.02%",
-      trend: "up",
-      icon: Server,
-      description: "Last 30 days",
-      color: "green",
-      status: "excellent"
-    },
-    {
-      title: "Error Rate",
-      value: "0.12%",
-      change: "-0.03%",
-      trend: "up",
-      icon: AlertTriangle,
-      description: "Error percentage",
-      color: "orange",
-      status: "good"
+  useEffect(() => {
+    fetchPerformanceData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange, refreshKey])
+
+  async function fetchPerformanceData() {
+    setIsLoading(true)
+    setError(null)
+    
+    try {
+      const params = new URLSearchParams({ dateRange })
+      const response = await fetch(`/api/super-admin/analytics/performance?${params}`)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch performance data: ${response.statusText}`)
+      }
+      
+      const result = await response.json()
+      setData(result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load performance data')
+      console.error('Performance data fetch error:', err)
+    } finally {
+      setIsLoading(false)
     }
-  ]
+  }
 
-  // Page Performance Metrics
-  const pageMetrics = [
-    {
-      page: "/dashboard",
-      loadTime: "0.98s",
-      ttfb: "245ms",
-      fcp: "1.1s",
-      lcp: "1.8s",
-      cls: "0.05",
-      tti: "2.1s",
-      requests: 42,
-      size: "1.2MB"
-    },
-    {
-      page: "/project-manager",
-      loadTime: "1.15s",
-      ttfb: "312ms",
-      fcp: "1.3s",
-      lcp: "2.1s",
-      cls: "0.08",
-      tti: "2.5s",
-      requests: 38,
-      size: "1.5MB"
-    },
-    {
-      page: "/admin",
-      loadTime: "1.42s",
-      ttfb: "298ms",
-      fcp: "1.5s",
-      lcp: "2.4s",
-      cls: "0.06",
-      tti: "2.8s",
-      requests: 51,
-      size: "1.8MB"
-    },
-    {
-      page: "/analytics",
-      loadTime: "1.68s",
-      ttfb: "334ms",
-      fcp: "1.7s",
-      lcp: "2.9s",
-      cls: "0.09",
-      tti: "3.2s",
-      requests: 67,
-      size: "2.4MB"
-    },
-    {
-      page: "/portfolio",
-      loadTime: "1.89s",
-      ttfb: "412ms",
-      fcp: "1.9s",
-      lcp: "3.2s",
-      cls: "0.11",
-      tti: "3.6s",
-      requests: 73,
-      size: "3.1MB"
-    }
-  ]
+  if (isLoading) {
+    return (
+      <div className="p-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading performance analytics...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-  // API Endpoint Performance
-  const apiEndpoints = [
-    {
-      endpoint: "/api/projects",
-      avgResponse: "98ms",
-      p95: "145ms",
-      p99: "234ms",
-      successRate: "99.8%",
-      requestsPerMin: 1250,
-      errorCount: 3,
-      status: "healthy"
-    },
-    {
-      endpoint: "/api/tasks",
-      avgResponse: "112ms",
-      p95: "178ms",
-      p99: "298ms",
-      successRate: "99.6%",
-      requestsPerMin: 890,
-      errorCount: 5,
-      status: "healthy"
-    },
-    {
-      endpoint: "/api/users",
-      avgResponse: "87ms",
-      p95: "134ms",
-      p99: "201ms",
-      successRate: "99.9%",
-      requestsPerMin: 2340,
-      errorCount: 2,
-      status: "healthy"
-    },
-    {
-      endpoint: "/api/analytics",
-      avgResponse: "245ms",
-      p95: "412ms",
-      p99: "678ms",
-      successRate: "98.9%",
-      requestsPerMin: 450,
-      errorCount: 12,
-      status: "warning"
-    },
-    {
-      endpoint: "/api/documents",
-      avgResponse: "189ms",
-      p95: "298ms",
-      p99: "445ms",
-      successRate: "99.4%",
-      requestsPerMin: 670,
-      errorCount: 7,
-      status: "healthy"
-    }
-  ]
+  if (error) {
+    return (
+      <div className="p-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="ml-2">
+            {error}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => setRefreshKey(prev => prev + 1)} className="mt-4">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Retry
+        </Button>
+      </div>
+    )
+  }
 
-  // Database Performance
-  const databaseMetrics = [
-    {
-      metric: "Query Response Time",
-      value: "45ms",
-      target: "< 100ms",
-      percentage: 45,
-      status: "excellent",
-      change: "-8ms"
-    },
-    {
-      metric: "Connection Pool Usage",
-      value: "68%",
-      target: "< 80%",
-      percentage: 68,
-      status: "good",
-      change: "+5%"
-    },
-    {
-      metric: "Cache Hit Rate",
-      value: "94.2%",
-      target: "> 90%",
-      percentage: 94.2,
-      status: "excellent",
-      change: "+2.1%"
-    },
-    {
-      metric: "Query Execution Rate",
-      value: "1,245/sec",
-      target: "< 2000/sec",
-      percentage: 62.25,
-      status: "good",
-      change: "+120/sec"
-    },
-    {
-      metric: "Slow Query Count",
-      value: "12",
-      target: "< 50",
-      percentage: 24,
-      status: "excellent",
-      change: "-8"
-    },
-    {
-      metric: "Deadlock Count",
-      value: "2",
-      target: "< 10",
-      percentage: 20,
-      status: "excellent",
-      change: "0"
-    }
-  ]
+  if (!data) return null
 
-  // Server Resource Usage
-  const serverResources = [
-    {
-      resource: "CPU Usage",
-      current: "34%",
-      avg: "42%",
-      peak: "78%",
-      status: "healthy",
-      icon: Cpu,
-      color: "blue"
-    },
-    {
-      resource: "Memory Usage",
-      current: "6.2GB",
-      avg: "5.8GB",
-      peak: "8.4GB",
-      status: "healthy",
-      icon: HardDrive,
-      color: "purple"
-    },
-    {
-      resource: "Disk I/O",
-      current: "145MB/s",
-      avg: "132MB/s",
-      peak: "298MB/s",
-      status: "healthy",
-      icon: Database,
-      color: "cyan"
-    },
-    {
-      resource: "Network Traffic",
-      current: "1.2GB/h",
-      avg: "1.1GB/h",
-      peak: "2.3GB/h",
-      status: "healthy",
-      icon: Network,
-      color: "green"
-    }
-  ]
-
-  // Application Health Indicators
-  const healthIndicators = [
-    {
-      component: "Web Server",
-      status: "healthy",
-      uptime: "99.98%",
-      lastCheck: "2 min ago",
-      responseTime: "12ms"
-    },
-    {
-      component: "Database Primary",
-      status: "healthy",
-      uptime: "99.99%",
-      lastCheck: "1 min ago",
-      responseTime: "8ms"
-    },
-    {
-      component: "Database Replica",
-      status: "healthy",
-      uptime: "99.97%",
-      lastCheck: "1 min ago",
-      responseTime: "11ms"
-    },
-    {
-      component: "Redis Cache",
-      status: "healthy",
-      uptime: "100%",
-      lastCheck: "30 sec ago",
-      responseTime: "2ms"
-    },
-    {
-      component: "Background Jobs",
-      status: "healthy",
-      uptime: "99.95%",
-      lastCheck: "3 min ago",
-      responseTime: "45ms"
-    },
-    {
-      component: "Email Service",
-      status: "warning",
-      uptime: "98.5%",
-      lastCheck: "5 min ago",
-      responseTime: "234ms"
-    }
-  ]
-
-  // Core Web Vitals
-  const webVitals = [
-    {
-      metric: "Largest Contentful Paint (LCP)",
-      value: "1.8s",
-      threshold: "< 2.5s",
-      score: "good",
-      description: "Measures loading performance",
-      percentage: 72
-    },
-    {
-      metric: "First Input Delay (FID)",
-      value: "45ms",
-      threshold: "< 100ms",
-      score: "good",
-      description: "Measures interactivity",
-      percentage: 45
-    },
-    {
-      metric: "Cumulative Layout Shift (CLS)",
-      value: "0.08",
-      threshold: "< 0.1",
-      score: "good",
-      description: "Measures visual stability",
-      percentage: 80
-    },
-    {
-      metric: "First Contentful Paint (FCP)",
-      value: "1.2s",
-      threshold: "< 1.8s",
-      score: "good",
-      description: "First content render time",
-      percentage: 67
-    },
-    {
-      metric: "Time to Interactive (TTI)",
-      value: "2.4s",
-      threshold: "< 3.8s",
-      score: "good",
-      description: "Time until fully interactive",
-      percentage: 63
-    },
-    {
-      metric: "Total Blocking Time (TBT)",
-      value: "180ms",
-      threshold: "< 300ms",
-      score: "good",
-      description: "Main thread blocking time",
-      percentage: 60
-    }
-  ]
-
-  // Error Tracking
-  const errorTracking = [
-    {
-      errorType: "JavaScript Errors",
-      count: 24,
-      percentage: "0.08%",
-      trend: "down",
-      change: "-12",
-      severity: "medium"
-    },
-    {
-      errorType: "API Errors (5xx)",
-      count: 8,
-      percentage: "0.02%",
-      trend: "down",
-      change: "-3",
-      severity: "high"
-    },
-    {
-      errorType: "API Errors (4xx)",
-      count: 145,
-      percentage: "0.45%",
-      trend: "up",
-      change: "+12",
-      severity: "low"
-    },
-    {
-      errorType: "Database Errors",
-      count: 3,
-      percentage: "0.01%",
-      trend: "stable",
-      change: "0",
-      severity: "high"
-    },
-    {
-      errorType: "Timeout Errors",
-      count: 17,
-      percentage: "0.05%",
-      trend: "down",
-      change: "-5",
-      severity: "medium"
-    }
-  ]
-
-  // Cache Performance
-  const cacheMetrics = [
-    {
-      cache: "Redis (Memory)",
-      hitRate: "94.2%",
-      size: "2.3GB",
-      entries: "145,234",
-      evictions: "1,234"
-    },
-    {
-      cache: "CDN Cache",
-      hitRate: "89.7%",
-      size: "45GB",
-      entries: "23,456",
-      evictions: "567"
-    },
-    {
-      cache: "Browser Cache",
-      hitRate: "87.3%",
-      size: "N/A",
-      entries: "N/A",
-      evictions: "N/A"
-    },
-    {
-      cache: "Database Query Cache",
-      hitRate: "91.5%",
-      size: "1.2GB",
-      entries: "34,567",
-      evictions: "890"
-    }
-  ]
-
-  // Performance Timeline (Last 24 hours) - for future chart implementation
-  const _performanceTimeline = [
-    { time: "00:00", loadTime: 1.2, apiTime: 145, errorRate: 0.1 },
-    { time: "03:00", loadTime: 1.1, apiTime: 138, errorRate: 0.08 },
-    { time: "06:00", loadTime: 1.3, apiTime: 156, errorRate: 0.12 },
-    { time: "09:00", loadTime: 1.5, apiTime: 178, errorRate: 0.15 },
-    { time: "12:00", loadTime: 1.6, apiTime: 189, errorRate: 0.18 },
-    { time: "15:00", loadTime: 1.4, apiTime: 167, errorRate: 0.14 },
-    { time: "18:00", loadTime: 1.3, apiTime: 152, errorRate: 0.11 },
-    { time: "21:00", loadTime: 1.2, apiTime: 142, errorRate: 0.09 }
-  ]
-
-  // Top Slow Queries
-  const slowQueries = [
-    {
-      query: "SELECT * FROM projects JOIN...",
-      avgTime: "1,245ms",
-      executions: 234,
-      totalTime: "291,330ms",
-      impact: "high"
-    },
-    {
-      query: "UPDATE tasks SET status...",
-      avgTime: "892ms",
-      executions: 567,
-      totalTime: "505,764ms",
-      impact: "high"
-    },
-    {
-      query: "SELECT analytics_data FROM...",
-      avgTime: "678ms",
-      executions: 123,
-      totalTime: "83,394ms",
-      impact: "medium"
-    },
-    {
-      query: "INSERT INTO audit_logs...",
-      avgTime: "445ms",
-      executions: 1890,
-      totalTime: "841,050ms",
-      impact: "medium"
-    }
-  ]
+  const {
+    systemMetrics,
+    pageMetrics,
+    apiEndpoints,
+    databaseMetrics,
+    cacheMetrics,
+    serverResources,
+    healthIndicators,
+    webVitals,
+    errorTracking,
+    slowQueries,
+  } = data
 
   // Get status color
   const getStatusColor = (status: string) => {
@@ -514,6 +242,23 @@ export default function SuperAdminPerformanceAnalyticsPage() {
       default:
         return "text-gray-400 bg-gray-500/20 border-gray-500/30"
     }
+  }
+
+  // Get icon component
+  const getIconComponent = (iconName: string) => {
+    const icons: Record<string, any> = {
+      Clock: Server, // Fallback to Server for simplicity
+      Zap,
+      Server,
+      AlertTriangle,
+      Database,
+      Activity,
+      Eye,
+      Layers,
+      MonitorCheck,
+      Timer,
+    }
+    return icons[iconName] || Server
   }
 
   // Export functionality
@@ -579,6 +324,9 @@ export default function SuperAdminPerformanceAnalyticsPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Badge variant={data.source === 'database' ? 'default' : 'secondary'}>
+                {data.source === 'database' ? '📊 Live Database' : '🔧 Demo Data'}
+              </Badge>
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-[180px] zyphex-input">
                   <SelectValue />
@@ -611,12 +359,14 @@ export default function SuperAdminPerformanceAnalyticsPage() {
 
           {/* System Performance Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {systemMetrics.map((metric, index) => (
+            {systemMetrics.map((metric, index) => {
+              const IconComponent = getIconComponent(metric.icon)
+              return (
               <Card key={index} className="zyphex-card hover-zyphex-lift transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className={`p-3 rounded-lg bg-gradient-to-br from-${metric.color}-500/20 to-${metric.color}-600/20 border border-${metric.color}-500/30`}>
-                      <metric.icon className={`h-6 w-6 text-${metric.color}-400`} />
+                      <IconComponent className={`h-6 w-6 text-${metric.color}-400`} />
                     </div>
                     <Badge variant="outline" className={getStatusColor(metric.status)}>
                       {metric.status}
@@ -637,7 +387,7 @@ export default function SuperAdminPerformanceAnalyticsPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )})}
           </div>
 
           {/* Page Performance Metrics */}
@@ -899,11 +649,13 @@ export default function SuperAdminPerformanceAnalyticsPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {serverResources.map((resource, index) => (
+                {serverResources.map((resource, index) => {
+                  const ResourceIcon = getIconComponent(resource.icon)
+                  return (
                   <div key={index} className="p-4 rounded-lg bg-gradient-to-br from-gray-800/50 to-gray-900/50">
                     <div className="flex items-center gap-3 mb-3">
                       <div className={`p-2 rounded-lg bg-${resource.color}-500/20 border border-${resource.color}-500/30`}>
-                        <resource.icon className={`h-5 w-5 text-${resource.color}-400`} />
+                        <ResourceIcon className={`h-5 w-5 text-${resource.color}-400`} />
                       </div>
                       <div>
                         <p className="text-sm font-medium zyphex-heading">{resource.resource}</p>
@@ -927,7 +679,7 @@ export default function SuperAdminPerformanceAnalyticsPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             </CardContent>
           </Card>

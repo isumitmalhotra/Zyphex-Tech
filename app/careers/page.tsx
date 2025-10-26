@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -55,88 +55,6 @@ interface JobPosition {
   responsibilities: string[]
   postedDate: string
 }
-
-// Mock Job Positions Data
-const jobPositions: JobPosition[] = [
-  {
-    id: "1",
-    title: "Senior Full Stack Developer",
-    department: "Engineering",
-    location: "Remote",
-    type: "Full-time",
-    remote: true,
-    salary: "$100k - $140k",
-    description: "Join our engineering team to build scalable web applications using modern technologies.",
-    requirements: ["5+ years experience", "React/Next.js", "Node.js", "TypeScript", "AWS/Cloud"],
-    responsibilities: ["Build and maintain web applications", "Collaborate with design team", "Code reviews", "Mentor junior developers"],
-    postedDate: "2024-10-15"
-  },
-  {
-    id: "2",
-    title: "UI/UX Designer",
-    department: "Design",
-    location: "Remote",
-    type: "Full-time",
-    remote: true,
-    salary: "$80k - $110k",
-    description: "Create beautiful and intuitive user experiences for our platform and clients.",
-    requirements: ["3+ years experience", "Figma/Sketch", "Design systems", "User research", "Prototyping"],
-    responsibilities: ["Design user interfaces", "Conduct user research", "Create design systems", "Collaborate with developers"],
-    postedDate: "2024-10-10"
-  },
-  {
-    id: "3",
-    title: "DevOps Engineer",
-    department: "Engineering",
-    location: "Remote",
-    type: "Full-time",
-    remote: true,
-    salary: "$95k - $130k",
-    description: "Build and maintain our cloud infrastructure and deployment pipelines.",
-    requirements: ["4+ years experience", "AWS/Azure", "Docker/Kubernetes", "CI/CD", "Terraform"],
-    responsibilities: ["Manage cloud infrastructure", "Automate deployments", "Monitor system performance", "Security implementation"],
-    postedDate: "2024-10-12"
-  },
-  {
-    id: "4",
-    title: "Product Manager",
-    department: "Product",
-    location: "Remote",
-    type: "Full-time",
-    remote: true,
-    salary: "$110k - $150k",
-    description: "Lead product strategy and roadmap for our innovative platform.",
-    requirements: ["5+ years experience", "Product strategy", "Agile/Scrum", "Data analysis", "Stakeholder management"],
-    responsibilities: ["Define product vision", "Manage roadmap", "Coordinate with teams", "Analyze metrics"],
-    postedDate: "2024-10-08"
-  },
-  {
-    id: "5",
-    title: "Frontend Developer",
-    department: "Engineering",
-    location: "Remote",
-    type: "Contract",
-    remote: true,
-    salary: "$70 - $100/hr",
-    description: "Build responsive and performant user interfaces for client projects.",
-    requirements: ["3+ years experience", "React", "CSS/Tailwind", "JavaScript/TypeScript", "Responsive design"],
-    responsibilities: ["Develop UI components", "Implement designs", "Optimize performance", "Write tests"],
-    postedDate: "2024-10-18"
-  },
-  {
-    id: "6",
-    title: "Marketing Manager",
-    department: "Marketing",
-    location: "Remote",
-    type: "Full-time",
-    remote: true,
-    salary: "$85k - $120k",
-    description: "Drive marketing strategy and growth initiatives for Zyphex Tech.",
-    requirements: ["4+ years experience", "Digital marketing", "SEO/SEM", "Content strategy", "Analytics"],
-    responsibilities: ["Develop marketing strategy", "Manage campaigns", "Analyze performance", "Lead content creation"],
-    postedDate: "2024-10-05"
-  }
-]
 
 // Employee Testimonials
 const testimonials = [
@@ -211,31 +129,52 @@ const hiringProcess = [
 export default function CareersPage() {
   useScrollAnimation()
 
+  const [jobPositions, setJobPositions] = useState<JobPosition[]>([])
+  const [_loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState<string>("all")
   const [locationFilter, setLocationFilter] = useState<string>("all")
   const [typeFilter, setTypeFilter] = useState<string>("all")
   const [emailSubscription, setEmailSubscription] = useState("")
 
+  // Fetch jobs from API
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await fetch('/api/careers')
+        if (response.ok) {
+          const data = await response.json()
+          setJobPositions(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch jobs:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchJobs()
+  }, [])
+
   // Get unique departments, locations, and types for filters
   const departments = useMemo(() => {
-    const depts = Array.from(new Set(jobPositions.map(job => job.department)))
+    const depts = Array.from(new Set(jobPositions.map((job: JobPosition) => job.department)))
     return ["all", ...depts]
-  }, [])
+  }, [jobPositions])
 
   const locations = useMemo(() => {
-    const locs = Array.from(new Set(jobPositions.map(job => job.location)))
+    const locs = Array.from(new Set(jobPositions.map((job: JobPosition) => job.location)))
     return ["all", ...locs]
-  }, [])
+  }, [jobPositions])
 
   const types = useMemo(() => {
-    const jobTypes = Array.from(new Set(jobPositions.map(job => job.type)))
+    const jobTypes = Array.from(new Set(jobPositions.map((job: JobPosition) => job.type)))
     return ["all", ...jobTypes]
-  }, [])
+  }, [jobPositions])
 
   // Filter jobs based on search and filters
   const filteredJobs = useMemo(() => {
-    return jobPositions.filter(job => {
+    return jobPositions.filter((job: JobPosition) => {
       const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           job.description.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesDepartment = departmentFilter === "all" || job.department === departmentFilter
@@ -244,7 +183,7 @@ export default function CareersPage() {
 
       return matchesSearch && matchesDepartment && matchesLocation && matchesType
     })
-  }, [searchQuery, departmentFilter, locationFilter, typeFilter])
+  }, [jobPositions, searchQuery, departmentFilter, locationFilter, typeFilter])
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault()

@@ -2407,3 +2407,164 @@ enum WorkflowLogLevel {
   ERROR // Error messages
   CRITICAL // Critical failures
 }
+
+// ============================================================================
+// PERFORMANCE MONITORING & ANALYTICS
+// ============================================================================
+
+// Performance Metrics - Track page load times, API response times, etc.
+model PerformanceMetric {
+  id          String   @id @default(cuid())
+  metricType  String // PAGE_LOAD, API_RESPONSE, LCP, FID, CLS, FCP, TTI, TBT, ERROR
+  page        String? // Page path for page-specific metrics
+  endpoint    String? // API endpoint for API metrics
+  value       Float // Metric value (milliseconds, ratio, etc.)
+  metadata    Json? // Additional metadata (ttfb, fcp, lcp, requests, size, etc.)
+  timestamp   DateTime @default(now())
+  userAgent   String? // Browser/device information
+  ipAddress   String? // Anonymized IP for geographic data
+  
+  @@index([metricType])
+  @@index([page])
+  @@index([endpoint])
+  @@index([timestamp])
+  @@index([metricType, timestamp])
+  @@index([page, timestamp])
+}
+
+// API Metrics - Detailed tracking of API endpoint performance
+model ApiMetric {
+  id           String   @id @default(cuid())
+  method       String // GET, POST, PUT, DELETE, etc.
+  endpoint     String // API endpoint path
+  path         String? // Full path with params
+  statusCode   Int // HTTP status code
+  responseTime Float // Response time in milliseconds
+  requestSize  Int? // Request payload size in bytes
+  responseSize Int? // Response payload size in bytes
+  userId       String? // User making the request (if authenticated)
+  ipAddress    String? // Anonymized IP address
+  userAgent    String? // User agent string
+  timestamp    DateTime @default(now())
+  
+  @@index([endpoint])
+  @@index([method])
+  @@index([statusCode])
+  @@index([timestamp])
+  @@index([endpoint, timestamp])
+  @@index([method, endpoint])
+  @@index([userId, timestamp])
+}
+
+// Error Logs - Track application errors
+model ErrorLog {
+  id          String   @id @default(cuid())
+  errorType   String // JavaScript, API_5xx, API_4xx, Database, Timeout, etc.
+  message     String
+  stack       String? @db.Text // Stack trace
+  severity    String // low, medium, high, critical
+  page        String? // Page where error occurred
+  endpoint    String? // API endpoint if applicable
+  userId      String? // User experiencing the error
+  metadata    Json? // Additional context
+  resolved    Boolean  @default(false)
+  resolvedAt  DateTime?
+  timestamp   DateTime @default(now())
+  
+  @@index([errorType])
+  @@index([severity])
+  @@index([resolved])
+  @@index([timestamp])
+  @@index([errorType, timestamp])
+  @@index([severity, timestamp])
+}
+
+// Database Query Log - Track slow queries
+model DatabaseQueryLog {
+  id            String   @id @default(cuid())
+  query         String   @db.Text // SQL query
+  queryHash     String // Hash of query for grouping
+  executionTime Float // Execution time in milliseconds
+  rowsReturned  Int? // Number of rows returned
+  queryPlan     Json? // Query execution plan
+  endpoint      String? // API endpoint that triggered query
+  userId        String? // User who triggered query
+  timestamp     DateTime @default(now())
+  
+  @@index([queryHash])
+  @@index([executionTime])
+  @@index([timestamp])
+  @@index([queryHash, timestamp])
+}
+
+// System Health Checks - Track service health
+model HealthCheck {
+  id           String   @id @default(cuid())
+  component    String // WebServer, DatabasePrimary, DatabaseReplica, Redis, BackgroundJobs, EmailService
+  status       String // healthy, warning, critical
+  responseTime Float // Response time in milliseconds
+  uptime       Float? // Uptime percentage
+  message      String? // Status message
+  metadata     Json? // Additional health data
+  timestamp    DateTime @default(now())
+  
+  @@index([component])
+  @@index([status])
+  @@index([timestamp])
+  @@index([component, timestamp])
+}
+
+// Job Posting - Career opportunities
+model JobPosting {
+  id               String   @id @default(cuid())
+  title            String
+  department       String // Engineering, Design, Product, Marketing, etc.
+  location         String // Remote, Hybrid, or specific location
+  type             String // Full-time, Part-time, Contract
+  remote           Boolean  @default(true)
+  salary           String? // Salary range
+  description      String   @db.Text
+  requirements     Json // Array of strings
+  responsibilities Json // Array of strings
+  postedDate       DateTime @default(now())
+  closingDate      DateTime? // Application deadline
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([department])
+  @@index([type])
+  @@index([isActive])
+  @@index([postedDate])
+  @@index([isActive, postedDate])
+}
+
+// Downloadable Resource - Templates, guides, and resources for users
+model DownloadableResource {
+  id           String   @id @default(cuid())
+  title        String
+  description  String   @db.Text
+  category     String // Branding, Development, Design, Documentation, Tools, Education
+  fileType     String // ZIP, PDF, FIG, MP4, etc.
+  fileName     String // Original file name
+  filePath     String // Storage path or URL
+  fileSize     Int // File size in bytes
+  downloads    Int      @default(0)
+  rating       Float?   @default(0)
+  ratingCount  Int      @default(0)
+  featured     Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Indexes for performance
+  @@index([category])
+  @@index([fileType])
+  @@index([featured])
+  @@index([isActive])
+  @@index([downloads])
+  @@index([rating])
+  @@index([updatedAt])
+  @@index([isActive, featured])
+  @@index([category, isActive])
+}

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,37 +21,117 @@ import {
 import { SubtleBackground } from "@/components/subtle-background"
 import Link from "next/link"
 
-const resources = [
-  {
-    id: 1,
-    name: "John Smith",
-    role: "Frontend Developer",
-    allocation: 80,
-    projects: ["E-commerce Platform", "Mobile App"],
-    skills: ["React", "TypeScript", "CSS"],
-    availability: "Available",
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    role: "Backend Developer",
-    allocation: 90,
-    projects: ["E-commerce Platform"],
-    skills: ["Node.js", "PostgreSQL", "Python"],
-    availability: "Busy",
-  },
-  {
-    id: 3,
-    name: "Mike Davis",
-    role: "UI/UX Designer",
-    allocation: 60,
-    projects: ["Website Redesign"],
-    skills: ["Figma", "Adobe XD", "Design Systems"],
-    availability: "Available",
-  },
-]
+interface Resource {
+  id: string;
+  projectId: string;
+  userId: string;
+  role: string | null;
+  allocationPercentage: number;
+  hourlyRate: number | null;
+  startDate: string;
+  endDate: string | null;
+  isActive: boolean;
+  skills: unknown;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+    role: string;
+  };
+  project: {
+    id: string;
+    name: string;
+    status: string;
+  };
+}
+
+interface Statistics {
+  total: number;
+  active: number;
+  inactive: number;
+  avgAllocationPercentage: number;
+  userUtilization: {
+    overallocated: number;
+    optimal: number;
+    underutilized: number;
+    data: Array<{
+      userId: string;
+      userName: string;
+      totalAllocation: number;
+      projects: number;
+      isOverallocated: boolean;
+    }>;
+  };
+}
 
 function ResourceAllocationContent() {
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [statistics, setStatistics] = useState<Statistics>({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    avgAllocationPercentage: 0,
+    userUtilization: {
+      overallocated: 0,
+      optimal: 0,
+      underutilized: 0,
+      data: [],
+    },
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchResources();
+  }, []);
+
+  const fetchResources = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/project-manager/resources?isActive=true");
+      if (!response.ok) throw new Error("Failed to fetch resources");
+
+      const data = await response.json();
+      setResources(data.resources);
+      setStatistics(data.statistics);
+    } catch (error) {
+      console.error("Error fetching resources:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getAvailabilityStatus = (allocation: number): string => {
+    if (allocation > 100) return "Overallocated";
+    if (allocation >= 80) return "Busy";
+    return "Available";
+  };
+
+  const getAvailabilityVariant = (allocation: number): "default" | "secondary" | "destructive" => {
+    if (allocation > 100) return "destructive";
+    if (allocation >= 80) return "secondary";
+    return "default";
+  };
+
+  // Get unique projects
+  const uniqueProjects = new Set(resources.map(r => r.project.name)).size;
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <SubtleBackground />
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Clock className="h-12 w-12 mx-auto mb-3 animate-spin text-blue-600" />
+              <p className="zyphex-subheading">Loading resources...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
       <SubtleBackground />
@@ -62,7 +143,7 @@ function ResourceAllocationContent() {
             <p className="zyphex-subheading">Manage team resources and project assignments</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="zyphex-button">
+            <Button variant="outline" size="sm" className="zyphex-button" onClick={fetchResources}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
             </Button>
@@ -93,7 +174,7 @@ function ResourceAllocationContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold zyphex-heading">
-                {resources.filter(r => r.availability === 'Available').length}
+                {statistics.userUtilization.underutilized}
               </div>
               <p className="text-xs zyphex-subheading">Ready for assignment</p>
             </CardContent>
@@ -106,7 +187,7 @@ function ResourceAllocationContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold zyphex-heading">
-                {Math.round(resources.reduce((acc, r) => acc + r.allocation, 0) / resources.length)}%
+                {Math.round(statistics.avgAllocationPercentage)}%
               </div>
               <p className="text-xs zyphex-subheading">Team utilization</p>
             </CardContent>
@@ -119,7 +200,7 @@ function ResourceAllocationContent() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold zyphex-heading">
-                {new Set(resources.flatMap(r => r.projects)).size}
+                {uniqueProjects}
               </div>
               <p className="text-xs zyphex-subheading">With assigned resources</p>
             </CardContent>
@@ -136,13 +217,13 @@ function ResourceAllocationContent() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {resources.map((resource) => (
-                <div key={resource.id} className="space-y-2">
+              {statistics.userUtilization.data.map((user) => (
+                <div key={user.userId} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium zyphex-heading">{resource.name}</span>
-                    <span className="text-sm zyphex-subheading">{resource.allocation}%</span>
+                    <span className="text-sm font-medium zyphex-heading">{user.userName}</span>
+                    <span className="text-sm zyphex-subheading">{Math.round(user.totalAllocation)}%</span>
                   </div>
-                  <Progress value={resource.allocation} className="h-2" />
+                  <Progress value={user.totalAllocation} className="h-2" />
                 </div>
               ))}
             </CardContent>
@@ -156,19 +237,19 @@ function ResourceAllocationContent() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {resources.map((resource) => (
-                <div key={resource.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
+              {statistics.userUtilization.data.map((user) => (
+                <div key={user.userId} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold">
-                      {resource.name[0]}
+                      {user.userName.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-medium zyphex-heading">{resource.name}</p>
-                      <p className="text-sm zyphex-subheading">{resource.role}</p>
+                      <p className="font-medium zyphex-heading">{user.userName}</p>
+                      <p className="text-sm zyphex-subheading">{user.projects} projects</p>
                     </div>
                   </div>
-                  <Badge variant={resource.availability === 'Available' ? 'default' : 'secondary'}>
-                    {resource.availability}
+                  <Badge variant={getAvailabilityVariant(user.totalAllocation)}>
+                    {getAvailabilityStatus(user.totalAllocation)}
                   </Badge>
                 </div>
               ))}
@@ -186,55 +267,82 @@ function ResourceAllocationContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {resources.map((resource) => (
-                <div key={resource.id} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold zyphex-heading">{resource.name}</h3>
-                        <Badge variant="outline">{resource.role}</Badge>
-                        <Badge variant={resource.availability === 'Available' ? 'default' : 'secondary'}>
-                          {resource.availability}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <p className="text-sm font-medium zyphex-subheading mb-1">Projects</p>
-                          <div className="flex flex-wrap gap-1">
-                            {resource.projects.map((project, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
-                                {project}
-                              </Badge>
-                            ))}
-                          </div>
+              {statistics.userUtilization.data.map((user) => {
+                // Get all allocations for this user
+                const userAllocations = resources.filter(r => r.userId === user.userId);
+                const projects = userAllocations.map(r => r.project.name);
+                const roles = [...new Set(userAllocations.map(r => r.role).filter(Boolean))];
+                // Parse skills from JSON
+                const allSkills = userAllocations
+                  .map(r => {
+                    try {
+                      return Array.isArray(r.skills) ? r.skills : JSON.parse(r.skills as string || '[]');
+                    } catch {
+                      return [];
+                    }
+                  })
+                  .flat()
+                  .filter((skill): skill is string => typeof skill === 'string');
+                const uniqueSkills = [...new Set(allSkills)];
+
+                return (
+                  <div key={user.userId} className="p-4 rounded-lg bg-slate-800/50 border border-slate-700/50">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold zyphex-heading">{user.userName}</h3>
+                          {roles.length > 0 && <Badge variant="outline">{roles[0]}</Badge>}
+                          <Badge variant={getAvailabilityVariant(user.totalAllocation)}>
+                            {getAvailabilityStatus(user.totalAllocation)}
+                          </Badge>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium zyphex-subheading mb-1">Skills</p>
-                          <div className="flex flex-wrap gap-1">
-                            {resource.skills.map((skill, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium zyphex-subheading mb-1">Allocation</p>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-slate-700 rounded-full">
-                              <div 
-                                className="h-full bg-blue-500 rounded-full"
-                                style={{ width: `${resource.allocation}%` }}
-                              />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <p className="text-sm font-medium zyphex-subheading mb-1">Projects</p>
+                            <div className="flex flex-wrap gap-1">
+                              {projects.map((project, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {project}
+                                </Badge>
+                              ))}
                             </div>
-                            <span className="text-sm zyphex-heading">{resource.allocation}%</span>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium zyphex-subheading mb-1">Skills</p>
+                            <div className="flex flex-wrap gap-1">
+                              {uniqueSkills.length > 0 ? (
+                                uniqueSkills.map((skill, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {skill}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <span className="text-xs zyphex-subheading">No skills listed</span>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium zyphex-subheading mb-1">Allocation</p>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-slate-700 rounded-full">
+                                <div 
+                                  className={`h-full rounded-full ${
+                                    user.totalAllocation > 100 ? 'bg-red-500' : 
+                                    user.totalAllocation >= 80 ? 'bg-yellow-500' : 
+                                    'bg-blue-500'
+                                  }`}
+                                  style={{ width: `${Math.min(user.totalAllocation, 100)}%` }}
+                                />
+                              </div>
+                              <span className="text-sm zyphex-heading">{Math.round(user.totalAllocation)}%</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

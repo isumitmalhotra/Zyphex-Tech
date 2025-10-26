@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,40 +21,92 @@ import {
 import { SubtleBackground } from "@/components/subtle-background"
 import Link from "next/link"
 
-const workloadData = [
-  {
-    id: 1,
-    name: "John Smith",
-    role: "Frontend Developer",
-    currentHours: 32,
-    maxHours: 40,
-    tasks: 8,
-    projects: ["E-commerce Platform", "Mobile App"],
-    status: "optimal",
-  },
-  {
-    id: 2,
-    name: "Sarah Johnson",
-    role: "Backend Developer",
-    currentHours: 45,
-    maxHours: 40,
-    tasks: 12,
-    projects: ["E-commerce Platform", "API Integration"],
-    status: "overloaded",
-  },
-  {
-    id: 3,
-    name: "Mike Davis",
-    role: "UI/UX Designer",
-    currentHours: 25,
-    maxHours: 40,
-    tasks: 5,
-    projects: ["Website Redesign"],
-    status: "underutilized",
-  },
-]
+interface WorkloadMember {
+  id: string;
+  name: string;
+  role: string;
+  currentHours: number;
+  maxHours: number;
+  tasks: number;
+  projects: string[];
+  status: "optimal" | "overloaded" | "underutilized";
+}
 
 function WorkloadManagementContent() {
+  const [workloadData, setWorkloadData] = useState<WorkloadMember[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWorkload();
+  }, []);
+
+  const fetchWorkload = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/project-manager/workload");
+      if (!response.ok) throw new Error("Failed to fetch workload data");
+
+      const data = await response.json();
+      
+      // Transform API response to component format
+      const transformedData: WorkloadMember[] = data.workload.map((member: Record<string, unknown>) => {
+        const capacity = member.capacity as number;
+        const hoursWorked = member.hoursWorked as number;
+        const utilization = member.utilization as number;
+        
+        let status: "optimal" | "overloaded" | "underutilized";
+        if (utilization > 100) {
+          status = "overloaded";
+        } else if (utilization >= 70 && utilization <= 100) {
+          status = "optimal";
+        } else {
+          status = "underutilized";
+        }
+
+        // Get projects from workload data
+        const projects = data.projectWorkload
+          .filter((pw: Record<string, unknown>) => {
+            const tasks = pw.tasks as Array<{ assigneeId: string }>;
+            return tasks.some(t => t.assigneeId === member.id);
+          })
+          .map((pw: Record<string, unknown>) => pw.projectName as string);
+
+        return {
+          id: member.id as string,
+          name: member.name as string,
+          role: member.role as string,
+          currentHours: Math.round(hoursWorked),
+          maxHours: Math.round(capacity),
+          tasks: (member.activeTasks as number) + (member.completedTasks as number),
+          projects: projects.length > 0 ? projects : ["No Projects"],
+          status,
+        };
+      });
+
+      setWorkloadData(transformedData);
+    } catch (error) {
+      console.error("Error fetching workload:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <SubtleBackground />
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Clock className="h-12 w-12 mx-auto mb-3 animate-spin text-blue-600" />
+              <p className="zyphex-subheading">Loading workload data...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
       <SubtleBackground />
@@ -64,7 +117,7 @@ function WorkloadManagementContent() {
             <h1 className="text-3xl font-bold zyphex-heading">Workload Management</h1>
             <p className="zyphex-subheading">Monitor and balance team workload distribution</p>
           </div>
-          <Button variant="outline" size="sm" className="zyphex-button">
+          <Button variant="outline" size="sm" className="zyphex-button" onClick={fetchWorkload}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>

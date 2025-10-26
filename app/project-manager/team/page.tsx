@@ -42,15 +42,15 @@ interface TeamMember {
   email: string
   role: string
   image?: string
-  department: string
-  skills: string[]
-  hourlyRate: number
-  availability: "AVAILABLE" | "BUSY" | "VACATION" | "SICK"
+  department?: string
+  skills: string[] | null
+  hourlyRate: number | null
+  availability: string | null
   projectsCount: number
   tasksCompleted: number
-  rating: number
-  joinedAt: string
-  lastActive: string
+  rating?: number
+  joinedAt: string | null
+  lastActive: string | null
 }
 
 export default function TeamManagementPage() {
@@ -59,102 +59,47 @@ export default function TeamManagementPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [departmentFilter, setDepartmentFilter] = useState("ALL")
   const [availabilityFilter, setAvailabilityFilter] = useState("ALL")
+  const [stats, setStats] = useState({
+    total: 0,
+    available: 0,
+    busy: 0,
+    onVacation: 0,
+    teamMembers: 0,
+    projectManagers: 0,
+    totalProjects: 0,
+    totalTasksCompleted: 0,
+  })
 
   useEffect(() => {
-    // Mock data for team members
-    const mockMembers: TeamMember[] = [
-      {
-        id: "1",
-        name: "Alice Johnson",
-        email: "dev.alice@zyphextech.com",
-        role: "TEAM_MEMBER",
-        image: "",
-        department: "Development",
-        skills: ["React", "Node.js", "TypeScript", "PostgreSQL"],
-        hourlyRate: 75,
-        availability: "AVAILABLE",
-        projectsCount: 3,
-        tasksCompleted: 42,
-        rating: 4.8,
-        joinedAt: "2024-03-15",
-        lastActive: "2025-10-02T14:30:00Z"
-      },
-      {
-        id: "2",
-        name: "Bob Smith",
-        email: "dev.bob@zyphextech.com",
-        role: "TEAM_MEMBER",
-        image: "",
-        department: "Development",
-        skills: ["Python", "Django", "Docker", "AWS"],
-        hourlyRate: 80,
-        availability: "BUSY",
-        projectsCount: 2,
-        tasksCompleted: 38,
-        rating: 4.6,
-        joinedAt: "2024-01-10",
-        lastActive: "2025-10-02T16:45:00Z"
-      },
-      {
-        id: "3",
-        name: "Carol Davis",
-        email: "dev.carol@zyphextech.com",
-        role: "TEAM_MEMBER",
-        image: "",
-        department: "Development",
-        skills: ["Vue.js", "Laravel", "MySQL", "Redis"],
-        hourlyRate: 70,
-        availability: "AVAILABLE",
-        projectsCount: 4,
-        tasksCompleted: 56,
-        rating: 4.9,
-        joinedAt: "2024-02-20",
-        lastActive: "2025-10-02T15:20:00Z"
-      },
-      {
-        id: "4",
-        name: "Lisa Brown",
-        email: "designer.lisa@zyphextech.com",
-        role: "TEAM_MEMBER",
-        image: "",
-        department: "Design",
-        skills: ["Figma", "Photoshop", "Illustrator", "UI/UX"],
-        hourlyRate: 65,
-        availability: "VACATION",
-        projectsCount: 2,
-        tasksCompleted: 24,
-        rating: 4.7,
-        joinedAt: "2024-04-05",
-        lastActive: "2025-09-30T12:00:00Z"
-      },
-      {
-        id: "5",
-        name: "Tom Wilson",
-        email: "qa.tom@zyphextech.com",
-        role: "TEAM_MEMBER",
-        image: "",
-        department: "QA",
-        skills: ["Manual Testing", "Automation", "Selenium", "Jest"],
-        hourlyRate: 60,
-        availability: "AVAILABLE",
-        projectsCount: 5,
-        tasksCompleted: 67,
-        rating: 4.5,
-        joinedAt: "2024-05-12",
-        lastActive: "2025-10-02T13:15:00Z"
-      }
-    ]
-    
-    setTimeout(() => {
-      setMembers(mockMembers)
-      setLoading(false)
-    }, 1000)
+    fetchTeam()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const fetchTeam = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/project-manager/team')
+      if (response.ok) {
+        const data = await response.json()
+        setMembers(data.members || [])
+        setStats(data.statistics || stats)
+      }
+    } catch (error) {
+      console.error('Error fetching team members:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Calculate avgRating from members
+  const avgRating = members.length > 0 
+    ? (members.reduce((sum, m) => sum + (m.rating || 0), 0) / members.length).toFixed(1) 
+    : "0.0"
 
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         member.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase()))
+                         (member.skills && member.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
     const matchesDepartment = departmentFilter === "ALL" || member.department === departmentFilter
     const matchesAvailability = availabilityFilter === "ALL" || member.availability === availabilityFilter
     
@@ -168,17 +113,7 @@ export default function TeamManagementPage() {
     SICK: "bg-red-100 text-red-800",
   }
 
-  const stats = {
-    total: members.length,
-    available: members.filter(m => m.availability === 'AVAILABLE').length,
-    busy: members.filter(m => m.availability === 'BUSY').length,
-    onLeave: members.filter(m => m.availability === 'VACATION' || m.availability === 'SICK').length,
-    avgRating: members.length > 0 ? (members.reduce((sum, m) => sum + m.rating, 0) / members.length).toFixed(1) : 0,
-    totalProjects: members.reduce((sum, m) => sum + m.projectsCount, 0),
-    totalTasks: members.reduce((sum, m) => sum + m.tasksCompleted, 0),
-  }
-
-  const departments = [...new Set(members.map(m => m.department))]
+  const departments = [...new Set(members.map(m => m.department).filter((d): d is string => !!d))]
 
   if (loading) {
     return (
@@ -248,7 +183,7 @@ export default function TeamManagementPage() {
               <Calendar className="h-4 w-4 text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold zyphex-heading">{stats.onLeave}</div>
+              <div className="text-2xl font-bold zyphex-heading">{stats.onVacation}</div>
               <p className="text-xs zyphex-subheading">Vacation/Sick</p>
             </CardContent>
           </Card>
@@ -259,7 +194,7 @@ export default function TeamManagementPage() {
               <Star className="h-4 w-4 text-yellow-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold zyphex-heading">{stats.avgRating}</div>
+              <div className="text-2xl font-bold zyphex-heading">{avgRating}</div>
               <p className="text-xs zyphex-subheading">Team performance</p>
             </CardContent>
           </Card>
@@ -270,7 +205,7 @@ export default function TeamManagementPage() {
               <BarChart3 className="h-4 w-4 text-purple-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold zyphex-heading">{stats.totalTasks}</div>
+              <div className="text-2xl font-bold zyphex-heading">{stats.totalTasksCompleted}</div>
               <p className="text-xs zyphex-subheading">Completed tasks</p>
             </CardContent>
           </Card>
@@ -358,25 +293,26 @@ export default function TeamManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{member.department}</Badge>
+                        <Badge variant="outline">{member.department || "N/A"}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1 max-w-48">
-                          {member.skills.slice(0, 3).map((skill, idx) => (
+                          {member.skills && member.skills.slice(0, 3).map((skill, idx) => (
                             <Badge key={idx} variant="secondary" className="text-xs">
                               {skill}
                             </Badge>
                           ))}
-                          {member.skills.length > 3 && (
+                          {member.skills && member.skills.length > 3 && (
                             <Badge variant="secondary" className="text-xs">
                               +{member.skills.length - 3}
                             </Badge>
                           )}
+                          {!member.skills && <span className="text-sm text-gray-500">No skills listed</span>}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={availabilityColors[member.availability]}>
-                          {member.availability}
+                        <Badge className={availabilityColors[member.availability as keyof typeof availabilityColors] || availabilityColors.AVAILABLE}>
+                          {member.availability || "AVAILABLE"}
                         </Badge>
                       </TableCell>
                       <TableCell>

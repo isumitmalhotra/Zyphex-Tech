@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,154 +44,47 @@ export default function PagesManagementPage() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const [pages, setPages] = useState<Page[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    published: 0,
+    draft: 0,
+    archived: 0
+  });
 
-  // Mock data - Replace with actual API calls
-  const pages: Page[] = [
-    {
-      id: 'PAGE-001',
-      title: 'Home',
-      slug: '/',
-      status: 'published',
-      author: 'Admin User',
-      lastModified: '2025-10-25 14:30',
-      publishDate: '2025-01-01 00:00',
-      views: 45623,
-      category: 'Main',
-      template: 'home-template'
-    },
-    {
-      id: 'PAGE-002',
-      title: 'About Us',
-      slug: '/about',
-      status: 'published',
-      author: 'Admin User',
-      lastModified: '2025-10-24 11:20',
-      publishDate: '2025-01-15 09:00',
-      views: 15234,
-      category: 'Company',
-      template: 'default-template'
-    },
-    {
-      id: 'PAGE-003',
-      title: 'Services',
-      slug: '/services',
-      status: 'published',
-      author: 'John Smith',
-      lastModified: '2025-10-23 16:45',
-      publishDate: '2025-02-01 10:00',
-      views: 12890,
-      category: 'Services',
-      template: 'services-template'
-    },
-    {
-      id: 'PAGE-004',
-      title: 'Portfolio',
-      slug: '/portfolio',
-      status: 'published',
-      author: 'Sarah Johnson',
-      lastModified: '2025-10-22 09:15',
-      publishDate: '2025-03-10 08:00',
-      views: 9876,
-      category: 'Portfolio',
-      template: 'portfolio-template'
-    },
-    {
-      id: 'PAGE-005',
-      title: 'Contact',
-      slug: '/contact',
-      status: 'published',
-      author: 'Admin User',
-      lastModified: '2025-10-26 10:00',
-      publishDate: '2025-01-20 12:00',
-      views: 8543,
-      category: 'Contact',
-      template: 'contact-template'
-    },
-    {
-      id: 'PAGE-006',
-      title: 'Blog',
-      slug: '/blog',
-      status: 'published',
-      author: 'Sarah Johnson',
-      lastModified: '2025-10-20 14:30',
-      publishDate: '2025-04-01 10:00',
-      views: 7234,
-      category: 'Blog',
-      template: 'blog-template'
-    },
-    {
-      id: 'PAGE-007',
-      title: 'Careers',
-      slug: '/careers',
-      status: 'published',
-      author: 'HR Team',
-      lastModified: '2025-10-19 13:20',
-      publishDate: '2025-05-15 09:00',
-      views: 5432,
-      category: 'Careers',
-      template: 'careers-template'
-    },
-    {
-      id: 'PAGE-008',
-      title: 'Pricing',
-      slug: '/pricing',
-      status: 'draft',
-      author: 'John Smith',
-      lastModified: '2025-10-18 15:30',
-      publishDate: '',
-      views: 0,
-      category: 'Pricing',
-      template: 'pricing-template'
-    },
-    {
-      id: 'PAGE-009',
-      title: 'Privacy Policy',
-      slug: '/privacy',
-      status: 'published',
-      author: 'Legal Team',
-      lastModified: '2025-09-15 11:00',
-      publishDate: '2025-01-01 00:00',
-      views: 8723,
-      category: 'Legal',
-      template: 'legal-template'
-    },
-    {
-      id: 'PAGE-010',
-      title: 'Terms of Service',
-      slug: '/terms',
-      status: 'published',
-      author: 'Legal Team',
-      lastModified: '2025-09-15 11:30',
-      publishDate: '2025-01-01 00:00',
-      views: 6421,
-      category: 'Legal',
-      template: 'legal-template'
-    },
-    {
-      id: 'PAGE-011',
-      title: 'FAQ',
-      slug: '/faq',
-      status: 'draft',
-      author: 'Support Team',
-      lastModified: '2025-10-17 10:45',
-      publishDate: '',
-      views: 0,
-      category: 'Support',
-      template: 'faq-template'
-    },
-    {
-      id: 'PAGE-012',
-      title: 'Old Landing Page',
-      slug: '/old-landing',
-      status: 'archived',
-      author: 'Admin User',
-      lastModified: '2024-12-20 16:00',
-      publishDate: '2024-06-01 10:00',
-      views: 23456,
-      category: 'Archive',
-      template: 'landing-template'
+  // Fetch pages from API
+  useEffect(() => {
+    fetchPages();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchPages = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/super-admin/content/pages');
+      
+      if (!response.ok) throw new Error('Failed to fetch pages');
+
+      const data = await response.json();
+      setPages(data.pages);
+      setStats(data.stats);
+
+      toast({
+        title: 'Pages Loaded',
+        description: `Loaded ${data.stats.total} pages from database`
+      });
+    } catch (error) {
+      console.error('Error fetching pages:', error);
+      toast({
+        title: 'Error Loading Pages',
+        description: 'Failed to load pages from database',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const filteredPages = pages.filter(page => {
     const matchesSearch = page.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -200,11 +93,6 @@ export default function PagesManagementPage() {
     const matchesStatus = statusFilter === 'all' || page.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
-
-  const totalPages = pages.length;
-  const publishedPages = pages.filter(p => p.status === 'published').length;
-  const draftPages = pages.filter(p => p.status === 'draft').length;
-  const archivedPages = pages.filter(p => p.status === 'archived').length;
 
   const handlePublish = (pageId: string) => {
     toast({
@@ -306,7 +194,7 @@ export default function PagesManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading">
-                    {totalPages}
+                    {loading ? '-' : stats.total}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     All pages
@@ -327,7 +215,7 @@ export default function PagesManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-green-600">
-                    {publishedPages}
+                    {loading ? '-' : stats.published}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Live pages
@@ -348,7 +236,7 @@ export default function PagesManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-yellow-600">
-                    {draftPages}
+                    {loading ? '-' : stats.draft}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     In progress
@@ -369,7 +257,7 @@ export default function PagesManagementPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="text-3xl font-bold zyphex-heading text-gray-600">
-                    {archivedPages}
+                    {loading ? '-' : stats.archived}
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                     Old pages
@@ -454,6 +342,12 @@ export default function PagesManagementPage() {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[calc(100vh-500px)]">
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-400">Loading pages...</p>
+                </div>
+              ) : (
               <div className="space-y-3">
                 {filteredPages.map((page) => (
                   <div
@@ -567,7 +461,7 @@ export default function PagesManagementPage() {
                   </div>
                 ))}
 
-                {filteredPages.length === 0 && (
+                {filteredPages.length === 0 && !loading && (
                   <div className="text-center py-12">
                     <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">No Pages Found</h3>
@@ -579,6 +473,7 @@ export default function PagesManagementPage() {
                   </div>
                 )}
               </div>
+              )}
             </ScrollArea>
           </CardContent>
         </Card>
