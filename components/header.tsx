@@ -9,6 +9,8 @@ import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
 import { RealtimeNotifications } from "@/components/realtime/RealtimeNotifications"
+import { cn } from "@/lib/utils"
+import { GlobalSearch } from "@/components/global-search"
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -91,6 +93,9 @@ export default function Header() {
               <>
                 {/* Real-time Notifications */}
                 <RealtimeNotifications />
+                
+                {/* Global Search */}
+                <GlobalSearch />
                 
                 <div className="relative">
                   <Button 
@@ -266,6 +271,9 @@ export default function Header() {
               </>
             ) : (
               <>
+                {/* Global Search */}
+                <GlobalSearch />
+                
                 {!isAdminRoute && !isAuthRoute && (
                   <Button variant="outline" className="zyphex-button-secondary bg-transparent hover-zyphex-lift" asChild>
                     <Link href="/login">
@@ -287,49 +295,72 @@ export default function Header() {
           {/* Mobile Menu */}
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover-zyphex-glow">
-                <Menu className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-gray-300 hover:text-white hover-zyphex-glow transition-all duration-300 hover:scale-110 group"
+              >
+                <Menu className="h-6 w-6 transition-transform duration-300 group-hover:rotate-90" />
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px] zyphex-glass-effect border-gray-800/50">
-              <div className="flex flex-col space-y-4 mt-8">
-                <div className="flex items-center space-x-3 mb-8">
+            <SheetContent 
+              side="right" 
+              className="w-[85vw] sm:w-[400px] zyphex-glass-effect border-gray-800/50 backdrop-blur-xl"
+            >
+              <div className="flex flex-col space-y-4 mt-8 animate-in slide-in-from-right duration-300">
+                <div className="flex items-center space-x-3 mb-8 animate-in fade-in zoom-in duration-500">
                   <div className="relative w-10 h-10 animate-zyphex-glow">
                     <Image src="/zyphex-logo.png" alt="Zyphex Tech" width={40} height={40} className="object-contain" />
                   </div>
                   <span className="font-bold text-xl zyphex-heading">Zyphex Tech</span>
                 </div>
 
-                <nav className="flex flex-col space-y-4">
-                  {navigation.map((item) => (
+                <nav className="flex flex-col space-y-2">
+                  {navigation.map((item, index) => (
                     <Link
                       key={item.name}
                       href={item.href}
                       onClick={() => setIsOpen(false)}
-                      className={`text-lg font-medium transition-colors hover-zyphex-glow ${
-                        isActive(item.href) ? "zyphex-accent-text" : "text-gray-300 hover:text-white"
-                      }`}
+                      className={cn(
+                        "text-lg font-medium px-4 py-3 rounded-lg transition-all duration-300 animate-in fade-in slide-in-from-right",
+                        "hover:scale-[1.02] active:scale-[0.98] group flex items-center justify-between",
+                        isActive(item.href) 
+                          ? "zyphex-accent-text bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 shadow-lg shadow-blue-500/20" 
+                          : "text-gray-300 hover:text-white hover:bg-white/5 hover-zyphex-glow"
+                      )}
+                      style={{ 
+                        animationDelay: `${index * 50}ms`,
+                        animationDuration: '400ms'
+                      }}
                     >
-                      {item.name}
+                      <span>{item.name}</span>
+                      <svg 
+                        className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </Link>
                   ))}
                 </nav>
 
-                <div className="flex flex-col space-y-4 pt-8">
+                <div className="flex flex-col space-y-4 pt-8 border-t border-gray-800/50">
                   {session ? (
                     <>
-                      <div className="flex items-center space-x-3 p-3 rounded-lg zyphex-card-bg">
+                      <div className="flex items-center space-x-3 p-3 rounded-lg zyphex-card-bg animate-in fade-in slide-in-from-bottom duration-500" style={{ animationDelay: '250ms' }}>
                         {session.user?.image ? (
                           <Image
                             src={session.user.image}
                             alt={session.user.name || 'User'}
                             width={32}
                             height={32}
-                            className="w-8 h-8 rounded-full"
+                            className="w-8 h-8 rounded-full ring-2 ring-blue-500/30"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full zyphex-gradient-primary flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full zyphex-gradient-primary flex items-center justify-center shadow-lg shadow-blue-500/30">
                             <User className="w-4 h-4 text-white" />
                           </div>
                         )}
@@ -342,44 +373,65 @@ export default function Header() {
                           </p>
                         </div>
                       </div>
-                      <Button className="zyphex-button-secondary bg-transparent" asChild onClick={() => setIsOpen(false)}>
+                      <Button 
+                        className="zyphex-button-secondary bg-transparent hover:scale-[1.02] active:scale-[0.98] transition-transform animate-in fade-in slide-in-from-bottom duration-500 group" 
+                        style={{ animationDelay: '300ms' }}
+                        asChild 
+                        onClick={() => setIsOpen(false)}
+                      >
                         <Link href="/user">
-                          <LayoutDashboard className="mr-2 h-4 w-4" />
+                          <LayoutDashboard className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12" />
                           Dashboard
                         </Link>
                       </Button>
-                      <Button className="zyphex-button-primary" asChild onClick={() => setIsOpen(false)}>
+                      <Button 
+                        className="zyphex-button-primary hover:scale-[1.02] active:scale-[0.98] transition-transform animate-in fade-in slide-in-from-bottom duration-500 group" 
+                        style={{ animationDelay: '350ms' }}
+                        asChild 
+                        onClick={() => setIsOpen(false)}
+                      >
                         <Link href="/contact">
                           Start Project
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </Link>
                       </Button>
                       <Button 
                         variant="outline" 
-                        className="zyphex-button-secondary bg-transparent" 
+                        className="zyphex-button-secondary bg-transparent hover:scale-[1.02] active:scale-[0.98] transition-all animate-in fade-in slide-in-from-bottom duration-500 hover:border-red-500/50 hover:text-red-400 group" 
+                        style={{ animationDelay: '400ms' }}
                         onClick={() => {
                           setIsOpen(false)
                           signOut({ callbackUrl: '/login' })
                         }}
                       >
-                        <LogOut className="mr-2 h-4 w-4" />
+                        <LogOut className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
                         Sign out
                       </Button>
                     </>
                   ) : (
                     <>
                       {!isAdminRoute && !isAuthRoute && (
-                        <Button className="zyphex-button-secondary bg-transparent" asChild onClick={() => setIsOpen(false)}>
+                        <Button 
+                          className="zyphex-button-secondary bg-transparent hover:scale-[1.02] active:scale-[0.98] transition-transform animate-in fade-in slide-in-from-bottom duration-500 group" 
+                          style={{ animationDelay: '250ms' }}
+                          asChild 
+                          onClick={() => setIsOpen(false)}
+                        >
                           <Link href="/login">
-                            <LogIn className="mr-2 h-4 w-4" />
+                            <LogIn className="mr-2 h-4 w-4 transition-transform group-hover:translate-x-[-2px]" />
                             Login / Sign Up
                           </Link>
                         </Button>
                       )}
-                      <Button className="zyphex-button-primary" asChild onClick={() => setIsOpen(false)}>
+                      <Button 
+                        className="zyphex-button-primary hover:scale-[1.02] active:scale-[0.98] transition-transform animate-in fade-in slide-in-from-bottom duration-500 group" 
+                        style={{ animationDelay: '300ms' }}
+                        asChild 
+                        onClick={() => setIsOpen(false)}
+                      >
                         <Link href="/contact">
                           Start Project
-                          <ArrowRight className="ml-2 h-4 w-4" />
+                          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </Link>
                       </Button>
                     </>

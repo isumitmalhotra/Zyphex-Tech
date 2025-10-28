@@ -12,11 +12,11 @@ const securityHeaders = {
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: https:",
+    "img-src 'self' data: https: https://www.google-analytics.com https://www.googletagmanager.com",
     "font-src 'self' data: https://r2cdn.perplexity.ai",
-    "connect-src 'self' https://zyphextech.com https://www.zyphextech.com wss://zyphextech.com wss://www.zyphextech.com ws://localhost:* http://localhost:* https://r2cdn.perplexity.ai",
+    "connect-src 'self' https://zyphextech.com https://www.zyphextech.com wss://zyphextech.com wss://www.zyphextech.com ws://localhost:* http://localhost:* https://r2cdn.perplexity.ai https://www.google-analytics.com https://analytics.google.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'"
@@ -100,7 +100,6 @@ function checkRateLimit(req: NextRequestWithAuth): boolean {
   const windowMs = 15 * 60 * 1000; // 15 minutes
   
   // Very generous rate limits for production with multiple concurrent users
-  const isDevelopment = process.env.NODE_ENV === 'development';
   const isProduction = process.env.NODE_ENV === 'production';
   
   // Determine max requests based on endpoint type and environment

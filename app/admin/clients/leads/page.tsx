@@ -13,10 +13,9 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/ui/user-avatar"
 import { CalendarDays, DollarSign, Phone, Mail, MapPin, Target, TrendingUp, Filter, Plus, UserPlus } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
-import { generateAvatar } from "@/lib/utils/avatar"
 
 export default function LeadsPage() {
   const leads = [
@@ -255,12 +254,12 @@ export default function LeadsPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={lead.avatar || generateAvatar(lead.contactPerson, 48)} alt={lead.name} />
-                      <AvatarFallback>
-                        <img src={generateAvatar(lead.contactPerson, 48)} alt={lead.contactPerson} className="h-full w-full" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar 
+                      name={lead.contactPerson} 
+                      imageUrl={lead.avatar}
+                      size="lg"
+                      alt={`${lead.contactPerson} from ${lead.company}`}
+                    />
                     <div>
                       <CardTitle className="zyphex-heading">{lead.company}</CardTitle>
                       <CardDescription className="zyphex-subheading">{lead.contactPerson}</CardDescription>

@@ -34,6 +34,7 @@ import {
 import Link from "next/link"
 import { format } from "date-fns"
 import { SubtleBackground } from "@/components/subtle-background"
+import { ProjectCardSkeleton } from "@/components/ui/loading-skeletons"
 
 interface Project {
   id: string
@@ -144,8 +145,16 @@ export default function AllProjectsPage() {
     return (
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
         <SubtleBackground />
-        <div className="flex items-center justify-center h-96">
-          <Loader2 className="h-8 w-8 animate-spin zyphex-heading" />
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <div className="space-y-2 mb-6">
+            <div className="h-9 w-48 bg-white/5 rounded-lg animate-pulse" />
+            <div className="h-5 w-72 bg-white/5 rounded animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <ProjectCardSkeleton key={i} />
+            ))}
+          </div>
         </div>
       </div>
     )

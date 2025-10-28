@@ -113,9 +113,9 @@ export function useSocket() {
         },
         autoConnect: true,
         reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 5,
-        timeout: 20000,
+        reconnectionDelay: 15000, // Wait 15 seconds between reconnection attempts
+        reconnectionAttempts: 2, // Only try 2 times
+        timeout: 20000, // Increased timeout to 20 seconds
       });
 
       // Connection event handlers
@@ -133,13 +133,21 @@ export function useSocket() {
       });
 
       socketRef.current.on('connect_error', (error) => {
-        console.error('Socket.io connection error:', error);
+        // Silently handle connection errors - socket server may not be running in dev
         setConnectionError(error.message);
         setIsConnected(false);
+        // Only log once every 60 seconds to avoid spam (increased from 30s)
+        const now = Date.now();
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const lastLog = (window as any)._lastSocketErrorLog || 0;
+        if (now - lastLog > 60000) {
+          console.warn('💡 Socket.io unavailable - Start with "npm run dev:custom" for real-time features');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any)._lastSocketErrorLog = now;
+        }
       });
 
       socketRef.current.on('error', (error) => {
-        console.error('Socket.io error:', error);
         setConnectionError(error.message);
       });
 

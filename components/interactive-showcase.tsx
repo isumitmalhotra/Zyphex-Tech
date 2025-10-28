@@ -121,9 +121,9 @@ export default function InteractiveShowcase() {
             <TabsTrigger
               key={demo.id}
               value={demo.id}
-              className="flex flex-col items-center gap-2 p-4 data-[state=active]:bg-slate-800 data-[state=active]:text-white data-[state=active]:shadow-sm text-gray-300 hover:text-white transition-colors"
+              className="flex flex-col items-center gap-2 p-4 data-[state=active]:bg-slate-800 data-[state=active]:text-white data-[state=active]:shadow-sm text-gray-300 hover:text-white hover:bg-slate-800/50 transition-all duration-300 cursor-pointer group"
             >
-              <demo.icon className="h-5 w-5" />
+              <demo.icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
               <span className="text-xs font-medium text-center leading-tight text-white">{demo.title}</span>
             </TabsTrigger>
           ))}
@@ -132,14 +132,17 @@ export default function InteractiveShowcase() {
         {/* Software Development Demo */}
         <TabsContent value="software" className="space-y-6">
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-white mb-2">Custom Business Application</h3>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <h3 className="text-2xl font-bold text-white">Custom Business Application</h3>
+              <Badge className="bg-blue-600 hover:bg-blue-700 animate-pulse">Interactive Demo</Badge>
+            </div>
             <p className="text-gray-300">Experience a fully functional business management interface</p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 group-hover:text-blue-600 transition-colors">
                   <Code className="h-5 w-5 text-blue-600" />
                   Project Management Dashboard
                 </CardTitle>
@@ -187,9 +190,9 @@ export default function InteractiveShowcase() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group">
               <CardHeader>
-                <CardTitle>Quick Project Setup</CardTitle>
+                <CardTitle className="group-hover:text-blue-600 transition-colors">Quick Project Setup</CardTitle>
                 <CardDescription>Try our intuitive project creation interface</CardDescription>
               </CardHeader>
               <CardContent>
@@ -239,13 +242,16 @@ export default function InteractiveShowcase() {
         {/* Cloud Architecture Demo */}
         <TabsContent value="cloud" className="space-y-6">
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-white mb-2">Cloud Infrastructure Visualization</h3>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <h3 className="text-2xl font-bold text-white">Cloud Infrastructure Visualization</h3>
+              <Badge className="bg-blue-600 hover:bg-blue-700 animate-pulse">Interactive Demo</Badge>
+            </div>
             <p className="text-gray-300">Interactive cloud architecture with real-time monitoring</p>
           </div>
 
-          <Card className="border-0 shadow-lg">
+          <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 hover:text-blue-600 transition-colors">
                 <Cloud className="h-5 w-5 text-blue-600" />
                 AWS Cloud Architecture
               </CardTitle>
@@ -342,14 +348,17 @@ export default function InteractiveShowcase() {
         {/* Analytics Dashboard Demo */}
         <TabsContent value="analytics" className="space-y-6">
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-white mb-2">Business Intelligence Dashboard</h3>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <h3 className="text-2xl font-bold text-white">Business Intelligence Dashboard</h3>
+              <Badge className="bg-blue-600 hover:bg-blue-700 animate-pulse">Interactive Demo</Badge>
+            </div>
             <p className="text-gray-300">Real-time analytics and data visualization</p>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-6">
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 group-hover:text-blue-600 transition-colors">
                   <BarChart3 className="h-5 w-5 text-blue-600" />
                   Revenue Analytics
                 </CardTitle>
@@ -396,9 +405,9 @@ export default function InteractiveShowcase() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer group">
               <CardHeader>
-                <CardTitle>Key Performance Indicators</CardTitle>
+                <CardTitle className="group-hover:text-blue-600 transition-colors">Key Performance Indicators</CardTitle>
                 <CardDescription>Real-time business metrics</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -449,7 +458,10 @@ export default function InteractiveShowcase() {
         {/* Mobile App Demo */}
         <TabsContent value="mobile" className="space-y-6">
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-white mb-2">Mobile App Interface</h3>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <h3 className="text-2xl font-bold text-white">Mobile App Interface</h3>
+              <Badge className="bg-blue-600 hover:bg-blue-700 animate-pulse">Interactive Demo</Badge>
+            </div>
             <p className="text-gray-300">Cross-platform mobile application preview</p>
           </div>
 
@@ -526,13 +538,16 @@ export default function InteractiveShowcase() {
         {/* IT Consulting Demo */}
         <TabsContent value="consulting" className="space-y-6">
           <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-white mb-2">IT Readiness Assessment</h3>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <h3 className="text-2xl font-bold text-white">IT Readiness Assessment</h3>
+              <Badge className="bg-blue-600 hover:bg-blue-700 animate-pulse">Interactive Demo</Badge>
+            </div>
             <p className="text-gray-300">Interactive tool to evaluate your technology infrastructure</p>
           </div>
 
-          <Card className="border-0 shadow-lg max-w-2xl mx-auto">
+          <Card className="border-0 shadow-lg max-w-2xl mx-auto hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 hover:text-blue-600 transition-colors">
                 <Zap className="h-5 w-5 text-blue-600" />
                 Technology Assessment Tool
               </CardTitle>
@@ -540,8 +555,8 @@ export default function InteractiveShowcase() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div>
-                  <Label className="text-base font-medium">What's your current technology stack?</Label>
+                  <div>
+                  <Label className="text-base font-medium">What&apos;s your current technology stack?</Label>
                   <div className="grid grid-cols-2 gap-2 mt-2">
                     {["Legacy Systems", "Modern Web", "Cloud-Native", "Hybrid"].map((option) => (
                       <Button key={option} variant="outline" size="sm" className="justify-start bg-transparent">

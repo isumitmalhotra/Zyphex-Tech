@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PermissionGuard } from "@/components/auth/permission-guard"
 import { Permission } from "@/lib/auth/permissions"
+import { useUser, usePermission } from "@/hooks/use-permissions"
 import {
   FileText,
   Plus,
@@ -61,6 +62,9 @@ interface InvoicesData {
 }
 
 export default function ProjectManagerInvoicesPage() {
+  const user = useUser()
+  const hasFinancialsPermission = usePermission(Permission.VIEW_FINANCIALS)
+  
   const [invoicesData, setInvoicesData] = useState<InvoicesData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,10 +72,20 @@ export default function ProjectManagerInvoicesPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
 
+  // Debug permissions
+  console.log('🔐 Permission Debug:', {
+    user: user?.email,
+    role: user?.role,
+    hasFinancialsPermission,
+    requiredPermission: Permission.VIEW_FINANCIALS
+  })
+
   useEffect(() => {
     const loadInvoices = async () => {
       try {
         setLoading(true)
+        console.log('📊 Loading invoices...', { page: currentPage, status: statusFilter, search: searchTerm })
+        
         const response = await fetch('/api/financial/mock', {
           method: 'POST',
           headers: {
@@ -84,7 +98,10 @@ export default function ProjectManagerInvoicesPage() {
             search: searchTerm
           })
         })
+        
+        console.log('📊 Response status:', response.status)
         const result = await response.json()
+        console.log('📊 Response data:', result)
 
         if (result.invoices) {
           setInvoicesData({
@@ -96,13 +113,15 @@ export default function ProjectManagerInvoicesPage() {
               pages: result.totalPages
             }
           })
+          console.log('✅ Invoices loaded:', result.invoices.length)
           setError(null)
         } else {
+          console.error('❌ No invoices in response:', result)
           setError(result.error || 'Failed to load invoices')
         }
       } catch (err) {
         setError('Failed to load invoices')
-        console.error('Invoices fetch error:', err)
+        console.error('❌ Invoices fetch error:', err)
       } finally {
         setLoading(false)
       }
@@ -204,11 +223,19 @@ export default function ProjectManagerInvoicesPage() {
     }
   }
 
-  const filteredInvoices = invoicesData?.invoices.filter(invoice =>
-    invoice?.invoiceNumber?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-    invoice?.client?.name?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-    (invoice?.client?.company && invoice.client.company.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || []
+  // No need to filter again on client since API already filters
+  // Just use the invoices directly from the API response
+  const filteredInvoices = invoicesData?.invoices || []
+
+  console.log('🔍 Filter debug:', {
+    invoicesDataExists: !!invoicesData,
+    totalInvoices: invoicesData?.invoices?.length,
+    searchTerm,
+    searchTermLength: searchTerm.length,
+    filteredCount: filteredInvoices.length,
+    sampleInvoice: invoicesData?.invoices?.[0],
+    firstInvoiceNumber: invoicesData?.invoices?.[0]?.invoiceNumber
+  })
 
   if (loading) {
     return (
@@ -237,8 +264,20 @@ export default function ProjectManagerInvoicesPage() {
     )
   }
 
+  console.log('🎨 About to render main content. Invoices to display:', filteredInvoices.length)
+
   return (
-    <PermissionGuard permission={Permission.VIEW_FINANCIALS}>
+    <PermissionGuard 
+      permission={Permission.VIEW_FINANCIALS}
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+          <div className="text-center text-white">
+            <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+            <p className="text-slate-400">You do not have permission to view financials</p>
+          </div>
+        </div>
+      }
+    >
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="container mx-auto px-6 py-8">
           <div className="space-y-6">

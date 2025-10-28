@@ -58,60 +58,63 @@ export default function NotFound() {
   // }, [])
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen zyphex-gradient-bg flex items-center justify-center p-4 relative overflow-hidden">
       {/* Subtle background effects matching homepage design */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-blob" />
-        <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-8 left-1/3 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl animate-blob animation-delay-4000" />
+      <div className="absolute inset-0 -z-10 opacity-10">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500 rounded-full blur-3xl animate-float-3d" />
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-500 rounded-full blur-3xl animate-float-3d animation-delay-2000" />
+        <div className="absolute -bottom-8 left-1/3 w-96 h-96 bg-cyan-500 rounded-full blur-3xl animate-float-3d animation-delay-4000" />
       </div>
 
       <div className="max-w-4xl w-full space-y-8">
         {/* Main Error Message */}
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-destructive/10 dark:bg-destructive/20 mb-4">
-            <FileQuestion className="w-10 h-10 text-destructive" />
+        <div className="text-center space-y-4 animate-in fade-in zoom-in duration-700">
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full zyphex-gradient-primary mb-6 animate-pulse-3d">
+            <FileQuestion className="w-12 h-12 text-white" />
           </div>
           
-          <h1 className="text-6xl md:text-8xl font-bold text-foreground">
-            404
+          <h1 className="text-7xl md:text-9xl font-bold animate-in zoom-in duration-700 delay-100">
+            <span className="zyphex-accent-text animate-metallic-shine">404</span>
           </h1>
           
-          <h2 className="text-2xl md:text-3xl font-semibold text-foreground">
+          <h2 className="text-3xl md:text-4xl font-bold zyphex-heading animate-in slide-in-from-bottom-4 duration-700 delay-200">
             Page Not Found
           </h2>
           
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="zyphex-subheading text-lg md:text-xl max-w-2xl mx-auto leading-relaxed animate-in slide-in-from-bottom-4 duration-700 delay-300">
             Oops! The page you&apos;re looking for seems to have wandered off into the digital void. 
             Don&apos;t worry, we&apos;ll help you find your way back.
           </p>
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button asChild size="lg" className="min-w-[160px]">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-in slide-in-from-bottom-4 duration-700 delay-400">
+          <Button asChild size="lg" className="min-w-[180px] zyphex-button-primary hover-zyphex-lift transition-all duration-300 hover:scale-105 group">
             <Link href="/">
-              <Home className="mr-2 h-4 w-4" />
+              <Home className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
               Go Home
             </Link>
           </Button>
           
-          <Button asChild variant="outline" size="lg" className="min-w-[160px]">
-            <Link href="javascript:history.back()">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Go Back
-            </Link>
+          <Button 
+            variant="outline" 
+            size="lg" 
+            className="min-w-[180px] zyphex-button-secondary bg-transparent hover-zyphex-lift transition-all duration-300 hover:scale-105 group"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="mr-2 h-5 w-5 transition-transform group-hover:-translate-x-1" />
+            Go Back
           </Button>
         </div>
 
         {/* Search Section */}
-        <Card className="max-w-2xl mx-auto">
+        <Card className="max-w-2xl mx-auto zyphex-card hover-zyphex-lift animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 zyphex-heading">
+              <Search className="h-6 w-6 text-blue-500" />
               Search Our Site
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="zyphex-subheading">
               Try searching for what you&apos;re looking for
             </CardDescription>
           </CardHeader>
@@ -131,9 +134,9 @@ export default function NotFound() {
                 type="search"
                 name="search"
                 placeholder="Search for services, blog posts..."
-                className="flex-1"
+                className="flex-1 zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors"
               />
-              <Button type="submit">
+              <Button type="submit" className="zyphex-button-primary hover-zyphex-lift">
                 <Search className="h-4 w-4 mr-2" />
                 Search
               </Button>
@@ -142,27 +145,30 @@ export default function NotFound() {
         </Card>
 
         {/* Popular Pages */}
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-center text-foreground">
+        <div className="space-y-6 animate-in fade-in duration-700 delay-600">
+          <h3 className="text-2xl font-bold text-center zyphex-heading">
             Popular Pages
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {popularPages.map((page) => {
+            {popularPages.map((page, index) => {
               const Icon = page.icon
               return (
                 <Link key={page.href} href={page.href}>
-                  <Card className="h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer group">
+                  <Card 
+                    className="h-full zyphex-card hover-zyphex-lift transition-all hover:scale-105 cursor-pointer group animate-in fade-in slide-in-from-bottom-2 duration-500"
+                    style={{ animationDelay: `${700 + index * 100}ms` }}
+                  >
                     <CardHeader>
                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary/20 group-hover:bg-primary/20 dark:group-hover:bg-primary/30 transition-colors">
-                          <Icon className="h-5 w-5 text-primary" />
+                        <div className="p-3 rounded-lg zyphex-gradient-primary group-hover:scale-110 transition-transform">
+                          <Icon className="h-6 w-6 text-white" />
                         </div>
                         <div className="flex-1">
-                          <CardTitle className="text-base group-hover:text-primary transition-colors">
+                          <CardTitle className="text-lg zyphex-heading group-hover:text-blue-400 transition-colors">
                             {page.title}
                           </CardTitle>
-                          <CardDescription className="mt-1 text-sm">
+                          <CardDescription className="mt-2 text-sm zyphex-subheading">
                             {page.description}
                           </CardDescription>
                         </div>
@@ -176,27 +182,27 @@ export default function NotFound() {
         </div>
 
         {/* Help Section */}
-        <Card className="max-w-2xl mx-auto bg-muted/30">
+        <Card className="max-w-2xl mx-auto zyphex-card bg-blue-900/20 animate-in fade-in duration-700 delay-900">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <AlertCircle className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg zyphex-heading">
+              <AlertCircle className="h-6 w-6 text-blue-500" />
               Still Can&apos;t Find What You&apos;re Looking For?
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm zyphex-subheading mb-6 leading-relaxed">
               If you believe this is an error or need assistance, our support team is here to help.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Button asChild variant="outline" className="flex-1">
+              <Button asChild variant="outline" className="flex-1 zyphex-button-secondary bg-transparent hover-zyphex-lift group">
                 <Link href="/contact">
-                  <Mail className="mr-2 h-4 w-4" />
+                  <Mail className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
                   Contact Support
                 </Link>
               </Button>
-              <Button asChild variant="outline" className="flex-1">
+              <Button asChild variant="outline" className="flex-1 zyphex-button-secondary bg-transparent hover-zyphex-lift group">
                 <Link href="/services">
-                  <Briefcase className="mr-2 h-4 w-4" />
+                  <Briefcase className="mr-2 h-5 w-5 transition-transform group-hover:scale-110" />
                   View Services
                 </Link>
               </Button>
@@ -205,8 +211,8 @@ export default function NotFound() {
         </Card>
 
         {/* Footer Note */}
-        <p className="text-center text-sm text-muted-foreground">
-          Error Code: 404 • Page Not Found
+        <p className="text-center text-sm zyphex-subheading animate-in fade-in duration-700 delay-1000">
+          Error Code: 404 • Page Not Found • <Link href="/contact" className="zyphex-accent-text hover:underline">Report Issue</Link>
         </p>
       </div>
     </div>

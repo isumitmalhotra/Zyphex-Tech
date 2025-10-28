@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // Fetch clients with their related data

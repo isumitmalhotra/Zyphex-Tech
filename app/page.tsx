@@ -11,7 +11,6 @@ import { Icon3D } from "@/components/3d-icons"
 import { getPageContent, getItemsByContentType } from "@/lib/content"
 import type { ContentSection, ContentItem } from "@/lib/content"
 import ClientAnimations from "@/components/client-animations"
-import { generateGradientPlaceholder } from "@/lib/utils/images"
 
 // Type for parsed content data
 interface ParsedContent {
@@ -115,9 +114,9 @@ export default async function HomePage() {
   // Helper functions for blog post data
   const getPostImage = (post: ContentItem | FallbackPost): string => {
     if ('data' in post && post.data && typeof post.data === 'object') {
-      return (post.data as { imageUrl?: string }).imageUrl || generateGradientPlaceholder(400, 200, post.title)
+      return (post.data as { imageUrl?: string }).imageUrl || "/images/blog/default.jpg"
     }
-    return generateGradientPlaceholder(400, 200, post.title)
+    return "/images/blog/default.jpg"
   }
 
   const getPostCategory = (post: ContentItem | FallbackPost): string => {
@@ -216,20 +215,31 @@ export default async function HomePage() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 scroll-reveal-scale">
-                <Button size="lg" className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 zyphex-button-primary hover-zyphex-lift w-full sm:w-auto" asChild>
+                <Button 
+                  size="lg" 
+                  className="group text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 zyphex-button-primary hover-zyphex-lift 
+                             w-full sm:w-auto transition-all duration-300 hover:scale-105 active:scale-95 
+                             focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 
+                             focus-visible:ring-offset-slate-900" 
+                  asChild
+                >
                   <Link href="/contact">
                     {getContentData(heroSection)?.ctaText || 'Get Free Consultation'}
-                    <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5" />
+                    <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5 transition-transform duration-300 group-hover:translate-x-1" />
                   </Link>
                 </Button>
                 <Button
                   variant="outline"
                   size="lg"
-                  className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 zyphex-button-secondary hover-zyphex-lift bg-transparent w-full sm:w-auto"
+                  className="group text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 zyphex-button-secondary hover-zyphex-lift 
+                             bg-transparent w-full sm:w-auto transition-all duration-300 hover:scale-105 active:scale-95
+                             focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 
+                             focus-visible:ring-offset-slate-900 hover:bg-blue-500/10"
                   asChild
                 >
                   <Link href="/services">
                     {getContentData(heroSection)?.ctaSecondary || 'View Our Services'}
+                    <ArrowRight className="ml-2 h-4 sm:h-5 w-4 sm:w-5 transition-transform duration-300 group-hover:translate-x-1" />
                   </Link>
                 </Button>
               </div>
@@ -271,10 +281,17 @@ export default async function HomePage() {
               {aboutSection?.description || aboutSection?.subtitle || 'Founded with a vision to bridge the gap between complex technology and business success, our agency combines deep technical expertise with strategic thinking. We don&apos;t just build solutions; we craft digital experiences that transform how businesses operate and grow.'}
             </p>
             <div className="flex justify-center pt-4">
-              <Button variant="outline" className="zyphex-button-secondary hover-zyphex-lift bg-transparent" asChild>
+              <Button 
+                variant="outline" 
+                className="group zyphex-button-secondary hover-zyphex-lift bg-transparent 
+                           transition-all duration-300 hover:scale-105 active:scale-95
+                           focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 
+                           focus-visible:ring-offset-slate-900 hover:bg-blue-500/10" 
+                asChild
+              >
                 <Link href="/about">
                   {getContentData(aboutSection)?.ctaText || 'Learn More About Us'}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
               </Button>
             </div>
@@ -394,10 +411,16 @@ export default async function HomePage() {
             )}
           </div>
           <div className="text-center mt-12 scroll-reveal">
-            <Button size="lg" className="zyphex-button-primary hover-zyphex-lift" asChild>
+            <Button 
+              size="lg" 
+              className="group zyphex-button-primary hover-zyphex-lift transition-all duration-300 
+                         hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-blue-500 
+                         focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900" 
+              asChild
+            >
               <Link href="/services">
                 Explore All Services
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </Button>
           </div>
@@ -483,11 +506,12 @@ export default async function HomePage() {
             <div className="relative scroll-reveal-right">
               <div className="zyphex-3d-card hover-zyphex-lift">
                 <Image
-                  src={generateGradientPlaceholder(500, 500, "why-choose-zyphex")}
-                  alt="Why Choose Zyphex Tech"
+                  src="/images/why-choose-us.jpg"
+                  alt="Why Choose Zyphex Tech - Expert Remote IT Team Collaboration"
                   width={500}
                   height={500}
                   className="rounded-2xl w-full h-auto"
+                  priority={false}
                 />
               </div>
             </div>
@@ -512,7 +536,7 @@ export default async function HomePage() {
                 title: "The Future of Cloud Computing in 2024",
                 data: {
                   excerpt: "Exploring emerging trends in cloud technology and how businesses can leverage them for competitive advantage.",
-                  imageUrl: generateGradientPlaceholder(400, 200, "cloud-computing"),
+                  imageUrl: "/images/blog/cloud-computing.jpg",
                 },
                 publishedAt: new Date("2024-12-15"),
                 categories: ["Cloud Technology"],
@@ -523,7 +547,7 @@ export default async function HomePage() {
                 title: "AI Integration in Business Applications",
                 data: {
                   excerpt: "How artificial intelligence is transforming business processes and creating new opportunities for growth.",
-                  imageUrl: generateGradientPlaceholder(400, 200, "ai-integration"),
+                  imageUrl: "/images/blog/ai-integration.jpg",
                 },
                 publishedAt: new Date("2024-12-10"),
                 categories: ["Artificial Intelligence"],
@@ -534,7 +558,7 @@ export default async function HomePage() {
                 title: "Cybersecurity Best Practices for SMBs", 
                 data: {
                   excerpt: "Essential security measures every small and medium business should implement to protect their digital assets.",
-                  imageUrl: generateGradientPlaceholder(400, 200, "cybersecurity"),
+                  imageUrl: "/images/blog/cybersecurity.jpg",
                 },
                 publishedAt: new Date("2024-12-05"),
                 categories: ["Security"],
@@ -707,18 +731,24 @@ export default async function HomePage() {
               <Button
                 size="lg"
                 variant="secondary"
-                className="text-lg px-8 py-6 zyphex-button-secondary hover-zyphex-lift"
+                className="group text-lg px-8 py-6 zyphex-button-secondary hover-zyphex-lift 
+                           transition-all duration-300 hover:scale-105 active:scale-95
+                           focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 
+                           focus-visible:ring-offset-slate-900"
                 asChild
               >
                 <Link href="/contact">
                   Start Your Project
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
-                className="text-lg px-8 py-6 border-white text-white hover:bg-white hover:text-blue-600 bg-transparent zyphex-button-secondary hover-zyphex-lift"
+                className="group text-lg px-8 py-6 border-white text-white hover:bg-white hover:text-blue-600 
+                           bg-transparent zyphex-button-secondary hover-zyphex-lift transition-all duration-300 
+                           hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white 
+                           focus-visible:ring-offset-2 focus-visible:ring-offset-blue-600"
                 asChild
               >
                 <Link href="/services">View Services</Link>

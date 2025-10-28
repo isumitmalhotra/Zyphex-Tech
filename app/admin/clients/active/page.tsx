@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/ui/user-avatar"
 import { CalendarDays, DollarSign, Phone, Mail, MapPin, Users, TrendingUp, Filter, Plus } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 
@@ -219,10 +219,12 @@ export default function ActiveClientsPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={client.avatar} alt={client.name} />
-                      <AvatarFallback>{client.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                    </Avatar>
+                    <UserAvatar 
+                      name={client.name} 
+                      imageUrl={client.avatar}
+                      size="lg"
+                      alt={`${client.name} from ${client.company}`}
+                    />
                     <div>
                       <CardTitle className="zyphex-heading">{client.company}</CardTitle>
                       <CardDescription className="zyphex-subheading">{client.contactPerson}</CardDescription>

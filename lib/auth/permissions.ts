@@ -220,6 +220,12 @@ export const DefaultRolePermissions: Record<Role, Permission[]> = {
     Permission.APPROVE_TIME_ENTRIES,
     Permission.VIEW_ALL_TIME_ENTRIES,
     
+    // Financial Management
+    Permission.VIEW_FINANCIALS,
+    Permission.MANAGE_INVOICES,
+    Permission.CREATE_INVOICE,
+    Permission.VIEW_REVENUE_REPORTS,
+    
     // Team Management
     Permission.VIEW_TEAMS,
     Permission.MANAGE_TEAM_MEMBERS,

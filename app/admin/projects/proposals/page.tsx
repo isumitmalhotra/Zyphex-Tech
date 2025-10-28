@@ -13,10 +13,9 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/ui/user-avatar"
 import { CalendarDays, DollarSign, FileText, TrendingUp, Filter, Plus, Eye, CheckCircle, XCircle } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
-import { generateAvatar } from '@/lib/utils/avatar'
 
 export default function ProposalsPage() {
   const proposals = [
@@ -304,12 +303,13 @@ export default function ProposalsPage() {
                     <p className="text-sm font-medium zyphex-heading mb-2">Assigned Team</p>
                     <div className="flex items-center space-x-2">
                       {proposal.team.map((member, index) => (
-                        <Avatar key={index} className="h-8 w-8">
-                          <AvatarImage src={member.avatar || generateAvatar(member.name, 32)} alt={member.name} />
-                          <AvatarFallback>
-                            <img src={generateAvatar(member.name, 32)} alt={member.name} />
-                          </AvatarFallback>
-                        </Avatar>
+                        <UserAvatar 
+                          key={index}
+                          name={member.name}
+                          imageUrl={member.avatar}
+                          size="sm"
+                          alt={member.name}
+                        />
                       ))}
                       <span className="text-sm zyphex-subheading ml-2">
                         {proposal.team.map(m => m.name.split(' ')[0]).join(', ')}

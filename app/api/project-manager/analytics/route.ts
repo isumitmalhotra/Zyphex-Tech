@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = 'force-dynamic'
+
 // GET - Fetch project analytics with aggregate queries
 export async function GET(request: NextRequest) {
   try {
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
         _count: {
           select: {
             tasks: true,
-            team: true,
+            teams: true,
             documents: true,
             milestones: true,
           },

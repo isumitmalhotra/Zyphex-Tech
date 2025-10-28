@@ -14,6 +14,8 @@ import {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

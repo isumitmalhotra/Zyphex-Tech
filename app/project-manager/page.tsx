@@ -21,11 +21,12 @@ import {
   Loader2,
 } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
-import { useProjectManagerDashboard } from "@/hooks/use-project-manager-dashboard"
-import { DashboardMessaging } from "@/components/dashboard-messaging"
+// import { useProjectManagerDashboard } from "@/hooks/use-project-manager-dashboard"
+// import { DashboardMessaging } from "@/components/dashboard-messaging"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 
 interface Project {
   id: string;
@@ -69,9 +70,37 @@ interface Activity {
 }
 
 function ProjectManagerDashboardContent() {
-  const { dashboardData, loading, error, refresh } = useProjectManagerDashboard()
-  const { data: session } = useSession()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [dashboardData, setDashboardData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { data: _session } = useSession()
   const router = useRouter()
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const response = await fetch('/api/project-manager/dashboard')
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data')
+      }
+      const result = await response.json()
+      setDashboardData(result.data || result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load dashboard data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const refresh = () => {
+    fetchDashboardData()
+  }
 
   if (loading) {
     return (
@@ -310,7 +339,8 @@ function ProjectManagerDashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {teamPerformance.filter(member => member && member.user).slice(0, 5).map((member: TeamMember) => (
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {teamPerformance.filter((member: any) => member && member.user).slice(0, 5).map((member: TeamMember) => (
                 <div key={member.userId} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/50">
                   <div className="flex-1">
                     <h4 className="font-medium zyphex-heading text-sm">

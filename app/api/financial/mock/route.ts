@@ -199,7 +199,7 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(mockData)
 
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -217,6 +217,8 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { page = 1, limit = 10, status, search } = body
+
+    console.log('📊 API received:', { page, limit, status, search })
 
     // Mock invoices data with filtering
     let mockInvoices = [
@@ -358,8 +360,11 @@ export async function POST(request: NextRequest) {
     ]
 
     // Apply filters
-    if (status && status !== 'ALL') {
+    console.log('📊 Before filter - Total invoices:', mockInvoices.length)
+    
+    if (status && status !== 'ALL' && status !== 'all') {
       mockInvoices = mockInvoices.filter(inv => inv.status === status)
+      console.log(`📊 After status filter (${status}):`, mockInvoices.length)
     }
 
     if (search) {
@@ -370,12 +375,20 @@ export async function POST(request: NextRequest) {
         inv.project.name.toLowerCase().includes(searchLower) ||
         inv.description.toLowerCase().includes(searchLower)
       )
+      console.log(`📊 After search filter (${search}):`, mockInvoices.length)
     }
 
     // Apply pagination
     const startIndex = (page - 1) * limit
     const endIndex = startIndex + limit
     const paginatedInvoices = mockInvoices.slice(startIndex, endIndex)
+
+    console.log('📊 Final result:', {
+      totalAfterFilters: mockInvoices.length,
+      returnedInvoices: paginatedInvoices.length,
+      page,
+      totalPages: Math.ceil(mockInvoices.length / limit)
+    })
 
     return NextResponse.json({
       invoices: paginatedInvoices,
@@ -385,7 +398,7 @@ export async function POST(request: NextRequest) {
       totalPages: Math.ceil(mockInvoices.length / limit)
     })
 
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

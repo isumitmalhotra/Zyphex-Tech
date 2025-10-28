@@ -30,16 +30,116 @@ export default function ContactPage() {
     newsletter: false,
     terms: false
   })
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
+  const validateField = (field: string, value: string | boolean): string => {
+    switch (field) {
+      case 'firstName':
+      case 'lastName':
+        if (typeof value === 'string' && value.trim().length < 2) {
+          return 'Must be at least 2 characters'
+        }
+        return ''
+      case 'email':
+        if (typeof value === 'string') {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (!emailRegex.test(value)) {
+            return 'Please enter a valid email address'
+          }
+        }
+        return ''
+      case 'phone':
+        if (typeof value === 'string' && value && value.length < 10) {
+          return 'Please enter a valid phone number'
+        }
+        return ''
+      case 'message':
+        if (typeof value === 'string' && value.trim().length < 10) {
+          return 'Message must be at least 10 characters'
+        }
+        return ''
+      case 'service':
+        if (!value) {
+          return 'Please select a service'
+        }
+        return ''
+      case 'terms':
+        if (!value) {
+          return 'You must agree to the terms'
+        }
+        return ''
+      default:
+        return ''
+    }
+  }
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
+    
+    // Validate on change if field has been touched
+    if (touched[field]) {
+      const error = validateField(field, value)
+      setErrors(prev => ({
+        ...prev,
+        [field]: error
+      }))
+    }
+  }
+
+  const handleBlur = (field: string) => {
+    setTouched(prev => ({
+      ...prev,
+      [field]: true
+    }))
+    
+    const value = formData[field as keyof typeof formData]
+    const error = validateField(field, value)
+    setErrors(prev => ({
+      ...prev,
+      [field]: error
+    }))
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {}
+    
+    // Validate required fields
+    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required'
+    else if (formData.firstName.trim().length < 2) newErrors.firstName = 'Must be at least 2 characters'
+    
+    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required'
+    else if (formData.lastName.trim().length < 2) newErrors.lastName = 'Must be at least 2 characters'
+    
+    if (!formData.email.trim()) newErrors.email = 'Email is required'
+    else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) newErrors.email = 'Please enter a valid email address'
+    }
+    
+    if (!formData.service) newErrors.service = 'Please select a service'
+    
+    if (!formData.message.trim()) newErrors.message = 'Message is required'
+    else if (formData.message.trim().length < 10) newErrors.message = 'Message must be at least 10 characters'
+    
+    if (!formData.terms) newErrors.terms = 'You must agree to the terms'
+    
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate form
+    if (!validateForm()) {
+      toast.error('Please fix the errors before submitting')
+      return
+    }
+    
     setIsSubmitting(true)
 
     try {
@@ -120,16 +220,24 @@ export default function ContactPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {isSubmitted ? (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Send className="h-8 w-8 text-white" />
+                    <div className="text-center py-8 animate-in fade-in zoom-in duration-500">
+                      <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-in zoom-in duration-700 shadow-lg shadow-green-500/50">
+                        <Send className="h-10 w-10 text-white animate-in slide-in-from-bottom-4 duration-500 delay-200" />
                       </div>
-                      <h3 className="text-xl font-semibold zyphex-heading mb-2">Message Sent Successfully!</h3>
-                      <p className="zyphex-subheading mb-4">Thank you for contacting us. We&apos;ll get back to you within 24 hours.</p>
+                      <h3 className="text-2xl font-bold zyphex-heading mb-3 animate-in slide-in-from-bottom-2 duration-500 delay-300">
+                        Message Sent Successfully!
+                      </h3>
+                      <p className="zyphex-subheading mb-6 max-w-md mx-auto animate-in slide-in-from-bottom-2 duration-500 delay-400">
+                        Thank you for contacting us. We&apos;ll get back to you within 24 hours.
+                      </p>
                       <Button
-                        onClick={() => setIsSubmitted(false)}
+                        onClick={() => {
+                          setIsSubmitted(false)
+                          setErrors({})
+                          setTouched({})
+                        }}
                         variant="outline"
-                        className="zyphex-button-secondary hover-zyphex-lift bg-transparent"
+                        className="zyphex-button-secondary hover-zyphex-lift bg-transparent animate-in slide-in-from-bottom-2 duration-500 delay-500"
                       >
                         Send Another Message
                       </Button>
@@ -147,8 +255,16 @@ export default function ContactPage() {
                             required
                             value={formData.firstName}
                             onChange={(e) => handleInputChange('firstName', e.target.value)}
-                            className="zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200"
+                            onBlur={() => handleBlur('firstName')}
+                            className={`zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200 ${
+                              errors.firstName && touched.firstName ? 'border-red-500 focus:border-red-500' : ''
+                            }`}
                           />
+                          {errors.firstName && touched.firstName && (
+                            <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1 duration-200">
+                              {errors.firstName}
+                            </p>
+                          )}
                         </div>
                         <div className="space-y-2 scroll-reveal" style={{ animationDelay: "200ms" }}>
                           <Label htmlFor="lastName" className="zyphex-subheading">
@@ -160,8 +276,16 @@ export default function ContactPage() {
                             required
                             value={formData.lastName}
                             onChange={(e) => handleInputChange('lastName', e.target.value)}
-                            className="zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200"
+                            onBlur={() => handleBlur('lastName')}
+                            className={`zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200 ${
+                              errors.lastName && touched.lastName ? 'border-red-500 focus:border-red-500' : ''
+                            }`}
                           />
+                          {errors.lastName && touched.lastName && (
+                            <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1 duration-200">
+                              {errors.lastName}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -177,8 +301,16 @@ export default function ContactPage() {
                             required
                             value={formData.email}
                             onChange={(e) => handleInputChange('email', e.target.value)}
-                            className="zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200"
+                            onBlur={() => handleBlur('email')}
+                            className={`zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200 ${
+                              errors.email && touched.email ? 'border-red-500 focus:border-red-500' : ''
+                            }`}
                           />
+                          {errors.email && touched.email && (
+                            <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1 duration-200">
+                              {errors.email}
+                            </p>
+                          )}
                         </div>
                         <div className="space-y-2 scroll-reveal" style={{ animationDelay: "400ms" }}>
                           <Label htmlFor="phone" className="zyphex-subheading">
@@ -190,8 +322,16 @@ export default function ContactPage() {
                             placeholder="+1 (555) 123-4567"
                             value={formData.phone}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
-                            className="zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200"
+                            onBlur={() => handleBlur('phone')}
+                            className={`zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200 ${
+                              errors.phone && touched.phone ? 'border-red-500 focus:border-red-500' : ''
+                            }`}
                           />
+                          {errors.phone && touched.phone && (
+                            <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1 duration-200">
+                              {errors.phone}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -215,9 +355,14 @@ export default function ContactPage() {
                           <Select
                             required
                             value={formData.service}
-                            onValueChange={(value) => handleInputChange('service', value)}
+                            onValueChange={(value) => {
+                              handleInputChange('service', value)
+                              handleBlur('service')
+                            }}
                           >
-                            <SelectTrigger className="zyphex-glass-effect border-gray-700 text-gray-200 hover:border-blue-500 transition-colors duration-200">
+                            <SelectTrigger className={`zyphex-glass-effect border-gray-700 text-gray-200 hover:border-blue-500 transition-colors duration-200 ${
+                              errors.service && touched.service ? 'border-red-500' : ''
+                            }`}>
                               <SelectValue placeholder="Select a service" />
                             </SelectTrigger>
                             <SelectContent className="zyphex-glass-effect border-gray-700">
@@ -230,6 +375,11 @@ export default function ContactPage() {
                               <SelectItem value="other">Other</SelectItem>
                             </SelectContent>
                           </Select>
+                          {errors.service && touched.service && (
+                            <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1 duration-200">
+                              {errors.service}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -264,9 +414,20 @@ export default function ContactPage() {
                           placeholder="Please describe your project requirements, goals, and any specific features you need..."
                           value={formData.message}
                           onChange={(e) => handleInputChange('message', e.target.value)}
-                          className="min-h-[120px] zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200"
+                          onBlur={() => handleBlur('message')}
+                          className={`min-h-[120px] zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 hover:border-blue-500 transition-colors duration-200 ${
+                            errors.message && touched.message ? 'border-red-500 focus:border-red-500' : ''
+                          }`}
                           required
                         />
+                        {errors.message && touched.message && (
+                          <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1 duration-200">
+                            {errors.message}
+                          </p>
+                        )}
+                        <p className="text-xs zyphex-subheading">
+                          {formData.message.length}/500 characters {formData.message.length < 10 && '(minimum 10)'}
+                        </p>
                       </div>
 
                       <div className="space-y-4 scroll-reveal" style={{ animationDelay: "900ms" }}>
@@ -287,8 +448,11 @@ export default function ContactPage() {
                             type="checkbox"
                             id="terms"
                             checked={formData.terms}
-                            onChange={(e) => handleInputChange('terms', e.target.checked)}
-                            className="mt-1"
+                            onChange={(e) => {
+                              handleInputChange('terms', e.target.checked)
+                              handleBlur('terms')
+                            }}
+                            className={`mt-1 ${errors.terms ? 'ring-2 ring-red-500' : ''}`}
                             required
                           />
                           <Label htmlFor="terms" className="text-sm zyphex-subheading">
@@ -303,6 +467,11 @@ export default function ContactPage() {
                             *
                           </Label>
                         </div>
+                        {errors.terms && (
+                          <p className="text-sm text-red-500 animate-in fade-in slide-in-from-top-1 duration-200">
+                            {errors.terms}
+                          </p>
+                        )}
                       </div>
 
                       <Button

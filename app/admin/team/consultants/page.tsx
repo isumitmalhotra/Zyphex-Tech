@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/ui/user-avatar"
 import { Briefcase, Users, Star, TrendingUp, Filter, Plus, Mail, Phone, Award, GraduationCap } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 
@@ -257,10 +257,12 @@ export default function ConsultantsPage() {
             <Card key={consultant.id} className="zyphex-card hover-zyphex-lift">
               <CardHeader>
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={consultant.avatar} alt={consultant.name} />
-                    <AvatarFallback>{consultant.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar 
+                    name={consultant.name} 
+                    imageUrl={consultant.avatar}
+                    size="xl"
+                    alt={`${consultant.name} - ${consultant.role}`}
+                  />
                   <div className="flex-1">
                     <CardTitle className="zyphex-heading">{consultant.name}</CardTitle>
                     <CardDescription className="zyphex-subheading">{consultant.role}</CardDescription>

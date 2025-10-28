@@ -29,6 +29,7 @@ interface FinancialData {
 export default function ProjectManagerFinancialPage() {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<FinancialData | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -41,11 +42,15 @@ export default function ProjectManagerFinancialPage() {
           const result = await response.json()
           console.log('Fetched data:', result)
           setData(result)
+          setError(null)
         } else {
-          console.error('Failed to fetch data:', response.status)
+          const errorText = await response.text()
+          console.error('Failed to fetch data:', response.status, errorText)
+          setError(`Failed to load financial data (${response.status})`)
         }
       } catch (error) {
         console.error('Error fetching data:', error)
+        setError('Network error - unable to load financial data')
       } finally {
         setLoading(false)
       }
@@ -64,6 +69,9 @@ export default function ProjectManagerFinancialPage() {
       </div>
     )
   }
+
+  // Show error banner if there's an error but still show fallback data
+  const showErrorBanner = error && !data
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -84,10 +92,22 @@ export default function ProjectManagerFinancialPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="container mx-auto px-6 py-8">
+        {/* Error Banner */}
+        {showErrorBanner && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
+            <div className="flex items-center gap-3 text-red-400">
+              <svg className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <p className="font-medium">{error}</p>
+            </div>
+          </div>
+        )}
+        
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Financial Dashboard</h1>
-          <p className="text-slate-400">Overview of your financial performance and metrics</p>
+          <p className="text-slate-400">Overview of your financial performance and metrics {!data && '(Showing fallback data)'}</p>
         </div>
 
         {/* Quick Stats */}

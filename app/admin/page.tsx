@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PermissionGuard } from "@/components/auth/permission-guard"
 import { Permission } from "@/lib/auth/permissions"
@@ -36,6 +35,7 @@ import { Icon3D } from "@/components/3d-icons"
 import { useAdminDashboard } from "@/hooks/use-admin-dashboard"
 import { DashboardMessaging } from "@/components/dashboard-messaging"
 import { useSession } from "next-auth/react"
+import { DashboardSkeleton } from "@/components/ui/loading-skeletons"
 
 export default function AdminDashboard() {
   return (
@@ -69,23 +69,7 @@ function AdminDashboardContent() {
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
         <SubtleBackground />
         <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-4 w-96" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="zyphex-card">
-                <CardHeader>
-                  <Skeleton className="h-4 w-24" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-8 w-16 mb-2" />
-                  <Skeleton className="h-3 w-32" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <DashboardSkeleton />
         </div>
       </div>
     )

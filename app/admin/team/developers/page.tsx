@@ -13,8 +13,8 @@ import {
 } from "@/components/ui/breadcrumb"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Code, Users, Star, TrendingUp, Filter, Plus, Mail, Phone } from "lucide-react"
+import { UserAvatar } from "@/components/ui/user-avatar"
+import { Code, Users, Star, TrendingUp, Filter, Plus, Mail, Phone, MapPin, Award } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 
 export default function DevelopersPage() {
@@ -265,10 +265,12 @@ export default function DevelopersPage() {
             <Card key={developer.id} className="zyphex-card hover-zyphex-lift">
               <CardHeader>
                 <div className="flex items-center space-x-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={developer.avatar} alt={developer.name} />
-                    <AvatarFallback>{developer.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar 
+                    name={developer.name} 
+                    imageUrl={developer.avatar}
+                    size="xl"
+                    alt={`${developer.name} - ${developer.role}`}
+                  />
                   <div className="flex-1">
                     <CardTitle className="zyphex-heading">{developer.name}</CardTitle>
                     <CardDescription className="zyphex-subheading">{developer.role}</CardDescription>
