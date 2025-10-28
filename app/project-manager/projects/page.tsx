@@ -29,7 +29,6 @@ import {
   DollarSign,
   Clock,
   BarChart3,
-  Loader2,
 } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
@@ -97,7 +96,7 @@ export default function AllProjectsPage() {
         const data = await response.json()
         setProjects(data.projects || [])
       }
-    } catch (error) {
+    } catch (_error) {
       // Error fetching projects - handle silently
     } finally {
       setLoading(false)

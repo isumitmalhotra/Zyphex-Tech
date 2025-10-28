@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { UserAvatar } from "@/components/ui/user-avatar"
-import { Code, Users, Star, TrendingUp, Filter, Plus, Mail, Phone, MapPin, Award } from "lucide-react"
+import { Code, Users, Star, TrendingUp, Filter, Plus, Mail, Phone } from "lucide-react"
 import { SubtleBackground } from "@/components/subtle-background"
 
 export default function DevelopersPage() {

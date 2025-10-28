@@ -42,7 +42,7 @@ export default function InteractiveShowcase() {
     email: "",
     project: "",
   })
-  const [analyticsData, setAnalyticsData] = useState([
+  const [analyticsData] = useState([
     { month: "Jan", revenue: 45000, users: 1200 },
     { month: "Feb", revenue: 52000, users: 1350 },
     { month: "Mar", revenue: 48000, users: 1280 },
@@ -386,7 +386,7 @@ export default function InteractiveShowcase() {
                   </div>
 
                   <div className="space-y-2">
-                    {analyticsData.map((data, index) => (
+                    {analyticsData.map((data) => (
                       <div key={data.month} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
                         <span className="font-medium">{data.month}</span>
                         <div className="flex items-center gap-4">

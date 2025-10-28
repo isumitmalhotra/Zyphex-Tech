@@ -138,51 +138,51 @@ export default async function HomePage() {
   }
 
   // Helper functions for service data
-  const getServiceData = (service: ContentItem): any => {
+  const getServiceData = (service: ContentItem): Record<string, unknown> => {
     if (service.data && typeof service.data === 'object') {
-      return service.data
+      return service.data as Record<string, unknown>
     }
     return {}
   }
 
   const getServiceIcon = (service: ContentItem): string => {
     const data = getServiceData(service)
-    return data.icon || "Code"
+    return (data.icon as string) || "Code"
   }
 
   const getServiceFeatures = (service: ContentItem): string[] => {
     const data = getServiceData(service)
-    return data.features || []
+    return (data.features as string[]) || []
   }
 
   // Helper functions for testimonial data
-  const getTestimonialData = (testimonial: ContentItem): any => {
+  const getTestimonialData = (testimonial: ContentItem): Record<string, unknown> => {
     if (testimonial.data && typeof testimonial.data === 'object') {
-      return testimonial.data
+      return testimonial.data as Record<string, unknown>
     }
     return {}
   }
 
   const getTestimonialName = (testimonial: ContentItem): string => {
     const data = getTestimonialData(testimonial)
-    return data.name || "Anonymous"
+    return (data.name as string) || "Anonymous"
   }
 
   const getTestimonialRole = (testimonial: ContentItem): string => {
     const data = getTestimonialData(testimonial)
-    const role = data.role || ""
-    const company = data.company || ""
+    const role = (data.role as string) || ""
+    const company = (data.company as string) || ""
     return company ? `${role}, ${company}` : role
   }
 
   const getTestimonialContent = (testimonial: ContentItem): string => {
     const data = getTestimonialData(testimonial)
-    return data.content || ""
+    return (data.content as string) || ""
   }
 
   const getTestimonialRating = (testimonial: ContentItem): number => {
     const data = getTestimonialData(testimonial)
-    return data.rating || 5
+    return (data.rating as number) || 5
   }
 
   const getPostSlug = (post: ContentItem | FallbackPost): string => {
@@ -323,7 +323,9 @@ export default async function HomePage() {
                   <CardTitle className="text-xl zyphex-heading">{service.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <CardDescription className="zyphex-subheading leading-relaxed">{getServiceData(service).description || service.title}</CardDescription>
+                  <CardDescription className="zyphex-subheading leading-relaxed">
+                    {(getServiceData(service).description as string) || service.title}
+                  </CardDescription>
                   <ul className="space-y-2">
                     {getServiceFeatures(service).map((feature, idx) => (
                       <li

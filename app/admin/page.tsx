@@ -33,7 +33,6 @@ import {
 import { SubtleBackground } from "@/components/subtle-background"
 import { Icon3D } from "@/components/3d-icons"
 import { useAdminDashboard } from "@/hooks/use-admin-dashboard"
-import { DashboardMessaging } from "@/components/dashboard-messaging"
 import { useSession } from "next-auth/react"
 import { DashboardSkeleton } from "@/components/ui/loading-skeletons"
 
@@ -61,7 +60,7 @@ export default function AdminDashboard() {
 
 function AdminDashboardContent() {
   const { data, error, isLoading, mutate } = useAdminDashboard()
-  const { data: session } = useSession()
+  const { data: _session } = useSession()
 
   // Handle loading state
   if (isLoading) {
