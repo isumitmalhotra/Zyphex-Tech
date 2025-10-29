@@ -45,11 +45,17 @@ export default defineConfig({
     /* Test against mobile viewports. */
     {
       name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
+      use: {
+        ...devices['Pixel 5'],
+        hasTouch: true, // Enable touch support for mobile tests
+      },
     },
     {
       name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
+      use: {
+        ...devices['iPhone 12'],
+        hasTouch: true, // Enable touch support for mobile tests
+      },
     },
   ],
 

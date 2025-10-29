@@ -4,15 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,15 +30,12 @@ import {
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { generateAvatar } from "@/lib/utils/avatar"
 import { toast } from "sonner"
 import { exportToCSV } from "@/lib/utils/export"
 import { StatsGridSkeleton } from "@/components/skeletons/stats-skeleton"
-import { TableSkeletonWithActions } from "@/components/skeletons/table-skeleton"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { DataPagination } from "@/components/data-pagination"
-import { useSortableData } from "@/hooks/use-sortable-data"
-import { SortableTableHeader } from "@/components/sortable-table-header"
+import { ResponsiveTable, type ResponsiveTableColumn } from '@/components/ui/responsive-table'
 
 interface Client {
   id: string
@@ -149,15 +138,6 @@ export default function ClientsPage() {
     (client.company && client.company.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
-  // Apply sorting
-  const { items: sortedClients, requestSort, getSortDirection } = useSortableData(filteredClients)
-
-  // Apply pagination
-  const paginatedClients = sortedClients.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
-
   // Reset to page 1 when search changes
   useEffect(() => {
     setCurrentPage(1)
@@ -182,6 +162,148 @@ export default function ClientsPage() {
     }
   }
 
+  // Column definitions for ResponsiveTable
+  const columns: ResponsiveTableColumn<Client>[] = [
+    {
+      key: 'name',
+      label: 'Client Name',
+      mobileLabel: 'Client',
+      render: (client: Client) => {
+        const getInitials = (name: string) => {
+          return name
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2)
+        }
+
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10">
+              <AvatarFallback>{getInitials(client.name)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="font-medium">{client.name}</div>
+              <div className="text-sm text-muted-foreground hidden md:block">{client.email}</div>
+            </div>
+          </div>
+        )
+      }
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      mobileLabel: 'Email',
+      hideOnMobile: true,
+      render: (client: Client) => (
+        <div className="flex items-center gap-2 text-sm">
+          <Mail className="h-4 w-4 text-muted-foreground" />
+          <span>{client.email}</span>
+        </div>
+      )
+    },
+    {
+      key: 'phone',
+      label: 'Phone',
+      mobileLabel: 'Phone',
+      hideOnMobile: false,
+      render: (client: Client) => (
+        <div className="flex items-center gap-2 text-sm">
+          <Phone className="h-4 w-4 text-muted-foreground" />
+          <span>{formatPhone(client.phone)}</span>
+        </div>
+      )
+    },
+    {
+      key: 'company',
+      label: 'Company',
+      mobileLabel: 'Company',
+      hideOnMobile: true,
+      render: (client: Client) => (
+        <div className="flex items-center gap-2 text-sm">
+          <Building2 className="h-4 w-4 text-muted-foreground" />
+          <span>{client.company || 'N/A'}</span>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      mobileLabel: 'Status',
+      hideOnMobile: false,
+      render: (client: Client) => {
+        const projectCount = client._count?.projects || 0
+        const statusInfo = getStatusInfo(projectCount)
+        return (
+          <Badge variant="outline" className={statusInfo.color}>
+            {statusInfo.label}
+          </Badge>
+        )
+      }
+    },
+    {
+      key: 'projects',
+      label: 'Projects',
+      mobileLabel: 'Projects',
+      hideOnMobile: true,
+      render: (client: Client) => {
+        const projectCount = client._count?.projects || 0
+        return (
+          <div className="text-sm">
+            <span className="font-medium">{projectCount}</span>
+            <span className="text-muted-foreground ml-1">
+              {projectCount === 1 ? 'project' : 'projects'}
+            </span>
+          </div>
+        )
+      }
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (client: Client) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant='ghost' className='h-8 w-8 p-0'>
+              <span className='sr-only'>Open menu</span>
+              <MoreVertical className='h-4 w-4' />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end'>
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => router.push(`/super-admin/clients/${client.id}`)}
+            >
+              <Eye className='mr-2 h-4 w-4' />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => router.push(`/super-admin/clients/${client.id}/edit`)}
+            >
+              <Edit className='mr-2 h-4 w-4' />
+              Edit Client
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className='text-destructive'
+              onClick={() =>
+                setDeleteDialog({
+                  open: true,
+                  id: client.id,
+                  name: client.name,
+                })
+              }
+            >
+              <Trash2 className='mr-2 h-4 w-4' />
+              Delete Client
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    }
+  ]
+
   if (loading) {
     return (
       <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -192,14 +314,18 @@ export default function ClientsPage() {
           </div>
         </div>
         <StatsGridSkeleton count={4} />
-        <TableSkeletonWithActions rows={10} />
+        <div className="animate-pulse space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-16 bg-slate-700 rounded"></div>
+          ))}
+        </div>
       </div>
     )
   }
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
-      <div className="flex items-center justify-between space-y-2">
+      <div className="flex items-center justify-between space-y-2" data-testid="clients-page-header">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Clients</h2>
           <p className="text-muted-foreground">
@@ -207,14 +333,14 @@ export default function ClientsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={handleExport}>
+          <Button variant="outline" size="icon" onClick={handleExport} data-testid="clients-export-button">
             <Download className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={fetchClients}>
+          <Button variant="outline" size="icon" onClick={fetchClients} data-testid="clients-refresh-button">
             <RefreshCw className="h-4 w-4" />
           </Button>
           <Link href="/super-admin/clients/new">
-            <Button>
+            <Button data-testid="clients-add-button">
               <Plus className="mr-2 h-4 w-4" />
               New Client
             </Button>
@@ -223,8 +349,8 @@ export default function ClientsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+      <div className="grid gap-4 md:grid-cols-4" data-testid="clients-stats-cards">
+        <Card data-testid="stat-total-clients">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -278,7 +404,7 @@ export default function ClientsPage() {
       </div>
 
       {/* Clients Table */}
-      <Card>
+      <Card data-testid="clients-list-card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -295,6 +421,7 @@ export default function ClientsPage() {
                   className="pl-8 w-[300px]"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  data-testid="clients-search-input"
                 />
               </div>
             </div>
@@ -306,129 +433,29 @@ export default function ClientsPage() {
               {searchQuery ? 'No clients found matching your search.' : 'No clients found.'}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <SortableTableHeader
-                    label="Client"
-                    sortKey="name"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('name')}
-                  />
-                  <SortableTableHeader
-                    label="Email"
-                    sortKey="email"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('email')}
-                  />
-                  <SortableTableHeader
-                    label="Phone"
-                    sortKey="phone"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('phone')}
-                  />
-                  <SortableTableHeader
-                    label="Company"
-                    sortKey="company"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('company')}
-                  />
-                  <TableHead>Status</TableHead>
-                  <SortableTableHeader
-                    label="Projects"
-                    sortKey="_count.projects"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('_count.projects')}
-                    align="center"
-                  />
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedClients.map((client) => {
-                  const projectCount = client._count?.projects || 0
-                  const statusInfo = getStatusInfo(projectCount)
-                  
-                  return (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={generateAvatar(client.name, 32)} />
-                            <AvatarFallback>{client.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          {client.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Mail className="h-3 w-3 text-muted-foreground" />
-                          {client.email}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm">
-                          <Phone className="h-3 w-3 text-muted-foreground" />
-                          {formatPhone(client.phone)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm">{client.company || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={statusInfo.color}>
-                          {statusInfo.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <span className="font-medium">{projectCount}</span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => router.push(`/super-admin/clients/${client.id}`)}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => router.push(`/super-admin/clients/${client.id}/edit`)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit Client
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => setDeleteDialog({ open: true, id: client.id, name: client.name })}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          )}
-          
-          {/* Pagination */}
-          {filteredClients.length > 0 && (
-            <div className="mt-4">
-              <DataPagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(sortedClients.length / itemsPerPage)}
-                totalItems={sortedClients.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={setItemsPerPage}
+            <>
+              <ResponsiveTable<Client>
+                data={filteredClients}
+                columns={columns}
+                keyExtractor={(client) => client.id}
+                emptyMessage="No clients found. Try adjusting your search."
+                onRowClick={(client) => router.push(`/super-admin/clients/${client.id}`)}
               />
-            </div>
+              
+              {/* Pagination */}
+              {filteredClients.length > itemsPerPage && (
+                <div className="mt-4">
+                  <DataPagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(filteredClients.length / itemsPerPage)}
+                    totalItems={filteredClients.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                  />
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

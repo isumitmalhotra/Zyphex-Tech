@@ -408,6 +408,60 @@ function ProjectManagerDashboardContent() {
 }
 
 export default function ProjectManagerDashboard() {
+  const { data: session, status } = useSession()
+
+  // Show loading state while checking auth
+  if (status === "loading") {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+              <span className="zyphex-subheading">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if not authenticated
+  if (status === "unauthenticated" || !session?.user) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Please log in to access the project manager dashboard.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if user has appropriate role (before permission check)
+  const userRole = session.user.role
+  const allowedRoles = ['PROJECT_MANAGER', 'SUPER_ADMIN', 'ADMIN']
+  
+  if (!allowedRoles.includes(userRole)) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0 zyphex-gradient-bg relative min-h-screen">
+        <div className="flex flex-1 flex-col gap-4 p-4 relative z-10">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              You must be a Project Manager, Admin, or Super Admin to access this dashboard. Your current role is: {userRole}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    )
+  }
+
+  // User is authenticated and has appropriate role, now check permissions
   return (
     <PermissionGuard 
       permission={Permission.VIEW_DASHBOARD}

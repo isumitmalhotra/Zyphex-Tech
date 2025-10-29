@@ -11,18 +11,22 @@ import { ServicesGrid } from "@/components/services-grid"
 // Define types for our services
 interface Service {
   id: string
+  slug: string
   title: string
   description: string
-  icon: string | null
-  imageUrl: string | null
-  features: string[] | string | null
-  isActive: boolean
+  icon: string
+  imageUrl: string
+  features: string[]
+  price?: string
+  ctaText?: string
+  ctaLink?: string
+  featured: boolean
   order: number
-  pricing?: string
-  timeline?: string
-  technologies?: string[]
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
+  publishedAt: Date | string | null
+  categories?: string[]
+  tags?: string[]
 }
 
 // Fetch services from API
@@ -36,21 +40,25 @@ async function fetchServices(): Promise<Service[]> {
       throw new Error('Failed to fetch services')
     }
     
-    return await response.json()
+    const result = await response.json()
+    
+    // API returns { success: true, data: [...], total: number }
+    // We need to extract the data array
+    if (result.success && Array.isArray(result.data)) {
+      return result.data
+    }
+    
+    return []
   } catch (_error) {
     return []
   }
 }
 
 // Helper function to parse features
-function parseFeatures(features: string[] | string | null): string[] {
+function parseFeatures(features: string[] | undefined): string[] {
   if (!features) return []
   if (Array.isArray(features)) return features
-  try {
-    return JSON.parse(features)
-  } catch {
-    return [features]
-  }
+  return []
 }
 
 export const dynamic = 'force-dynamic';
@@ -108,8 +116,8 @@ export default async function ServicesPage() {
                             {service.title}
                           </CardTitle>
                           <div className="flex items-center gap-4 mt-2 text-sm zyphex-subheading">
-                            <span>💰 {service.pricing || 'Contact for pricing'}</span>
-                            <span>⏱️ {service.timeline || 'Contact for timeline'}</span>
+                            <span>💰 {service.price || 'Contact for pricing'}</span>
+                            <span>⏱️ Timeline varies by project</span>
                           </div>
                         </div>
                       </div>
@@ -133,17 +141,20 @@ export default async function ServicesPage() {
                         </div>
                       </div>
                       <div>
-                        <h4 className="font-semibold zyphex-heading mb-3">Technologies:</h4>
+                        <h4 className="font-semibold zyphex-heading mb-3">Tags:</h4>
                         <div className="flex flex-wrap gap-2">
-                          {(service.technologies || []).map((tech: string, idx: number) => (
+                          {(service.tags || []).map((tag: string, idx: number) => (
                             <Badge
                               key={idx}
                               variant="outline"
                               className="text-xs hover:bg-blue-600 hover:text-white transition-colors duration-200"
                             >
-                              {tech}
+                              {tag}
                             </Badge>
                           ))}
+                          {(!service.tags || service.tags.length === 0) && (
+                            <span className="text-sm zyphex-subheading">No tags available</span>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-4 pt-4">

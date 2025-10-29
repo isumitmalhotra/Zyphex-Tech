@@ -33,7 +33,7 @@ import { MessageThread } from './MessageThread'
 import { MessageInput } from './MessageInput'
 import { SearchResults } from './SearchResults'
 import { useMessaging } from '@/hooks/use-messaging'
-import { ViewMode } from './types'
+import { ViewMode, Channel } from './types'
 import { cn } from '@/lib/utils'
 
 interface MessagingHubProps {
@@ -67,7 +67,7 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
     openDirectMessage,
     search,
     handleTyping,
-    refreshChannels,
+    refreshChannels: _refreshChannels,
     createChannel,
     deleteChannel,
     togglePinChannel,
@@ -89,7 +89,7 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
   }, [searchQuery, search])
 
   // Handle channel selection
-  const handleChannelSelect = async (channel: any) => {
+  const handleChannelSelect = async (channel: Channel) => {
     setSelectedChannel(channel)
     await fetchChannelMessages(channel.id)
     setShowSearch(false)
@@ -245,8 +245,8 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
               </>
             ) : (
               <>
-                <WifiOff className="h-4 w-4 text-red-500" />
-                <span className="text-red-600">Disconnected</span>
+                <WifiOff className="h-4 w-4 text-yellow-500" />
+                <span className="text-yellow-600">Real-time messaging coming soon</span>
               </>
             )}
           </div>
@@ -339,7 +339,7 @@ export function MessagingHub({ className, compact = false, layout }: MessagingHu
           {showSearch && searchResults && (
             <div className="absolute inset-0 z-50 bg-background">
               <div className="flex items-center justify-between border-b p-4">
-                <h3 className="font-semibold">Search Results for "{searchQuery}"</h3>
+                <h3 className="font-semibold">Search Results for &quot;{searchQuery}&quot;</h3>
                 <Button
                   variant="ghost"
                   size="sm"

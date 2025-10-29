@@ -34,22 +34,16 @@ export default function ProjectManagerFinancialPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('Fetching financial data...')
         const response = await fetch('/api/financial/mock?period=month')
-        console.log('Response status:', response.status)
         
         if (response.ok) {
           const result = await response.json()
-          console.log('Fetched data:', result)
           setData(result)
           setError(null)
         } else {
-          const errorText = await response.text()
-          console.error('Failed to fetch data:', response.status, errorText)
           setError(`Failed to load financial data (${response.status})`)
         }
-      } catch (error) {
-        console.error('Error fetching data:', error)
+      } catch (_error) {
         setError('Network error - unable to load financial data')
       } finally {
         setLoading(false)
@@ -288,21 +282,6 @@ export default function ProjectManagerFinancialPage() {
           </Card>
         </div>
 
-        {/* Debug Info */}
-        <Card className="bg-slate-800/50 border-slate-700 mt-6">
-          <CardHeader>
-            <CardTitle className="text-white">Debug Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="text-green-400 text-xs overflow-auto">
-              {JSON.stringify({ 
-                dataLoaded: !!data, 
-                apiResponse: data ? 'Success' : 'No data',
-                timestamp: new Date().toISOString() 
-              }, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
       </div>
     </div>
   )

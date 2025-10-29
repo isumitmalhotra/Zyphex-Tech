@@ -1302,6 +1302,351 @@ model PasswordResetToken {
 }
 
 // Content Management Models
+// ============================================================================
+// ENHANCED CONTENT MANAGEMENT SYSTEM - Enterprise-Grade CMS
+// ============================================================================
+
+// Content Pages - Enhanced page management with complete metadata
+model CmsPage {
+  id        String @id @default(uuid())
+  pageKey   String @unique // Unique identifier (e.g., 'home', 'about', 'contact')
+  pageTitle String // Display title
+  slug      String @unique // URL slug
+  pageType  String @default("standard") // standard, landing, blog, custom
+
+  // Template reference
+  templateId String?
+  template   CmsTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  // Metadata for SEO
+  metaTitle       String?
+  metaDescription String?
+  metaKeywords    String?
+  ogImage         String?
+  ogTitle         String?
+  ogDescription   String?
+  structuredData  Json? // JSON-LD structured data
+
+  // Status & Publishing
+  status               String    @default("draft") // draft, review, scheduled, published, archived
+  publishedAt          DateTime?
+  scheduledPublishAt   DateTime?
+  scheduledUnpublishAt DateTime?
+
+  // Authoring
+  authorId     String?
+  lastEditedBy String?
+
+  // Settings
+  isPublic      Boolean @default(true)
+  requiresAuth  Boolean @default(false)
+  allowComments Boolean @default(false)
+  layout        String? @default("default")
+
+  // SEO Score
+  seoScore Int? @default(0) // 0-100
+
+  // Timestamps
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete
+
+  // Relations
+  sections  CmsPageSection[]
+  versions  CmsPageVersion[]
+  workflows CmsWorkflow[]
+  schedules CmsSchedule[]
+
+  // Indexes
+  @@index([pageKey])
+  @@index([slug])
+  @@index([status])
+  @@index([templateId])
+  @@index([authorId])
+  @@index([publishedAt])
+  @@index([status, publishedAt])
+  @@index([deletedAt])
+  @@index([pageTitle, slug, metaDescription]) // Full-text search optimization
+}
+
+// Content Page Sections - Granular section-wise editing for CMS pages
+model CmsPageSection {
+  id          String  @id @default(uuid())
+  pageId      String
+  page        CmsPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  sectionKey  String // Unique within page (e.g., 'hero', 'features-1')
+  sectionType String // hero, features, testimonials, cta, custom
+  title       String?
+  subtitle    String?
+
+  // Flexible content as JSONB
+  content Json // Flexible JSON structure
+
+  // Layout & Display
+  order        Int     @default(0)
+  isVisible    Boolean @default(true)
+  cssClasses   String?
+  customStyles Json?
+
+  // Responsive Settings
+  showOnMobile  Boolean @default(true)
+  showOnTablet  Boolean @default(true)
+  showOnDesktop Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Indexes
+  @@unique([pageId, sectionKey])
+  @@index([pageId])
+  @@index([sectionType])
+  @@index([order])
+  @@index([pageId, order])
+  @@index([isVisible])
+}
+
+// Content Page Versions - Complete version control
+model CmsPageVersion {
+  id            String  @id @default(uuid())
+  pageId        String
+  page          CmsPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  versionNumber Int
+
+  // Complete snapshots
+  pageSnapshot     Json // Full page data at this version
+  sectionsSnapshot Json // All sections data at this version
+
+  // Metadata
+  changeDescription String?
+  createdBy         String
+  createdAt         DateTime @default(now())
+
+  // Version info
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  tags        String[] // Tags for organization
+
+  // Indexes
+  @@unique([pageId, versionNumber])
+  @@index([pageId])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@index([pageId, versionNumber])
+  @@index([isPublished])
+}
+
+// CMS Templates - Reusable page templates
+model CmsTemplate {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  category    String  @default("general") // landing, blog, portfolio, custom
+
+  // Template structure
+  templateStructure Json // Defines available sections and layout
+  defaultContent    Json? // Default content for new pages
+  thumbnailUrl      String?
+
+  // Settings
+  isActive Boolean @default(true)
+  isSystem Boolean @default(false) // System templates can't be deleted
+  order    Int     @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  pages CmsPage[]
+
+  // Indexes
+  @@index([category])
+  @@index([isActive])
+  @@index([order])
+  @@index([category, isActive])
+  @@index([name, description]) // Full-text search optimization
+}
+
+// Media Assets for CMS - Professional digital asset management with local VPS storage
+model CmsMediaAsset {
+  id           String          @id @default(uuid())
+  folderId     String?
+  folder       CmsMediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  filename     String
+  originalName String
+  filePath     String // Relative path on VPS storage
+  fileUrl      String // Public URL served by Nginx
+  mimeType     String
+  fileSize     BigInt
+
+  // Asset type
+  assetType String // image, video, document, audio, other
+
+  // Image-specific metadata
+  width         Int?
+  height        Int?
+  aspectRatio   String?
+  dominantColor String?
+
+  // SEO & Accessibility
+  altText     String?
+  caption     String?
+  description String?
+
+  // Organization
+  tags       String[] // Array of tags
+  categories String[] // Array of categories
+
+  // Processing status
+  processingStatus String  @default("completed") // pending, processing, completed, failed
+  thumbnailUrl     String?
+  optimizedUrl     String?
+
+  // Usage tracking
+  usageCount Int       @default(0)
+  lastUsedAt DateTime?
+
+  // Upload info
+  uploadedBy String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime? // Soft delete
+
+  // Indexes
+  @@index([folderId])
+  @@index([assetType])
+  @@index([uploadedBy])
+  @@index([createdAt])
+  @@index([tags])
+  @@index([deletedAt])
+  @@index([folderId, assetType])
+  @@index([filename, originalName, altText, caption]) // Full-text search optimization
+}
+
+// Media Folders for CMS - Hierarchical organization
+model CmsMediaFolder {
+  id          String           @id @default(uuid())
+  name        String
+  parentId    String?
+  parent      CmsMediaFolder?  @relation("CmsFolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    CmsMediaFolder[] @relation("CmsFolderHierarchy")
+  path        String // Full path (e.g., '/images/portfolio')
+  description String?
+  color       String? // UI organization
+  icon        String? // Icon identifier
+
+  // Metadata
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  assets CmsMediaAsset[]
+
+  // Indexes
+  @@unique([parentId, name])
+  @@index([parentId])
+  @@index([path])
+  @@index([createdBy])
+}
+
+// Content Workflows - Multi-step approval process
+model CmsWorkflow {
+  id        String  @id @default(uuid())
+  pageId    String
+  page      CmsPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  versionId String? // Reference to specific version
+
+  // Workflow status
+  status      String @default("pending") // pending, in_review, approved, rejected, changes_requested
+  currentStep Int    @default(1)
+  totalSteps  Int    @default(1)
+
+  // Participants
+  submittedBy     String
+  submittedAt     DateTime @default(now())
+  reviewers       String[] // Array of user IDs
+  currentReviewer String?
+
+  // Review details
+  reviewerNotes String?
+  reviewedBy    String?
+  reviewedAt    DateTime?
+
+  // Completion
+  completedAt DateTime?
+
+  // Workflow history
+  history Json @default("[]") // Array of status changes
+
+  // Indexes
+  @@index([pageId])
+  @@index([status])
+  @@index([submittedBy])
+  @@index([currentReviewer])
+  @@index([submittedAt])
+  @@index([reviewers])
+}
+
+// Content Schedule - Automated publishing
+model CmsSchedule {
+  id     String  @id @default(uuid())
+  pageId String
+  page   CmsPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  // Schedule type
+  scheduleType String   @default("publish") // publish, unpublish, update
+  scheduledFor DateTime
+  timezone     String   @default("UTC")
+
+  // Execution status
+  status        String    @default("pending") // pending, executed, failed, cancelled
+  executedAt    DateTime?
+  failureReason String?
+
+  // Content to apply (for updates)
+  contentSnapshot Json?
+
+  // Metadata
+  createdBy String
+  createdAt DateTime @default(now())
+
+  // Indexes
+  @@index([pageId])
+  @@index([scheduledFor])
+  @@index([status])
+  @@index([status, scheduledFor])
+  @@index([createdBy])
+}
+
+// CMS Activity Log - Comprehensive audit trail
+model CmsActivityLog {
+  id         String   @id @default(uuid())
+  userId     String
+  action     String // create_page, edit_section, publish, rollback, etc.
+  entityType String // page, section, template, media, workflow
+  entityId   String
+  changes    Json? // Detailed change data
+  metadata   Json? // Additional context
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  // Indexes
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([entityType, entityId])
+}
+
+// ============================================================================
+// LEGACY CONTENT MANAGEMENT (Keep for backward compatibility)
+// ============================================================================
+
 model ContentSection {
   id         String   @id @default(uuid())
   sectionKey String   @unique // e.g., 'hero', 'about', 'services'
@@ -2262,11 +2607,11 @@ model TokenBlacklist {
 
 // Main Workflow Definition
 model Workflow {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String // Workflow name (e.g., "Invoice Reminder", "Milestone Notification")
   description String? // Detailed description of what the workflow does
-  enabled     Boolean  @default(true) // Whether workflow is active
-  version     Int      @default(1) // Version number for workflow updates
+  enabled     Boolean @default(true) // Whether workflow is active
+  version     Int     @default(1) // Version number for workflow updates
 
   // Workflow Configuration (JSON structure)
   triggers   Json // Array of trigger configurations { type, config, conditions }
@@ -2276,27 +2621,27 @@ model Workflow {
   // Metadata
   category String @default("custom") // custom, template, system
   tags     Json? // Array of tags for organization
-  
+
   // Execution Settings
-  priority        Int     @default(5) // 1-10, higher = more important
-  maxRetries      Int     @default(3) // Number of retries on failure
-  retryDelay      Int     @default(60) // Seconds between retries
-  timeout         Int     @default(300) // Max execution time in seconds
-  allowParallel   Boolean @default(true) // Allow parallel executions
-  rateLimitCount  Int?    @default(100) // Max executions per hour (null = unlimited)
-  
+  priority       Int     @default(5) // 1-10, higher = more important
+  maxRetries     Int     @default(3) // Number of retries on failure
+  retryDelay     Int     @default(60) // Seconds between retries
+  timeout        Int     @default(300) // Max execution time in seconds
+  allowParallel  Boolean @default(true) // Allow parallel executions
+  rateLimitCount Int?    @default(100) // Max executions per hour (null = unlimited)
+
   // Statistics
-  executionCount  Int      @default(0) // Total executions
-  successCount    Int      @default(0) // Successful executions
-  failureCount    Int      @default(0) // Failed executions
+  executionCount  Int       @default(0) // Total executions
+  successCount    Int       @default(0) // Successful executions
+  failureCount    Int       @default(0) // Failed executions
   lastExecutionAt DateTime? // Last time workflow ran
-  avgExecutionMs  Int?     @default(0) // Average execution time
+  avgExecutionMs  Int?      @default(0) // Average execution time
 
   // Audit
   createdBy String
-  creator   User     @relation("WorkflowCreator", fields: [createdBy], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  creator   User      @relation("WorkflowCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime? // Soft delete
 
   // Relations
@@ -2321,32 +2666,32 @@ model WorkflowExecution {
 
   // Execution Status
   status WorkflowExecutionStatus @default(PENDING)
-  
+
   // Trigger Information
   triggeredBy   String // USER_ACTION, SCHEDULE, WEBHOOK, EVENT
   triggerSource String? // User ID, cron job name, webhook URL, etc.
   triggerData   Json? // Data that triggered the workflow
-  
+
   // Context Information
   context Json // Execution context (project, task, invoice, etc.)
-  
+
   // Execution Details
   startedAt   DateTime  @default(now())
   completedAt DateTime? // When execution finished
   duration    Int? // Execution time in milliseconds
-  
+
   // Results
-  actionsExecuted Int      @default(0) // Number of actions that ran
-  actionsSuccess  Int      @default(0) // Number of successful actions
-  actionsFailed   Int      @default(0) // Number of failed actions
+  actionsExecuted Int   @default(0) // Number of actions that ran
+  actionsSuccess  Int   @default(0) // Number of successful actions
+  actionsFailed   Int   @default(0) // Number of failed actions
   results         Json? // Results from each action
   errors          Json? // Error details if failed
-  
+
   // Retry Information
-  retryCount    Int      @default(0)
-  retryOf       String? // ID of original execution if this is a retry
-  nextRetryAt   DateTime? // When next retry is scheduled
-  
+  retryCount  Int       @default(0)
+  retryOf     String? // ID of original execution if this is a retry
+  nextRetryAt DateTime? // When next retry is scheduled
+
   // Metadata
   metadata Json? // Additional execution metadata
 
@@ -2365,18 +2710,18 @@ model WorkflowLog {
   id         String   @id @default(cuid())
   workflowId String
   workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  
+
   executionId String? // Optional link to execution
-  
+
   // Log Information
   level   WorkflowLogLevel // INFO, WARNING, ERROR, DEBUG
   message String // Log message
   data    Json? // Additional structured data
-  
+
   // Context
   action String? // Which action this log is related to
   step   Int? // Step number in workflow
-  
+
   // Metadata
   timestamp DateTime @default(now())
   duration  Int? // Duration in ms if applicable
@@ -2414,16 +2759,16 @@ enum WorkflowLogLevel {
 
 // Performance Metrics - Track page load times, API response times, etc.
 model PerformanceMetric {
-  id          String   @id @default(cuid())
-  metricType  String // PAGE_LOAD, API_RESPONSE, LCP, FID, CLS, FCP, TTI, TBT, ERROR
-  page        String? // Page path for page-specific metrics
-  endpoint    String? // API endpoint for API metrics
-  value       Float // Metric value (milliseconds, ratio, etc.)
-  metadata    Json? // Additional metadata (ttfb, fcp, lcp, requests, size, etc.)
-  timestamp   DateTime @default(now())
-  userAgent   String? // Browser/device information
-  ipAddress   String? // Anonymized IP for geographic data
-  
+  id         String   @id @default(cuid())
+  metricType String // PAGE_LOAD, API_RESPONSE, LCP, FID, CLS, FCP, TTI, TBT, ERROR
+  page       String? // Page path for page-specific metrics
+  endpoint   String? // API endpoint for API metrics
+  value      Float // Metric value (milliseconds, ratio, etc.)
+  metadata   Json? // Additional metadata (ttfb, fcp, lcp, requests, size, etc.)
+  timestamp  DateTime @default(now())
+  userAgent  String? // Browser/device information
+  ipAddress  String? // Anonymized IP for geographic data
+
   @@index([metricType])
   @@index([page])
   @@index([endpoint])
@@ -2446,7 +2791,7 @@ model ApiMetric {
   ipAddress    String? // Anonymized IP address
   userAgent    String? // User agent string
   timestamp    DateTime @default(now())
-  
+
   @@index([endpoint])
   @@index([method])
   @@index([statusCode])
@@ -2458,19 +2803,19 @@ model ApiMetric {
 
 // Error Logs - Track application errors
 model ErrorLog {
-  id          String   @id @default(cuid())
-  errorType   String // JavaScript, API_5xx, API_4xx, Database, Timeout, etc.
-  message     String
-  stack       String? @db.Text // Stack trace
-  severity    String // low, medium, high, critical
-  page        String? // Page where error occurred
-  endpoint    String? // API endpoint if applicable
-  userId      String? // User experiencing the error
-  metadata    Json? // Additional context
-  resolved    Boolean  @default(false)
-  resolvedAt  DateTime?
-  timestamp   DateTime @default(now())
-  
+  id         String    @id @default(cuid())
+  errorType  String // JavaScript, API_5xx, API_4xx, Database, Timeout, etc.
+  message    String
+  stack      String?   @db.Text // Stack trace
+  severity   String // low, medium, high, critical
+  page       String? // Page where error occurred
+  endpoint   String? // API endpoint if applicable
+  userId     String? // User experiencing the error
+  metadata   Json? // Additional context
+  resolved   Boolean   @default(false)
+  resolvedAt DateTime?
+  timestamp  DateTime  @default(now())
+
   @@index([errorType])
   @@index([severity])
   @@index([resolved])
@@ -2490,7 +2835,7 @@ model DatabaseQueryLog {
   endpoint      String? // API endpoint that triggered query
   userId        String? // User who triggered query
   timestamp     DateTime @default(now())
-  
+
   @@index([queryHash])
   @@index([executionTime])
   @@index([timestamp])
@@ -2507,7 +2852,7 @@ model HealthCheck {
   message      String? // Status message
   metadata     Json? // Additional health data
   timestamp    DateTime @default(now())
-  
+
   @@index([component])
   @@index([status])
   @@index([timestamp])
@@ -2516,22 +2861,22 @@ model HealthCheck {
 
 // Job Posting - Career opportunities
 model JobPosting {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   title            String
   department       String // Engineering, Design, Product, Marketing, etc.
   location         String // Remote, Hybrid, or specific location
   type             String // Full-time, Part-time, Contract
-  remote           Boolean  @default(true)
+  remote           Boolean   @default(true)
   salary           String? // Salary range
-  description      String   @db.Text
+  description      String    @db.Text
   requirements     Json // Array of strings
   responsibilities Json // Array of strings
-  postedDate       DateTime @default(now())
+  postedDate       DateTime  @default(now())
   closingDate      DateTime? // Application deadline
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
   @@index([department])
   @@index([type])
   @@index([isActive])
@@ -2541,22 +2886,22 @@ model JobPosting {
 
 // Downloadable Resource - Templates, guides, and resources for users
 model DownloadableResource {
-  id           String   @id @default(cuid())
-  title        String
-  description  String   @db.Text
-  category     String // Branding, Development, Design, Documentation, Tools, Education
-  fileType     String // ZIP, PDF, FIG, MP4, etc.
-  fileName     String // Original file name
-  filePath     String // Storage path or URL
-  fileSize     Int // File size in bytes
-  downloads    Int      @default(0)
-  rating       Float?   @default(0)
-  ratingCount  Int      @default(0)
-  featured     Boolean  @default(false)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  category    String // Branding, Development, Design, Documentation, Tools, Education
+  fileType    String // ZIP, PDF, FIG, MP4, etc.
+  fileName    String // Original file name
+  filePath    String // Storage path or URL
+  fileSize    Int // File size in bytes
+  downloads   Int      @default(0)
+  rating      Float?   @default(0)
+  ratingCount Int      @default(0)
+  featured    Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Indexes for performance
   @@index([category])
   @@index([fileType])

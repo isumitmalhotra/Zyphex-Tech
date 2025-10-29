@@ -246,7 +246,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
   return (
     <Sidebar collapsible="icon" {...props} className="zyphex-glass-effect border-gray-800/50">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-1 py-1.5">
+        <div className="flex items-center gap-2 px-1 py-1.5" data-testid="sidebar-header">
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg zyphex-gradient-primary animate-pulse-3d">
             <Image src="/zyphex-logo.png" alt="Zyphex Tech" width={24} height={24} className="object-contain" />
           </div>

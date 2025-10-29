@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Briefcase, Search, Plus, MoreVertical, Calendar, Users, DollarSign, Eye, Edit, Archive, Trash2, RefreshCw, Download } from 'lucide-react'
 import { useState, useEffect } from 'react'
@@ -13,11 +12,9 @@ import Link from 'next/link'
 import { toast } from "sonner"
 import { exportToCSV } from "@/lib/utils/export"
 import { StatsGridSkeleton } from "@/components/skeletons/stats-skeleton"
-import { TableSkeletonWithActions } from "@/components/skeletons/table-skeleton"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { DataPagination } from "@/components/data-pagination"
-import { useSortableData } from "@/hooks/use-sortable-data"
-import { SortableTableHeader } from "@/components/sortable-table-header"
+import { ResponsiveTable, type ResponsiveTableColumn } from '@/components/ui/responsive-table'
 
 interface Project {
   id: string
@@ -139,15 +136,6 @@ export default function ProjectsPage() {
     return matchesSearch && matchesStatus
   })
 
-  // Apply sorting
-  const { items: sortedProjects, requestSort, getSortDirection } = useSortableData(filteredProjects)
-
-  // Apply pagination
-  const paginatedProjects = sortedProjects.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
-
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       'IN_PROGRESS': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
@@ -177,23 +165,145 @@ export default function ProjectsPage() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount)
   }
 
+  // Define columns for ResponsiveTable
+  const columns: ResponsiveTableColumn<Project>[] = [
+    {
+      key: 'name',
+      label: 'Project Name',
+      mobileLabel: 'Project',
+      render: (project: Project) => (
+        <div className="font-semibold">{project.name}</div>
+      )
+    },
+    {
+      key: 'client',
+      label: 'Client',
+      mobileLabel: 'Client',
+      hideOnMobile: false,
+      render: (project: Project) => (
+        <div className="text-sm">{project.client?.name || 'No Client'}</div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      mobileLabel: 'Status',
+      hideOnMobile: false,
+      render: (project: Project) => (
+        <Badge className={getStatusColor(project.status)}>
+          {formatStatus(project.status)}
+        </Badge>
+      )
+    },
+    {
+      key: 'progress',
+      label: 'Progress',
+      mobileLabel: 'Progress',
+      hideOnMobile: true,
+      render: (project: Project) => (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-secondary h-2 rounded-full overflow-hidden max-w-[100px]">
+            <div 
+              className="h-full bg-primary transition-all" 
+              style={{ width: `${project.progress || 0}%` }}
+            />
+          </div>
+          <span className="text-sm text-muted-foreground">{project.progress || 0}%</span>
+        </div>
+      )
+    },
+    {
+      key: 'timeline',
+      label: 'Timeline',
+      mobileLabel: 'Timeline',
+      hideOnMobile: true,
+      render: (project: Project) => (
+        <div className="text-sm">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            <span>{formatDate(project.startDate)} - {formatDate(project.endDate)}</span>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'budget',
+      label: 'Budget',
+      mobileLabel: 'Budget',
+      hideOnMobile: true,
+      render: (project: Project) => (
+        <div className="font-mono text-sm">{formatBudget(project.budget)}</div>
+      )
+    },
+    {
+      key: 'team',
+      label: 'Team',
+      mobileLabel: 'Team',
+      hideOnMobile: true,
+      render: (project: Project) => (
+        <div className="flex items-center gap-1">
+          <Users className="h-4 w-4" />
+          <span>{project._count?.teamMembers || 0}</span>
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      mobileLabel: 'Actions',
+      render: (project: Project) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant='ghost' className='h-8 w-8 p-0'>
+              <span className='sr-only'>Open menu</span>
+              <MoreVertical className='h-4 w-4' />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end'>
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => router.push(`/super-admin/projects/${project.id}`)}>
+              <Eye className='mr-2 h-4 w-4' />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(`/super-admin/projects/${project.id}/edit`)}>
+              <Edit className='mr-2 h-4 w-4' />
+              Edit Project
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setDeleteDialog({ open: true, id: project.id, name: project.name, action: 'archive' })}>
+              <Archive className='mr-2 h-4 w-4' />
+              Archive
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              className='text-destructive'
+              onClick={() => setDeleteDialog({ open: true, id: project.id, name: project.name, action: 'delete' })}
+            >
+              <Trash2 className='mr-2 h-4 w-4' />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    }
+  ]
+
   return (
     <div className='flex-1 space-y-4 p-4 pt-6 md:p-8'>
-      <div className='flex items-center justify-between'>
+      <div className='flex items-center justify-between' data-testid="projects-page-header">
         <div>
           <h2 className='text-3xl font-bold tracking-tight'>Projects</h2>
           <p className='text-muted-foreground'>Manage and track all your projects</p>
         </div>
         <div className='flex gap-2'>
-          <Button variant='outline' size='icon' onClick={handleExport} title="Export to CSV">
+          <Button variant='outline' size='icon' onClick={handleExport} title="Export to CSV" data-testid="projects-export-button">
             <Download className='h-4 w-4' />
           </Button>
-          <Button onClick={fetchProjects} variant='outline' disabled={loading}>
+          <Button onClick={fetchProjects} variant='outline' disabled={loading} data-testid="projects-refresh-button">
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Link href='/super-admin/projects/new'>
-            <Button>
+            <Button data-testid="projects-add-button">
               <Plus className='mr-2 h-4 w-4' />
               New Project
             </Button>
@@ -202,8 +312,8 @@ export default function ProjectsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className='grid gap-4 md:grid-cols-4'>
-        <Card>
+      <div className='grid gap-4 md:grid-cols-4' data-testid="projects-stats-cards">
+        <Card data-testid="stat-total-projects">
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Total Projects</CardTitle>
             <Briefcase className='h-4 w-4 text-muted-foreground' />
@@ -251,7 +361,7 @@ export default function ProjectsPage() {
       </div>
 
       {/* Projects Table */}
-      <Card>
+      <Card data-testid="projects-list-card">
         <CardHeader>
           <div className='flex items-center justify-between'>
             <div>
@@ -266,12 +376,14 @@ export default function ProjectsPage() {
                   className='pl-8 w-[300px]'
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  data-testid="projects-search-input"
                 />
               </div>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className='px-3 py-2 bg-background border border-input rounded-md text-sm'
+                data-testid="projects-status-filter"
               >
                 <option value='all'>All Status</option>
                 <option value='ACTIVE'>Active</option>
@@ -289,7 +401,11 @@ export default function ProjectsPage() {
           {loading ? (
             <div className='space-y-4'>
               <StatsGridSkeleton count={4} />
-              <TableSkeletonWithActions rows={10} />
+              <div className="animate-pulse space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-16 bg-slate-700 rounded"></div>
+                ))}
+              </div>
             </div>
           ) : filteredProjects.length === 0 ? (
             <div className='text-center py-12'>
@@ -297,128 +413,29 @@ export default function ProjectsPage() {
               <p className='text-muted-foreground'>No projects found</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <SortableTableHeader
-                    label="Project Name"
-                    sortKey="name"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('name')}
-                  />
-                  <SortableTableHeader
-                    label="Client"
-                    sortKey="client.name"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('client.name')}
-                  />
-                  <SortableTableHeader
-                    label="Status"
-                    sortKey="status"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('status')}
-                  />
-                  <SortableTableHeader
-                    label="Progress"
-                    sortKey="progress"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('progress')}
-                  />
-                  <SortableTableHeader
-                    label="Timeline"
-                    sortKey="startDate"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('startDate')}
-                  />
-                  <SortableTableHeader
-                    label="Budget"
-                    sortKey="budget"
-                    onSort={requestSort}
-                    sortDirection={getSortDirection('budget')}
-                  />
-                  <TableHead>Team</TableHead>
-                  <TableHead className='text-right'>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedProjects.map((project) => (
-                  <TableRow key={project.id}>
-                    <TableCell className='font-medium'>{project.name}</TableCell>
-                    <TableCell>{project.client?.name || 'No Client'}</TableCell>
-                    <TableCell>
-                      <Badge variant='outline' className={getStatusColor(project.status)}>
-                        {formatStatus(project.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex items-center gap-2'>
-                        <div className='w-full bg-secondary rounded-full h-2'>
-                          <div className='bg-primary h-2 rounded-full' style={{ width: `${project.progress || 0}%` }} />
-                        </div>
-                        <span className='text-sm text-muted-foreground'>{project.progress || 0}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className='flex items-center gap-1 text-sm'>
-                        <Calendar className='h-3 w-3 text-muted-foreground' />
-                        {formatDate(project.startDate)} - {formatDate(project.endDate)}
-                      </div>
-                    </TableCell>
-                    <TableCell>{formatBudget(project.budget)}</TableCell>
-                    <TableCell>
-                      <div className='flex items-center gap-1'>
-                        <Users className='h-3 w-3 text-muted-foreground' />
-                        {project._count?.teamMembers || 0}
-                      </div>
-                    </TableCell>
-                    <TableCell className='text-right'>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant='ghost' size='icon'>
-                            <MoreVertical className='h-4 w-4' />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align='end'>
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => router.push(`/super-admin/projects/${project.id}`)}>
-                            <Eye className='mr-2 h-4 w-4' />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => router.push(`/super-admin/projects/${project.id}/edit`)}>
-                            <Edit className='mr-2 h-4 w-4' />
-                            Edit Project
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setDeleteDialog({ open: true, id: project.id, name: project.name, action: 'archive' })}>
-                            <Archive className='mr-2 h-4 w-4' />
-                            Archive
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setDeleteDialog({ open: true, id: project.id, name: project.name, action: 'delete' })} className='text-red-600'>
-                            <Trash2 className='mr-2 h-4 w-4' />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-          
-          {/* Pagination */}
-          {filteredProjects.length > 0 && (
-            <div className="mt-4">
-              <DataPagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(sortedProjects.length / itemsPerPage)}
-                totalItems={sortedProjects.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={setItemsPerPage}
+            <>
+              <ResponsiveTable<Project>
+                data={filteredProjects}
+                columns={columns}
+                keyExtractor={(project) => project.id}
+                emptyMessage="No projects found. Try adjusting your filters."
+                onRowClick={(project) => router.push(`/super-admin/projects/${project.id}`)}
               />
-            </div>
+              
+              {/* Pagination */}
+              {filteredProjects.length > itemsPerPage && (
+                <div className="mt-4">
+                  <DataPagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(filteredProjects.length / itemsPerPage)}
+                    totalItems={filteredProjects.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                  />
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

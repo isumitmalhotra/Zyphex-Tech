@@ -12,14 +12,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -52,11 +44,9 @@ import { format, isPast } from "date-fns"
 import { toast } from "sonner"
 import { exportToCSV } from "@/lib/utils/export"
 import { StatsGridSkeleton } from "@/components/skeletons/stats-skeleton"
-import { TableSkeletonWithActions } from "@/components/skeletons/table-skeleton"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { DataPagination } from "@/components/data-pagination"
-import { useSortableData } from "@/hooks/use-sortable-data"
-import { SortableTableHeader } from "@/components/sortable-table-header"
+import { ResponsiveTable, type ResponsiveTableColumn } from '@/components/ui/responsive-table'
 
 interface Task {
   id: string
@@ -128,15 +118,6 @@ export default function TasksOverviewPage() {
   })
   const [loading, setLoading] = useState(true)
 
-  // Apply sorting
-  const { items: sortedTasks, requestSort, getSortDirection } = useSortableData(tasks)
-
-  // Apply pagination
-  const paginatedTasks = sortedTasks.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
-
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1)
@@ -205,6 +186,155 @@ export default function TasksOverviewPage() {
     return badges[priority as keyof typeof badges] || badges.MEDIUM
   }
 
+  // Column definitions for ResponsiveTable
+  const columns: ResponsiveTableColumn<Task>[] = [
+    {
+      key: 'title',
+      label: 'Task',
+      mobileLabel: 'Task',
+      render: (task: Task) => (
+        <div className="space-y-1">
+          <div className="font-medium">{task.title}</div>
+          {task.description && (
+            <div className="text-sm text-muted-foreground line-clamp-1 hidden md:block">
+              {task.description}
+            </div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'project',
+      label: 'Project',
+      mobileLabel: 'Project',
+      hideOnMobile: false,
+      render: (task: Task) => (
+        <div className="flex items-center gap-2 text-sm">
+          <Briefcase className="h-4 w-4 text-muted-foreground" />
+          <span>{task.project.name}</span>
+        </div>
+      )
+    },
+    {
+      key: 'assignee',
+      label: 'Assignee',
+      mobileLabel: 'Assignee',
+      hideOnMobile: true,
+      render: (task: Task) => (
+        <div className="flex items-center gap-2 text-sm">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span>{task.assignee?.name || 'Unassigned'}</span>
+        </div>
+      )
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      mobileLabel: 'Status',
+      hideOnMobile: false,
+      render: (task: Task) => {
+        const statusBadge = getStatusBadge(task.status)
+        const StatusIcon = statusBadge.icon
+        return (
+          <Badge variant="outline" className={statusBadge.color}>
+            <StatusIcon className="h-3 w-3 mr-1" />
+            {statusBadge.label}
+          </Badge>
+        )
+      }
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      mobileLabel: 'Priority',
+      hideOnMobile: true,
+      render: (task: Task) => {
+        const priorityBadge = getPriorityBadge(task.priority)
+        return (
+          <Badge variant="outline" className={priorityBadge.color}>
+            {priorityBadge.label}
+          </Badge>
+        )
+      }
+    },
+    {
+      key: 'dueDate',
+      label: 'Due Date',
+      mobileLabel: 'Due',
+      hideOnMobile: true,
+      render: (task: Task) => {
+        if (!task.dueDate) return <span className="text-muted-foreground text-sm">No due date</span>
+        const isOverdue = isPast(new Date(task.dueDate)) && task.status !== 'DONE'
+        return (
+          <div className={`flex items-center gap-2 text-sm ${isOverdue ? 'text-red-500' : ''}`}>
+            <Calendar className="h-4 w-4" />
+            <span>{format(new Date(task.dueDate), 'MMM d, yyyy')}</span>
+          </div>
+        )
+      }
+    },
+    {
+      key: 'progress',
+      label: 'Progress',
+      mobileLabel: 'Progress',
+      hideOnMobile: true,
+      render: (task: Task) => (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-secondary h-2 rounded-full overflow-hidden max-w-[100px]">
+            <div 
+              className="h-full bg-primary transition-all" 
+              style={{ width: `${task.progress || 0}%` }}
+            />
+          </div>
+          <span className="text-sm text-muted-foreground">{task.progress || 0}%</span>
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (task: Task) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant='ghost' className='h-8 w-8 p-0'>
+              <span className='sr-only'>Open menu</span>
+              <MoreVertical className='h-4 w-4' />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end'>
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => router.push(`/super-admin/tasks/${task.id}`)}
+            >
+              <Eye className='mr-2 h-4 w-4' />
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => router.push(`/super-admin/tasks/${task.id}/edit`)}
+            >
+              <Edit className='mr-2 h-4 w-4' />
+              Edit Task
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className='text-destructive'
+              onClick={() =>
+                setDeleteDialog({
+                  open: true,
+                  id: task.id,
+                  title: task.title,
+                })
+              }
+            >
+              <Trash2 className='mr-2 h-4 w-4' />
+              Delete Task
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    }
+  ]
+
   // Handle delete task
   const handleDelete = async () => {
     try {
@@ -224,7 +354,7 @@ export default function TasksOverviewPage() {
   }
 
   // Handle status change
-  const handleStatusChange = async (taskId: string, newStatus: string) => {
+  const _handleStatusChange = async (taskId: string, newStatus: string) => {
     try {
       const response = await fetch(`/api/project-manager/tasks?id=${taskId}`, {
         method: 'PUT',
@@ -274,7 +404,11 @@ export default function TasksOverviewPage() {
         <StatsGridSkeleton count={4} />
         <div className="space-y-4">
           <div className="h-32 bg-muted animate-pulse rounded-lg" />
-          <TableSkeletonWithActions rows={10} />
+          <div className="animate-pulse space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-16 bg-slate-700 rounded"></div>
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -413,188 +547,29 @@ export default function TasksOverviewPage() {
                 : 'No tasks found.'}
             </div>
           ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <SortableTableHeader
-                      label="Task"
-                      sortKey="title"
-                      onSort={requestSort}
-                      sortDirection={getSortDirection('title')}
-                    />
-                    <SortableTableHeader
-                      label="Project"
-                      sortKey="project.name"
-                      onSort={requestSort}
-                      sortDirection={getSortDirection('project.name')}
-                    />
-                    <SortableTableHeader
-                      label="Status"
-                      sortKey="status"
-                      onSort={requestSort}
-                      sortDirection={getSortDirection('status')}
-                    />
-                    <SortableTableHeader
-                      label="Priority"
-                      sortKey="priority"
-                      onSort={requestSort}
-                      sortDirection={getSortDirection('priority')}
-                    />
-                    <SortableTableHeader
-                      label="Assignee"
-                      sortKey="assignee.name"
-                      onSort={requestSort}
-                      sortDirection={getSortDirection('assignee.name')}
-                    />
-                    <SortableTableHeader
-                      label="Due Date"
-                      sortKey="dueDate"
-                      onSort={requestSort}
-                      sortDirection={getSortDirection('dueDate')}
-                    />
-                    <SortableTableHeader
-                      label="Progress"
-                      sortKey="progress"
-                      onSort={requestSort}
-                      sortDirection={getSortDirection('progress')}
-                    />
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedTasks.map((task) => {
-                    const statusBadge = getStatusBadge(task.status)
-                    const priorityBadge = getPriorityBadge(task.priority)
-                    const isOverdue = task.dueDate && isPast(new Date(task.dueDate)) && task.status !== 'DONE'
-                    const StatusIcon = statusBadge.icon
-                    
-                    return (
-                      <TableRow key={task.id} className={isOverdue ? 'bg-red-500/5' : ''}>
-                        <TableCell>
-                          <div className="font-medium max-w-[300px]">
-                            {task.title}
-                            {isOverdue && (
-                              <Badge variant="outline" className="ml-2 bg-red-500/10 text-red-500 border-red-500/20">
-                                Overdue
-                              </Badge>
-                            )}
-                          </div>
-                          {task.description && (
-                            <div className="text-sm text-muted-foreground truncate max-w-[300px]">
-                              {task.description}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-sm">
-                            <Briefcase className="h-3 w-3 text-muted-foreground" />
-                            {task.project.name}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={statusBadge.color}>
-                            <StatusIcon className="mr-1 h-3 w-3" />
-                            {statusBadge.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={priorityBadge.color}>
-                            {priorityBadge.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {task.assignee ? (
-                            <div className="flex items-center gap-1 text-sm">
-                              <User className="h-3 w-3 text-muted-foreground" />
-                              {task.assignee.name || task.assignee.email}
-                            </div>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">Unassigned</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {task.dueDate ? (
-                            <div className="flex items-center gap-1 text-sm">
-                              <Calendar className="h-3 w-3 text-muted-foreground" />
-                              {format(new Date(task.dueDate), 'MMM dd, yyyy')}
-                            </div>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">No due date</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="text-sm font-medium">{task.progress}%</div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => router.push(`/super-admin/projects/${task.projectId}`)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Project
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => alert('Edit task functionality would be implemented here')}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit Task
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'TODO')}>
-                                <Circle className="mr-2 h-4 w-4" />
-                                To Do
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'IN_PROGRESS')}>
-                                <PlayCircle className="mr-2 h-4 w-4" />
-                                In Progress
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'REVIEW')}>
-                                <Clock className="mr-2 h-4 w-4" />
-                                Review
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleStatusChange(task.id, 'DONE')}>
-                                <CheckCircle2 className="mr-2 h-4 w-4" />
-                                Done
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                onClick={() => setDeleteDialog({ open: true, id: task.id, title: task.title })}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Task
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-          
-          {/* Pagination */}
-          {tasks.length > 0 && (
-            <div className="mt-4">
-              <DataPagination
-                currentPage={currentPage}
-                totalPages={Math.ceil(sortedTasks.length / itemsPerPage)}
-                totalItems={sortedTasks.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={setItemsPerPage}
+            <>
+              <ResponsiveTable<Task>
+                data={tasks}
+                columns={columns}
+                keyExtractor={(task) => task.id}
+                emptyMessage="No tasks found. Try adjusting your filters."
+                onRowClick={(task) => router.push(`/super-admin/tasks/${task.id}`)}
               />
-            </div>
+              
+              {/* Pagination */}
+              {tasks.length > itemsPerPage && (
+                <div className="mt-4">
+                  <DataPagination
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(tasks.length / itemsPerPage)}
+                    totalItems={tasks.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                    onItemsPerPageChange={setItemsPerPage}
+                  />
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -1,4 +1,11 @@
 /** @type {import('next').NextConfig} */
+
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 const nextConfig = {
   // Enable SWC minification for faster builds
   swcMinify: true,
@@ -232,5 +239,5 @@ const nextConfig = {
   },
 }
 
-// Export without Sentry to save memory during build
-export default nextConfig;
+// Export with bundle analyzer wrapper
+export default withBundleAnalyzer(nextConfig);

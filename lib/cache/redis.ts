@@ -46,7 +46,7 @@ export function getRedisClient(): Redis | null {
       });
 
       // Handle errors
-      redis.on('error', (error: Error) => {
+      redis.on('error', (_error: Error) => {
         redis = null; // Reset to null on error
       });
 
@@ -54,7 +54,7 @@ export function getRedisClient(): Redis | null {
       redis.ping().catch(() => {
         redis = null;
       });
-    } catch (error) {
+    } catch (_error) {
       redis = null;
     }
   }
@@ -70,6 +70,17 @@ export const cacheKeys = {
   dynamicContentItem: (id: string) => `dynamic_content_item:${id}`,
   contentBySlug: (slug: string) => `content:slug:${slug}`,
   contentByType: (type: string) => `content:type:${type}`,
+  
+  // CMS cache keys
+  cmsPage: (id: string) => `cms:page:${id}`,
+  cmsPageList: (filters: string) => `cms:pages:${filters}`,
+  cmsTemplate: (id: string) => `cms:template:${id}`,
+  cmsTemplateList: (filters: string) => `cms:templates:${filters}`,
+  cmsMedia: (id: string) => `cms:media:${id}`,
+  cmsMediaList: (filters: string) => `cms:media:${filters}`,
+  cmsSearch: (query: string) => `cms:search:${query}`,
+  cmsActivityLog: (filters: string) => `cms:activity:${filters}`,
+  cmsStats: (type: string) => `cms:stats:${type}`,
 } as const;
 
 // Cache TTL constants (in seconds)
@@ -88,7 +99,7 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
 
     const cached = await client.get(key);
     return cached ? JSON.parse(cached) : null;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -104,7 +115,7 @@ export async function cacheSet<T>(
 
     await client.setex(key, ttl, JSON.stringify(value));
     return true;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -116,7 +127,7 @@ export async function cacheDelete(key: string): Promise<boolean> {
 
     await client.del(key);
     return true;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -131,7 +142,7 @@ export async function cacheDeletePattern(pattern: string): Promise<boolean> {
       await client.del(...keys);
     }
     return true;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -237,5 +248,124 @@ export async function checkCacheHealth(): Promise<{
       connected: false, 
       error: error instanceof Error ? error.message : 'Unknown error'
     };
+  }
+}
+
+// ============================================================================
+// CMS-SPECIFIC CACHE FUNCTIONS
+// ============================================================================
+
+/**
+ * Cache wrapper for CMS data
+ * Automatically handles cache miss and stores result
+ */
+export async function cmsCache<T>(
+  key: string,
+  ttl: number,
+  fetchFn: () => Promise<T>
+): Promise<T> {
+  // Try cache first
+  const cached = await cacheGet<T>(key);
+  if (cached !== null) {
+    return cached;
+  }
+
+  // Fetch fresh data
+  const data = await fetchFn();
+
+  // Store in cache
+  await cacheSet(key, data, ttl);
+
+  return data;
+}
+
+/**
+ * Invalidate CMS page cache
+ */
+export async function invalidateCmsPageCache(pageId?: string): Promise<void> {
+  if (pageId) {
+    await cacheDelete(cacheKeys.cmsPage(pageId));
+  }
+  // Invalidate all page lists
+  await cacheDeletePattern('cms:pages:*');
+}
+
+/**
+ * Invalidate CMS template cache
+ */
+export async function invalidateCmsTemplateCache(templateId?: string): Promise<void> {
+  if (templateId) {
+    await cacheDelete(cacheKeys.cmsTemplate(templateId));
+  }
+  // Invalidate all template lists
+  await cacheDeletePattern('cms:templates:*');
+}
+
+/**
+ * Invalidate CMS media cache
+ */
+export async function invalidateCmsMediaCache(mediaId?: string): Promise<void> {
+  if (mediaId) {
+    await cacheDelete(cacheKeys.cmsMedia(mediaId));
+  }
+  // Invalidate all media lists
+  await cacheDeletePattern('cms:media:*');
+}
+
+/**
+ * Invalidate CMS search cache
+ */
+export async function invalidateCmsSearchCache(): Promise<void> {
+  await cacheDeletePattern('cms:search:*');
+}
+
+/**
+ * Invalidate all CMS cache
+ */
+export async function invalidateAllCmsCache(): Promise<void> {
+  await cacheDeletePattern('cms:*');
+}
+
+/**
+ * Get cache statistics
+ */
+export async function getCacheStats(): Promise<{
+  connected: boolean;
+  keys: number;
+  memory?: string;
+  hitRate?: string;
+} | null> {
+  try {
+    const client = getRedisClient();
+    if (!client) {
+      return { connected: false, keys: 0 };
+    }
+
+    // Get all CMS keys
+    const cmsKeys = await client.keys('cms:*');
+    
+    // Get info
+    const info = await client.info();
+    
+    // Parse memory usage
+    const memoryMatch = info.match(/used_memory_human:(.+)/);
+    const memory = memoryMatch ? memoryMatch[1].trim() : undefined;
+    
+    // Parse hit rate
+    const hitsMatch = info.match(/keyspace_hits:(\d+)/);
+    const missesMatch = info.match(/keyspace_misses:(\d+)/);
+    const hits = hitsMatch ? parseInt(hitsMatch[1], 10) : 0;
+    const misses = missesMatch ? parseInt(missesMatch[1], 10) : 0;
+    const total = hits + misses;
+    const hitRate = total > 0 ? `${((hits / total) * 100).toFixed(2)}%` : '0%';
+
+    return {
+      connected: true,
+      keys: cmsKeys.length,
+      memory,
+      hitRate
+    };
+  } catch (_error) {
+    return null;
   }
 }

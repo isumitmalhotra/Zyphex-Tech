@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import { TeamMemberSidebar } from "@/components/team-member-sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
+import { MobileNavWrapper } from "@/components/mobile-nav-wrapper"
+import { Toaster } from "sonner"
 
 export const metadata: Metadata = {
   title: "Team Member Dashboard - ZyphexTech",
@@ -13,13 +15,17 @@ export default function TeamMemberLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex">
-      <SidebarProvider>
-        <TeamMemberSidebar />
-        <main className="flex-1 overflow-hidden min-h-screen">
+    <SidebarProvider>
+      <TeamMemberSidebar />
+      <MobileNavWrapper 
+        sidebarContent={<TeamMemberSidebar />}
+        headerContent={<span className="text-lg font-semibold">Team Dashboard</span>}
+      >
+        <main className="flex-1 overflow-hidden">
           {children}
         </main>
-      </SidebarProvider>
-    </div>
+      </MobileNavWrapper>
+      <Toaster position="top-right" richColors />
+    </SidebarProvider>
   )
 }

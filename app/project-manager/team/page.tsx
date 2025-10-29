@@ -99,7 +99,9 @@ export default function TeamManagementPage() {
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (member.skills && member.skills.some(skill => skill.toLowerCase().includes(searchTerm.toLowerCase())))
+                         (Array.isArray(member.skills) && member.skills.some((skill) => 
+                           typeof skill === 'string' && skill.toLowerCase().includes(searchTerm.toLowerCase())
+                         ))
     const matchesDepartment = departmentFilter === "ALL" || member.department === departmentFilter
     const matchesAvailability = availabilityFilter === "ALL" || member.availability === availabilityFilter
     
@@ -297,22 +299,30 @@ export default function TeamManagementPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-wrap gap-1 max-w-48">
-                          {member.skills && member.skills.slice(0, 3).map((skill, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">
-                              {skill}
-                            </Badge>
-                          ))}
-                          {member.skills && member.skills.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{member.skills.length - 3}
-                            </Badge>
+                          {Array.isArray(member.skills) && member.skills.length > 0 ? (
+                            <>
+                              {member.skills
+                                .filter((skill): skill is string => typeof skill === 'string')
+                                .slice(0, 3)
+                                .map((skill, idx) => (
+                                  <Badge key={idx} variant="secondary" className="text-xs">
+                                    {skill}
+                                  </Badge>
+                                ))}
+                              {member.skills.length > 3 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +{member.skills.length - 3}
+                                </Badge>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-sm text-gray-500">No skills listed</span>
                           )}
-                          {!member.skills && <span className="text-sm text-gray-500">No skills listed</span>}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge className={availabilityColors[member.availability as keyof typeof availabilityColors] || availabilityColors.AVAILABLE}>
-                          {member.availability || "AVAILABLE"}
+                          {typeof member.availability === 'string' ? member.availability : "AVAILABLE"}
                         </Badge>
                       </TableCell>
                       <TableCell>

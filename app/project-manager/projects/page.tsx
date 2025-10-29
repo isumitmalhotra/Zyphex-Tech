@@ -211,7 +211,10 @@ export default function AllProjectsPage() {
             <CardContent>
               <div className="text-2xl font-bold zyphex-heading">${projectStats.totalBudget.toLocaleString()}</div>
               <p className="text-xs zyphex-subheading">
-                ${projectStats.usedBudget.toLocaleString()} used ({Math.round((projectStats.usedBudget / projectStats.totalBudget) * 100)}%)
+                ${projectStats.usedBudget.toLocaleString()} used (
+                {projectStats.totalBudget > 0
+                  ? Math.round((projectStats.usedBudget / projectStats.totalBudget) * 100)
+                  : 0}%)
               </p>
             </CardContent>
           </Card>

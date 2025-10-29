@@ -79,10 +79,43 @@ export async function GET(request: NextRequest) {
           },
         });
 
+        // Ensure skills is always an array of strings
+        let skills: string[] = [];
+        if (member.skills) {
+          if (Array.isArray(member.skills)) {
+            skills = member.skills.filter((s): s is string => typeof s === 'string');
+          } else if (typeof member.skills === 'object') {
+            // Handle case where skills might be an object with array property
+            const skillsObj = member.skills as Record<string, unknown>;
+            if (Array.isArray(skillsObj.skills)) {
+              skills = skillsObj.skills.filter((s: unknown): s is string => typeof s === 'string');
+            }
+          }
+        }
+
+        // Handle availability - convert object to string status if needed
+        let availabilityStatus = "AVAILABLE";
+        if (member.availability) {
+          if (typeof member.availability === 'string') {
+            availabilityStatus = member.availability;
+          } else if (typeof member.availability === 'object') {
+            // If it's an object (schedule), determine status based on current availability
+            // For now, default to AVAILABLE
+            availabilityStatus = "AVAILABLE";
+          }
+        }
+
         return {
           ...member,
+          skills, // Override with validated skills array
+          availability: availabilityStatus, // Override with string status
           projectsCount: member._count.projects,
           tasksCompleted,
+          // Add missing fields expected by frontend
+          rating: 4.5,
+          department: member.role === "PROJECT_MANAGER" ? "Management" : "Engineering",
+          joinedAt: member.createdAt.toISOString(),
+          lastActive: member.updatedAt.toISOString(),
         };
       })
     );

@@ -434,7 +434,7 @@ export default function ProjectAnalyticsPage() {
 
         {/* Project Performance Tab */}
         <TabsContent value="performance" className="space-y-4">
-          {projectPerf && (
+          {projectPerf ? (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Card>
@@ -526,6 +526,20 @@ export default function ProjectAnalyticsPage() {
                 </CardContent>
               </Card>
             </>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <BarChart3 className="h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium mb-2">No Performance Data Available</h3>
+                <p className="text-gray-500 text-center mb-4">
+                  Performance analytics will appear once you have active projects with completed milestones.
+                </p>
+                <Button variant="outline" onClick={fetchAnalytics}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Data
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
