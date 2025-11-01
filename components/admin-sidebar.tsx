@@ -137,54 +137,27 @@ const data = {
     },
     {
       title: "Content Management",
-      url: "/super-admin/content",
-      icon: FileText,
-      items: [
-        {
-          title: "Page Content",
-          url: "/super-admin/content/manage",
-        },
-        {
-          title: "Pages Management",
-          url: "/super-admin/content/pages",
-        },
-        {
-          title: "Content Types",
-          url: "/super-admin/content/content-types",
-        },
-        {
-          title: "Media Library",
-          url: "/super-admin/content/media",
-        },
-        {
-          title: "Dynamic Content",
-          url: "/super-admin/content",
-        },
-      ],
-    },
-    {
-      title: "CMS System",
       url: "/super-admin/cms",
       icon: FileText,
       items: [
         {
-          title: "CMS Pages",
+          title: "Pages",
           url: "/super-admin/cms/pages",
         },
         {
-          title: "Page Templates",
+          title: "Templates",
           url: "/super-admin/cms/templates",
         },
         {
-          title: "Media Manager",
+          title: "Media Library",
           url: "/super-admin/cms/media",
         },
         {
-          title: "CMS Analytics",
+          title: "Analytics",
           url: "/super-admin/cms/analytics",
         },
         {
-          title: "CMS Settings",
+          title: "Settings",
           url: "/super-admin/cms/settings",
         },
       ],
@@ -264,7 +237,6 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
       case 'Clients':
         return hasViewClients
       case 'Content Management':
-      case 'CMS System':
         return hasManageSettings || user?.role === 'SUPER_ADMIN'
       default:
         return true
