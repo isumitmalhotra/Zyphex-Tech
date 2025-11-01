@@ -54,7 +54,7 @@ export function requirePermissions(permissions: Permission[]) {
 
       // Call the actual handler
       return handler(authenticatedRequest)
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -85,7 +85,7 @@ export function requireAuth() {
       authenticatedRequest.user = session.user as ExtendedUser
 
       return handler(authenticatedRequest)
-    } catch (error) {
+    } catch (_error) {
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -105,12 +105,12 @@ export function requireAdmin() {
  * Helper function to wrap API handlers with permission checks
  */
 export function withPermissions(permissions: Permission[]) {
-  return function wrapper(
-    handler: (req: AuthenticatedRequest) => Promise<NextResponse>
+  return function wrapper<T = unknown>(
+    handler: (req: AuthenticatedRequest, context?: T) => Promise<NextResponse>
   ) {
-    return async function wrappedHandler(request: NextRequest) {
+    return async function wrappedHandler(request: NextRequest, context?: T) {
       const middleware = requirePermissions(permissions)
-      return middleware(request, handler)
+      return middleware(request, (req) => handler(req, context))
     }
   }
 }
@@ -119,12 +119,12 @@ export function withPermissions(permissions: Permission[]) {
  * Helper function to wrap API handlers with authentication only
  */
 export function withAuth() {
-  return function wrapper(
-    handler: (req: AuthenticatedRequest) => Promise<NextResponse>
+  return function wrapper<T = unknown>(
+    handler: (req: AuthenticatedRequest, context?: T) => Promise<NextResponse>
   ) {
-    return async function wrappedHandler(request: NextRequest) {
+    return async function wrappedHandler(request: NextRequest, context?: T) {
       const middleware = requireAuth()
-      return middleware(request, handler)
+      return middleware(request, (req) => handler(req, context))
     }
   }
 }
@@ -143,7 +143,7 @@ export async function logAction(
   try {
     // In a real implementation, you would save this to your audit log
     // For now, we'll just log to console
-    const auditEntry = {
+    const _auditEntry = {
       userId: user.id,
       action,
       entityType,
@@ -158,7 +158,7 @@ export async function logAction(
 
     // TODO: Save to database audit log table
     // await prisma.auditLog.create({ data: auditEntry })
-  } catch (error) {
+  } catch (_error) {
     // Audit logging failed
   }
 }

@@ -2,34 +2,79 @@ import { prisma } from '../lib/prisma'
 import { hash } from 'bcryptjs'
 
 async function createAdminUser() {
-  try {
-    // Check if admin user already exists
-    const existingAdmin = await prisma.user.findUnique({
-      where: { email: 'admin@example.com' }
-    })
+  console.log('🔐 Creating Super Admin User...\n');
 
-    if (existingAdmin) {
-      console.log('Admin user already exists:', existingAdmin.email)
-      return
+  try {
+    const email = 'sumitmalhotra@zyphextech.com';
+    const password = 'Haryana@272002';
+    const name = 'Sumit Malhotra';
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      console.log('⚠️  User already exists!');
+      console.log(`   Email: ${existingUser.email}`);
+      console.log(`   Name: ${existingUser.name}`);
+      console.log(`   Role: ${existingUser.role}`);
+      
+      // Update password if user exists
+      const hashedPassword = await hash(password, 12);
+      await prisma.user.update({
+        where: { email },
+        data: {
+          password: hashedPassword,
+          role: 'SUPER_ADMIN',
+          emailVerified: new Date(),
+        },
+      });
+      
+      console.log('\n✅ Password updated and role set to SUPER_ADMIN');
+      console.log('\n🔑 Login Credentials:');
+      console.log(`   Email: ${email}`);
+      console.log(`   Password: ${password}`);
+      console.log(`   Dashboard: http://localhost:3000/super-admin`);
+      console.log(`   CMS: http://localhost:3000/super-admin/content`);
+      console.log(`   Production: https://zyphextech.com/super-admin\n`);
+      return;
     }
 
-    // Create admin user
-    const hashedPassword = await hash('admin123', 10)
+    // Hash password
+    const hashedPassword = await hash(password, 12);
 
-    const admin = await prisma.user.create({
+    // Create user
+    const user = await prisma.user.create({
       data: {
-        email: 'admin@example.com',
-        name: 'Admin User',
+        email,
+        name,
         password: hashedPassword,
-        role: 'ADMIN'
-      }
-    })
+        role: 'SUPER_ADMIN',
+        emailVerified: new Date(), // Mark email as verified
+      },
+    });
 
-    console.log('Admin user created:', admin.email)
+    console.log('✅ Super Admin user created successfully!');
+    console.log('\nUser Details:');
+    console.log(`   ID: ${user.id}`);
+    console.log(`   Name: ${user.name}`);
+    console.log(`   Email: ${user.email}`);
+    console.log(`   Role: ${user.role}`);
+    console.log(`   Email Verified: ${user.emailVerified ? 'Yes' : 'No'}`);
+    
+    console.log('\n🔑 Login Credentials:');
+    console.log(`   Email: ${email}`);
+    console.log(`   Password: ${password}`);
+    console.log(`   Dashboard URL: http://localhost:3000/super-admin`);
+    console.log(`   CMS URL: http://localhost:3000/super-admin/content`);
+    console.log(`   Production URL: https://zyphextech.com/super-admin\n`);
+
   } catch (error) {
-    console.error('Error creating admin user:', error)
+    console.error('❌ Error creating admin user:', error);
+    throw error;
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 

@@ -60,6 +60,8 @@ const nextConfig = {
       'cdn.discordapp.com', // Discord profile images
       'graph.microsoft.com', // Microsoft profile images
       'media.licdn.com', // LinkedIn profile images
+      'ui-avatars.com', // Team member avatars
+      'images.unsplash.com', // Unsplash images for content
     ],
     remotePatterns: [
       {
@@ -81,6 +83,14 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'media.licdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ui-avatars.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
       },
     ],
   },

@@ -177,11 +177,11 @@ export default async function ServicesPage() {
                   <div className="lg:col-span-1 bg-slate-800/50 p-8 flex items-center justify-center">
                     <div className="zyphex-3d-card hover-zyphex-lift">
                       <Image
-                        src={`/abstract-geometric-shapes.png?height=300&width=300&query=${service.title.toLowerCase().replace(/\s+/g, "-")}-technology-illustration`}
+                        src={service.imageUrl || '/placeholder.svg'}
                         alt={service.title}
                         width={300}
                         height={300}
-                        className="rounded-lg w-full h-auto"
+                        className="rounded-lg w-full h-auto object-cover"
                       />
                     </div>
                   </div>

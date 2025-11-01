@@ -411,8 +411,8 @@ export default function ContentTypesPage() {
                               {type.slug}
                             </p>
                           </div>
-                          <Badge variant="outline" className="ml-2 flex-shrink-0">
-                            {type.entryCount}
+                          <Badge variant="outline" className="ml-2 flex-shrink-0" title={`${type.entryCount} content entries`}>
+                            {type.entryCount} {type.entryCount === 1 ? 'entry' : 'entries'}
                           </Badge>
                         </div>
                         <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
@@ -512,12 +512,12 @@ export default function ContentTypesPage() {
                     {/* Metadata */}
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-600 dark:text-gray-400">Entries:</span>
-                        <span className="ml-2 font-semibold">{selectedTypeData.entryCount}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Content Entries:</span>
+                        <span className="ml-2 font-semibold">{selectedTypeData.entryCount} {selectedTypeData.entryCount === 1 ? 'entry' : 'entries'}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600 dark:text-gray-400">Fields:</span>
-                        <span className="ml-2 font-semibold">{selectedTypeData.fields.length}</span>
+                        <span className="text-gray-600 dark:text-gray-400">Field Definitions:</span>
+                        <span className="ml-2 font-semibold">{selectedTypeData.fields.length} {selectedTypeData.fields.length === 1 ? 'field' : 'fields'}</span>
                       </div>
                       <div>
                         <span className="text-gray-600 dark:text-gray-400">Created:</span>

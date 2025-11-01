@@ -1719,6 +1719,7 @@ model MediaAsset {
   alt          String?
   category     String? // e.g., 'portfolio', 'blog', 'content'
   uploadedBy   String?
+  isFavorite   Boolean  @default(false) // Whether this media is marked as favorite
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -2913,3 +2914,123 @@ model DownloadableResource {
   @@index([isActive, featured])
   @@index([category, isActive])
 }
+
+// ============================================
+// CONTENT MIGRATION MODELS (Static to Dynamic)
+// ============================================
+// These models are SEPARATE from the existing CmsPage system.
+// Purpose: Migrate static React component content into database
+// so CMS admin can display and manage it.
+
+// Page Content - Simple page structure for static content migration
+model PageContent {
+  id          String              @id @default(cuid())
+  pageKey     String              @unique // e.g., 'home', 'about', 'services', 'contact'
+  name        String // Display name
+  slug        String // URL slug
+  title       String // Page title for SEO
+  description String?             @db.Text // Meta description
+  status      String              @default("published") // draft, published
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  sections    PageContentSection[]
+
+  @@index([pageKey])
+  @@index([status])
+  @@index([slug])
+}
+
+// Page Content Section - Individual sections within a page
+model PageContentSection {
+  id          String      @id @default(cuid())
+  pageId      String
+  page        PageContent @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  sectionKey  String // e.g., 'hero', 'about', 'services', 'testimonials'
+  sectionType String // hero, text, features, cards, testimonials, cta
+  title       String? // Section title (optional)
+  contentData Json // All section-specific data (flexible JSON structure)
+  order       Int // Display order on page
+  isVisible   Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([pageId])
+  @@index([sectionKey])
+  @@index([order])
+  @@index([isVisible])
+  @@index([pageId, order])
+}
+
+// Page Media Asset - Simple media management for page content
+model PageMediaAsset {
+  id           String   @id @default(cuid())
+  fileName     String // Display name
+  originalName String // Original file name
+  fileUrl      String // Public URL path
+  filePath     String // Server file path
+  fileType     String // image, video, document
+  mimeType     String // image/png, video/mp4, etc.
+  fileSize     Int // Size in bytes
+  width        Int? // For images
+  height       Int? // For images
+  altText      String? // Accessibility text
+  caption      String? // Image caption
+  uploadedBy   String // User ID who uploaded
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([fileType])
+  @@index([uploadedBy])
+  @@index([createdAt])
+  @@index([fileName])
+}
+
+// System Settings - Global application settings
+model SystemSettings {
+  id                     String   @id @default(cuid())
+  // General
+  siteName               String   @default("Zyphex-Tech")
+  tagline                String?
+  email                  String?
+  phone                  String?
+  address                String?
+  logo                   String?
+  favicon                String?
+  facebook               String?
+  twitter                String?
+  instagram              String?
+  linkedin               String?
+  youtube                String?
+  // Security
+  minPasswordLength      Int      @default(8)
+  requireUppercase       Boolean  @default(true)
+  requireNumbers         Boolean  @default(true)
+  requireSpecialChars    Boolean  @default(true)
+  twoFactorEnabled       Boolean  @default(false)
+  sessionTimeout         Int      @default(30)
+  maxLoginAttempts       Int      @default(5)
+  ipWhitelist            Json?
+  // Email
+  smtpHost               String?
+  smtpPort               Int      @default(587)
+  smtpUser               String?
+  smtpPassword           String?
+  smtpEncryption         String?  @default("TLS")
+  fromName               String?
+  fromEmail              String?
+  notifyOnNewUser        Boolean  @default(true)
+  notifyOnNewProject     Boolean  @default(true)
+  notifyOnTaskComplete   Boolean  @default(false)
+  // System
+  timezone               String   @default("America/Los_Angeles")
+  dateFormat             String   @default("MM/DD/YYYY")
+  timeFormat             String   @default("12h")
+  language               String   @default("en-US")
+  maintenanceMode        Boolean  @default(false)
+  maintenanceMessage     String?
+  debugMode              Boolean  @default(false)
+  cacheEnabled           Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+

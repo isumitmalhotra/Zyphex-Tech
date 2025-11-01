@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { SubtleBackground } from '@/components/subtle-background';
+import { Loader2 } from 'lucide-react';
 import {
   Settings,
   Globe,
@@ -93,6 +94,10 @@ export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [showSmtpPassword, setShowSmtpPassword] = useState(false);
   const [newIpAddress, setNewIpAddress] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingFavicon, setUploadingFavicon] = useState(false);
 
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>({
     siteName: 'Zyphex-Tech',
@@ -144,32 +149,201 @@ export default function AdminSettingsPage() {
     cacheEnabled: true
   });
 
-  const handleSaveGeneral = () => {
-    toast({
-      title: 'Settings Saved',
-      description: 'General settings have been updated successfully'
-    });
+  // Load settings from API on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/super-admin/settings');
+        
+        if (!response.ok) {
+          throw new Error('Failed to load settings');
+        }
+
+        const result = await response.json();
+        if (result.success && result.data) {
+          const data = result.data;
+          
+          // Update all settings states
+          setGeneralSettings({
+            siteName: data.siteName || 'Zyphex-Tech',
+            tagline: data.tagline || 'Innovative Digital Solutions',
+            email: data.email || 'info@zyphex-tech.com',
+            phone: data.phone || '+1 (555) 123-4567',
+            address: data.address || '123 Tech Street, Silicon Valley, CA 94025',
+            logo: data.logo || '/images/zyphex-logo.png',
+            favicon: data.favicon || '/images/favicon.ico',
+            facebook: data.facebook || 'https://facebook.com/zyphextech',
+            twitter: data.twitter || 'https://twitter.com/zyphextech',
+            instagram: data.instagram || 'https://instagram.com/zyphextech',
+            linkedin: data.linkedin || 'https://linkedin.com/company/zyphextech',
+            youtube: data.youtube || 'https://youtube.com/zyphextech'
+          });
+
+          setSecuritySettings({
+            minPasswordLength: data.minPasswordLength || 8,
+            requireUppercase: data.requireUppercase !== undefined ? data.requireUppercase : true,
+            requireNumbers: data.requireNumbers !== undefined ? data.requireNumbers : true,
+            requireSpecialChars: data.requireSpecialChars !== undefined ? data.requireSpecialChars : true,
+            twoFactorEnabled: data.twoFactorEnabled || false,
+            sessionTimeout: data.sessionTimeout || 30,
+            maxLoginAttempts: data.maxLoginAttempts || 5,
+            ipWhitelist: data.ipWhitelist || []
+          });
+
+          setEmailSettings({
+            smtpHost: data.smtpHost || 'smtp.gmail.com',
+            smtpPort: data.smtpPort || 587,
+            smtpUser: data.smtpUser || 'noreply@zyphex-tech.com',
+            smtpPassword: data.smtpPassword || '••••••••••••',
+            smtpEncryption: data.smtpEncryption || 'TLS',
+            fromName: data.fromName || 'Zyphex-Tech',
+            fromEmail: data.fromEmail || 'noreply@zyphex-tech.com',
+            notifyOnNewUser: data.notifyOnNewUser !== undefined ? data.notifyOnNewUser : true,
+            notifyOnNewProject: data.notifyOnNewProject !== undefined ? data.notifyOnNewProject : true,
+            notifyOnTaskComplete: data.notifyOnTaskComplete || false
+          });
+
+          setSystemSettings({
+            timezone: data.timezone || 'America/Los_Angeles',
+            dateFormat: data.dateFormat || 'MM/DD/YYYY',
+            timeFormat: data.timeFormat || '12h',
+            language: data.language || 'en-US',
+            maintenanceMode: data.maintenanceMode || false,
+            maintenanceMessage: data.maintenanceMessage || 'We are currently performing scheduled maintenance. Please check back soon.',
+            debugMode: data.debugMode || false,
+            cacheEnabled: data.cacheEnabled !== undefined ? data.cacheEnabled : true
+          });
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load settings. Using default values.',
+          variant: 'destructive'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [toast]);
+
+  const handleSaveGeneral = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch('/api/super-admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(generalSettings)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      toast({
+        title: 'Settings Saved',
+        description: 'General settings have been updated successfully'
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save settings. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSaveSecurity = () => {
-    toast({
-      title: 'Security Settings Saved',
-      description: 'Security settings have been updated successfully'
-    });
+  const handleSaveSecurity = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch('/api/super-admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(securitySettings)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      toast({
+        title: 'Security Settings Saved',
+        description: 'Security settings have been updated successfully'
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save security settings. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSaveEmail = () => {
-    toast({
-      title: 'Email Settings Saved',
-      description: 'Email settings have been updated successfully'
-    });
+  const handleSaveEmail = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch('/api/super-admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailSettings)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      toast({
+        title: 'Email Settings Saved',
+        description: 'Email settings have been updated successfully'
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save email settings. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSaveSystem = () => {
-    toast({
-      title: 'System Settings Saved',
-      description: 'System settings have been updated successfully'
-    });
+  const handleSaveSystem = async () => {
+    try {
+      setIsSaving(true);
+      const response = await fetch('/api/super-admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(systemSettings)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save settings');
+      }
+
+      toast({
+        title: 'System Settings Saved',
+        description: 'System settings have been updated successfully'
+      });
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to save system settings. Please try again.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleTestEmail = () => {
@@ -177,6 +351,125 @@ export default function AdminSettingsPage() {
       title: 'Test Email Sent',
       description: 'A test email has been sent to verify your SMTP configuration'
     });
+  };
+
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid File Type',
+        description: 'Please upload an image file (PNG, JPG, SVG)',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File Too Large',
+        description: 'Logo file must be less than 5MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setUploadingLogo(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'image');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      setGeneralSettings(prev => ({ ...prev, logo: data.file.url }));
+
+      toast({
+        title: 'Logo Uploaded',
+        description: 'Your logo has been uploaded successfully'
+      });
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast({
+        title: 'Upload Failed',
+        description: error instanceof Error ? error.message : 'Failed to upload logo',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  const handleFaviconUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/x-icon', 'image/png', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid File Type',
+        description: 'Please upload an ICO, PNG, or SVG file',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validate file size (max 1MB for favicon)
+    if (file.size > 1 * 1024 * 1024) {
+      toast({
+        title: 'File Too Large',
+        description: 'Favicon file must be less than 1MB',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setUploadingFavicon(true);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'image');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      setGeneralSettings(prev => ({ ...prev, favicon: data.file.url }));
+
+      toast({
+        title: 'Favicon Uploaded',
+        description: 'Your favicon has been uploaded successfully'
+      });
+    } catch (error) {
+      console.error('Error uploading favicon:', error);
+      toast({
+        title: 'Upload Failed',
+        description: error instanceof Error ? error.message : 'Failed to upload favicon',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploadingFavicon(false);
+    }
   };
 
   const handleAddIp = () => {
@@ -216,7 +509,17 @@ export default function AdminSettingsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
       <SubtleBackground />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      {isLoading ? (
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Loading settings...</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="relative z-10 container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -327,9 +630,25 @@ export default function AdminSettingsPage() {
                         readOnly
                         className="zyphex-input"
                       />
-                      <Button variant="outline" size="sm">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload
+                      <input
+                        type="file"
+                        id="logo-upload"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => document.getElementById('logo-upload')?.click()}
+                        disabled={uploadingLogo}
+                      >
+                        {uploadingLogo ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
+                        {uploadingLogo ? 'Uploading...' : 'Upload'}
                       </Button>
                     </div>
                   </div>
@@ -341,9 +660,25 @@ export default function AdminSettingsPage() {
                         readOnly
                         className="zyphex-input"
                       />
-                      <Button variant="outline" size="sm">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload
+                      <input
+                        type="file"
+                        id="favicon-upload"
+                        accept="image/x-icon,image/png,image/svg+xml"
+                        onChange={handleFaviconUpload}
+                        className="hidden"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => document.getElementById('favicon-upload')?.click()}
+                        disabled={uploadingFavicon}
+                      >
+                        {uploadingFavicon ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Upload className="h-4 w-4 mr-2" />
+                        )}
+                        {uploadingFavicon ? 'Uploading...' : 'Upload'}
                       </Button>
                     </div>
                   </div>
@@ -426,9 +761,18 @@ export default function AdminSettingsPage() {
             </Card>
 
             <div className="flex justify-end">
-              <Button className="zyphex-button-primary" onClick={handleSaveGeneral}>
-                <Save className="h-4 w-4 mr-2" />
-                Save General Settings
+              <Button className="zyphex-button-primary" onClick={handleSaveGeneral} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save General Settings
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -618,9 +962,18 @@ export default function AdminSettingsPage() {
             </Card>
 
             <div className="flex justify-end">
-              <Button className="zyphex-button-primary" onClick={handleSaveSecurity}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Security Settings
+              <Button className="zyphex-button-primary" onClick={handleSaveSecurity} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Security Settings
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -783,9 +1136,18 @@ export default function AdminSettingsPage() {
             </Card>
 
             <div className="flex justify-end">
-              <Button className="zyphex-button-primary" onClick={handleSaveEmail}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Email Settings
+              <Button className="zyphex-button-primary" onClick={handleSaveEmail} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Email Settings
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -939,14 +1301,24 @@ export default function AdminSettingsPage() {
             </Card>
 
             <div className="flex justify-end">
-              <Button className="zyphex-button-primary" onClick={handleSaveSystem}>
-                <Save className="h-4 w-4 mr-2" />
-                Save System Settings
+              <Button className="zyphex-button-primary" onClick={handleSaveSystem} disabled={isSaving}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save System Settings
+                  </>
+                )}
               </Button>
             </div>
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

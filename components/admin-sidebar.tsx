@@ -163,6 +163,33 @@ const data = {
       ],
     },
     {
+      title: "CMS System",
+      url: "/super-admin/cms",
+      icon: FileText,
+      items: [
+        {
+          title: "CMS Pages",
+          url: "/super-admin/cms/pages",
+        },
+        {
+          title: "Page Templates",
+          url: "/super-admin/cms/templates",
+        },
+        {
+          title: "Media Manager",
+          url: "/super-admin/cms/media",
+        },
+        {
+          title: "CMS Analytics",
+          url: "/super-admin/cms/analytics",
+        },
+        {
+          title: "CMS Settings",
+          url: "/super-admin/cms/settings",
+        },
+      ],
+    },
+    {
       title: "Messages",
       url: "/super-admin/messages",
       icon: MessageSquare,
@@ -201,7 +228,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
         if (msgResponse.ok) {
           const data = await msgResponse.json()
           // Count unread messages from all channels
-          const unread = data.channels?.reduce((total: number, channel: any) => {
+          const unread = data.channels?.reduce((total: number, channel: { unreadCount?: number }) => {
             return total + (channel.unreadCount || 0)
           }, 0) || 0
           setMessageCount(unread)
@@ -237,7 +264,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
       case 'Clients':
         return hasViewClients
       case 'Content Management':
-        return hasManageSettings || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'
+      case 'CMS System':
+        return hasManageSettings || user?.role === 'SUPER_ADMIN'
       default:
         return true
     }
@@ -347,7 +375,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}
-            {(user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') && (
+            {user?.role === 'SUPER_ADMIN' && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild tooltip="Security" className="zyphex-button-secondary hover-zyphex-glow">
                   <Link href="/super-admin/security">
@@ -371,8 +399,9 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground zyphex-card hover-zyphex-glow"
                 >
                   <Avatar className="h-8 w-8 rounded-lg zyphex-blue-glow">
-                    <AvatarImage src={(session?.user as any)?.image || generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} />
+                    <AvatarImage src={(session?.user as { image?: string })?.image || generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} />
                     <AvatarFallback className="rounded-lg zyphex-gradient-primary">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} className="h-full w-full" />
                     </AvatarFallback>
                   </Avatar>
@@ -392,8 +421,9 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                 <DropdownMenuLabel className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-lg zyphex-blue-glow">
-                      <AvatarImage src={(session?.user as any)?.image || generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} />
+                      <AvatarImage src={(session?.user as { image?: string })?.image || generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} />
                       <AvatarFallback className="rounded-lg zyphex-gradient-primary">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={generateAvatar(user?.name || user?.email || 'User', 32)} alt={user?.name || 'User'} className="h-full w-full" />
                       </AvatarFallback>
                     </Avatar>

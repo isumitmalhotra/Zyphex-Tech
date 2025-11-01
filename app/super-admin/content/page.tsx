@@ -17,6 +17,7 @@ import {
   Eye
 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
@@ -65,6 +66,7 @@ interface MediaFile {
 }
 
 export default function ContentPage() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const [pages, setPages] = useState<Page[]>([])
@@ -332,11 +334,15 @@ export default function ContentPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => window.open(page.path, '_blank')}
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               View Page
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/super-admin/content/pages/${page.id}`)}
+                            >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit Page
                             </DropdownMenuItem>
@@ -418,11 +424,15 @@ export default function ContentPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => window.open(`/content/${item.slug}`, '_blank')}
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               Preview
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => router.push(`/super-admin/content/edit/${item.id}`)}
+                            >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit Content
                             </DropdownMenuItem>

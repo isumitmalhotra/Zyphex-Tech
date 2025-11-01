@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         topPages,
         activeUsers,
         trend,
-        dateRange: { startDate, endDate },
+        dateRange: { start: startDate, end: endDate },
       })
     } catch (gaError) {
       console.error('GA4 API Error:', gaError)
@@ -106,7 +106,7 @@ function getMockTrafficData() {
       totalSessions: 67234,
       totalPageViews: 189432,
       bounceRate: 42,
-      avgSessionDuration: '3m 24s',
+      avgSessionDuration: 204, // 3 minutes 24 seconds in seconds
       newUsersRate: 68,
     },
     sources: [
@@ -172,62 +172,62 @@ function getMockTrafficData() {
         page: '/',
         pageViews: 45678,
         uniquePageViews: 32456,
-        avgTimeOnPage: '2m 34s',
+        avgTimeOnPage: 154, // 2 minutes 34 seconds in seconds
         bounceRate: 38,
       },
       {
         page: '/services',
         pageViews: 34567,
         uniquePageViews: 24567,
-        avgTimeOnPage: '3m 12s',
+        avgTimeOnPage: 192, // 3 minutes 12 seconds in seconds
         bounceRate: 35,
       },
       {
         page: '/portfolio',
         pageViews: 28934,
         uniquePageViews: 19876,
-        avgTimeOnPage: '4m 23s',
+        avgTimeOnPage: 263, // 4 minutes 23 seconds in seconds
         bounceRate: 28,
       },
       {
         page: '/about',
         pageViews: 23456,
         uniquePageViews: 16789,
-        avgTimeOnPage: '2m 45s',
+        avgTimeOnPage: 165, // 2 minutes 45 seconds in seconds
         bounceRate: 42,
       },
       {
         page: '/contact',
         pageViews: 18765,
         uniquePageViews: 13456,
-        avgTimeOnPage: '1m 56s',
+        avgTimeOnPage: 116, // 1 minute 56 seconds in seconds
         bounceRate: 48,
       },
       {
         page: '/blog',
         pageViews: 15678,
         uniquePageViews: 11234,
-        avgTimeOnPage: '3m 34s',
+        avgTimeOnPage: 214, // 3 minutes 34 seconds in seconds
         bounceRate: 32,
       },
       {
         page: '/careers',
         pageViews: 12345,
         uniquePageViews: 8976,
-        avgTimeOnPage: '2m 18s',
+        avgTimeOnPage: 138, // 2 minutes 18 seconds in seconds
         bounceRate: 45,
       },
       {
         page: '/pricing',
         pageViews: 9876,
         uniquePageViews: 7234,
-        avgTimeOnPage: '2m 56s',
+        avgTimeOnPage: 176, // 2 minutes 56 seconds in seconds
         bounceRate: 40,
       },
     ],
     activeUsers: 234,
     trend: generateMockTrend(30),
-    dateRange: { startDate: '30daysAgo', endDate: 'today' },
+    dateRange: { start: '30daysAgo', end: 'today' },
   }
 }
 

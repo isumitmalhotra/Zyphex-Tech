@@ -47,6 +47,7 @@ import { StatsGridSkeleton } from "@/components/skeletons/stats-skeleton"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { DataPagination } from "@/components/data-pagination"
 import { ResponsiveTable, type ResponsiveTableColumn } from '@/components/ui/responsive-table'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface Task {
   id: string
@@ -541,11 +542,17 @@ export default function TasksOverviewPage() {
         </CardHeader>
         <CardContent>
           {tasks.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {searchQuery || statusFilter !== 'ALL' || priorityFilter !== 'ALL' 
-                ? 'No tasks found matching your filters.' 
-                : 'No tasks found.'}
-            </div>
+            <EmptyState
+              icon={ListTodo}
+              title="No tasks found"
+              description={searchQuery || statusFilter !== 'ALL' || priorityFilter !== 'ALL'
+                ? "Try adjusting your filters or search query."
+                : "Tasks will appear here once they're created in projects."}
+              action={{
+                label: "View Projects",
+                onClick: () => router.push('/super-admin/projects')
+              }}
+            />
           ) : (
             <>
               <ResponsiveTable<Task>

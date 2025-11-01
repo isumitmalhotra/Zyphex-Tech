@@ -1,19 +1,72 @@
-"use client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useScrollAnimation } from "@/components/scroll-animations"
 import { SubtleBackground, MinimalParticles } from "@/components/subtle-background"
 import { Icon3D } from "@/components/3d-icons"
+import ClientAnimations from "@/components/client-animations"
+import { getItemsByContentType } from "@/lib/content"
+import type { ContentItem } from "@/lib/content"
 
-export default function AboutPage() {
-  useScrollAnimation()
+export const dynamic = 'force-dynamic';
+
+// Helper functions for team member data
+function getTeamMemberData(member: ContentItem): Record<string, unknown> {
+  if (member.data && typeof member.data === 'object') {
+    return member.data as Record<string, unknown>
+  }
+  return {}
+}
+
+function getTeamMemberRole(member: ContentItem): string {
+  const data = getTeamMemberData(member)
+  return (data.role as string) || "Team Member"
+}
+
+function getTeamMemberBio(member: ContentItem): string {
+  const data = getTeamMemberData(member)
+  return (data.bio as string) || ""
+}
+
+function getTeamMemberImageUrl(member: ContentItem): string {
+  const data = getTeamMemberData(member)
+  return (data.imageUrl as string) || "/placeholder.svg?height=200&width=200"
+}
+
+function getTeamMemberSpecialties(member: ContentItem): string[] {
+  const data = getTeamMemberData(member)
+  return (data.specialties as string[]) || []
+}
+
+export default async function AboutPage() {
+  // Fetch team members from database
+  let teamMembers: ContentItem[] = []
+  
+  try {
+    console.log('[About Page] Fetching team members...')
+    teamMembers = await getItemsByContentType('team_member', {
+      limit: 10 // Get all members, don't filter by featured
+    })
+    console.log('[About Page] Team members fetched:', teamMembers.length)
+    if (teamMembers.length > 0) {
+      console.log('[About Page] First member:', teamMembers[0].title)
+    } else {
+      console.log('[About Page] WARNING: No team members returned!')
+    }
+  } catch (error) {
+    console.error('[About Page] Error fetching team members:', error)
+    if (error instanceof Error) {
+      console.error('[About Page] Error message:', error.message)
+    }
+  }
+  
+  console.log('[About Page] Rendering with', teamMembers.length, 'team members')
 
   return (
     <>
+      <ClientAnimations />
       {/* Hero Section */}
       <section className="zyphex-gradient-bg section-padding overflow-hidden relative">
         <SubtleBackground />
@@ -75,8 +128,8 @@ export default function AboutPage() {
             <div className="relative scroll-reveal-right">
               <div className="zyphex-3d-card hover-zyphex-lift">
                 <Image
-                  src="/placeholder.svg?height=500&width=500"
-                  alt="Zyphex Tech Office"
+                  src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=800&fit=crop"
+                  alt="Zyphex Tech Office - Modern Workspace"
                   width={500}
                   height={500}
                   className="rounded-2xl w-full h-auto"
@@ -148,7 +201,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Core Team Section */}
+      {/* Core Team Section - Dynamic from Database */}
       <section className="section-padding zyphex-section-bg relative">
         <SubtleBackground />
         <div className="container mx-auto container-padding relative z-10">
@@ -159,139 +212,54 @@ export default function AboutPage() {
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <Card className="text-center zyphex-card hover-zyphex-lift scroll-reveal-rotate">
-              <CardHeader className="pb-4">
-                <div className="relative mx-auto mb-4">
-                  <Image
-                    src="/placeholder.svg?height=200&width=200"
-                    alt="Ishan Garg"
-                    width={200}
-                    height={200}
-                    className="w-32 h-32 rounded-full object-cover mx-auto hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
-                <CardTitle className="text-xl zyphex-heading">Ishan Garg</CardTitle>
-                <CardDescription className="zyphex-accent-text font-medium">Co-Founder & CTO</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="zyphex-subheading text-sm leading-relaxed">
-                  Ishan brings over 8 years of experience in software architecture and cloud solutions. He specializes
-                  in scalable system design and leads our technical innovation initiatives.
+            {teamMembers.length > 0 ? (
+              teamMembers.map((member, index) => (
+                <Card 
+                  key={member.id}
+                  className="text-center zyphex-card hover-zyphex-lift scroll-reveal-rotate"
+                  style={{ animationDelay: `${index * 150}ms` }}
+                >
+                  <CardHeader className="pb-4">
+                    <div className="relative mx-auto mb-4">
+                      <Image
+                        src={getTeamMemberImageUrl(member)}
+                        alt={member.title}
+                        width={200}
+                        height={200}
+                        className="w-32 h-32 rounded-full object-cover mx-auto hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                    <CardTitle className="text-xl zyphex-heading">{member.title}</CardTitle>
+                    <CardDescription className="zyphex-accent-text font-medium">
+                      {getTeamMemberRole(member)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="zyphex-subheading text-sm leading-relaxed">
+                      {getTeamMemberBio(member)}
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {getTeamMemberSpecialties(member).slice(0, 3).map((specialty, i) => (
+                        <Badge
+                          key={i}
+                          variant="secondary"
+                          className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
+                        >
+                          {specialty}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              // Fallback if no team members in database
+              <div className="col-span-full text-center py-12">
+                <p className="text-lg zyphex-subheading">
+                  Our talented team is working behind the scenes to bring you exceptional solutions.
                 </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Badge
-                    variant="secondary"
-                    className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
-                  >
-                    Cloud Architecture
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
-                  >
-                    System Design
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
-                  >
-                    DevOps
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card
-              className="text-center zyphex-card hover-zyphex-lift scroll-reveal-rotate"
-              style={{ animationDelay: "200ms" }}
-            >
-              <CardHeader className="pb-4">
-                <div className="relative mx-auto mb-4">
-                  <Image
-                    src="/placeholder.svg?height=200&width=200"
-                    alt="Sumit Malhotra"
-                    width={200}
-                    height={200}
-                    className="w-32 h-32 rounded-full object-cover mx-auto hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
-                <CardTitle className="text-xl zyphex-heading">Sumit Malhotra</CardTitle>
-                <CardDescription className="zyphex-accent-text font-medium">Co-Founder & CEO</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="zyphex-subheading text-sm leading-relaxed">
-                  Sumit combines business acumen with technical expertise to drive strategic growth. He focuses on
-                  client relationships and ensuring our solutions deliver measurable business value.
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Badge
-                    variant="secondary"
-                    className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
-                  >
-                    Business Strategy
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
-                  >
-                    Client Relations
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
-                  >
-                    Product Management
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card
-              className="text-center zyphex-card hover-zyphex-lift scroll-reveal-rotate md:col-span-2 lg:col-span-1"
-              style={{ animationDelay: "400ms" }}
-            >
-              <CardHeader className="pb-4">
-                <div className="relative mx-auto mb-4">
-                  <Image
-                    src="/placeholder.svg?height=200&width=200"
-                    alt="Development Team"
-                    width={200}
-                    height={200}
-                    className="w-32 h-32 rounded-full object-cover mx-auto hover:scale-110 transition-transform duration-300"
-                  />
-                </div>
-                <CardTitle className="text-xl zyphex-heading">Our Expert Team</CardTitle>
-                <CardDescription className="zyphex-accent-text font-medium">
-                  Senior Developers & Consultants
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="zyphex-subheading text-sm leading-relaxed">
-                  Our team of senior developers, designers, and consultants brings diverse expertise across multiple
-                  technologies and industries to deliver exceptional results.
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center">
-                  <Badge
-                    variant="secondary"
-                    className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
-                  >
-                    Full-Stack Development
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
-                  >
-                    UI/UX Design
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className="hover:bg-blue-600 hover:text-white transition-colors duration-200"
-                  >
-                    Quality Assurance
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            )}
           </div>
         </div>
       </section>

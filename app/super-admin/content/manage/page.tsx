@@ -11,6 +11,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { SubtleBackground } from '@/components/subtle-background';
+import { UsageInfo } from '@/components/cms/usage-info';
+import { useRouter } from 'next/navigation';
 import {
   FileText,
   Search,
@@ -79,6 +81,7 @@ interface PageContent {
 
 export default function PageContentManagementPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPage, setSelectedPage] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -268,6 +271,28 @@ export default function PageContentManagementPage() {
       <SubtleBackground />
       
       <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Usage Info */}
+        <UsageInfo
+          title="📄 Page Content Management"
+          description="This is your main content management hub. Here you can edit all website pages, manage content blocks, control page settings, and track page versions. Use the page list to navigate between pages and the editor to make changes."
+          features={[
+            "Edit page content with rich text blocks",
+            "Manage page metadata (title, description, SEO)",
+            "Control page visibility (published/draft/scheduled)",
+            "Track page versions and restore previous versions",
+            "Add/remove/reorder content blocks",
+            "Set SEO titles, descriptions, and keywords",
+            "Preview pages before publishing"
+          ]}
+          tips={[
+            "Use Edit Mode toggle to enable/disable editing",
+            "Save frequently to avoid losing changes",
+            "Preview pages before publishing",
+            "Use version history to undo unwanted changes",
+            "SEO settings help improve search rankings"
+          ]}
+        />
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -389,7 +414,11 @@ export default function PageContentManagementPage() {
                 </div>
               </div>
 
-              <Button className="zyphex-button-primary" size="sm">
+              <Button 
+                className="zyphex-button-primary" 
+                size="sm"
+                onClick={() => router.push('/super-admin/content/pages/new')}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Create New Page
               </Button>

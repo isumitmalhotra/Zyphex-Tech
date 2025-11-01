@@ -370,7 +370,7 @@ export const getItemsByContentType = cache(async (
     }
 
     if (!includeDrafts) {
-      filter.status = 'published'
+      filter.status = 'published' // Match database value
     }
 
     if (featured !== undefined) {

@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Check CMS permissions
     const userRole = session.user.role;
-    const canManageMedia = ['admin', 'super_admin', 'content_editor'].includes(userRole);
+    const canManageMedia = userRole === 'super-admin';
 
     if (!canManageMedia) {
       return NextResponse.json(

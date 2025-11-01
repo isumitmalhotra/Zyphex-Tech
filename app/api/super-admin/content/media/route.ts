@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         tags: [], // Could add tags field to MediaAsset model
         folder: 'root',
         usageCount: 0, // Could track with separate table
-        starred: false, // Could add starred field to MediaAsset model
+        starred: file.isFavorite || false,
         mimeType: file.mimeType,
         alt: file.alt,
         category: file.category

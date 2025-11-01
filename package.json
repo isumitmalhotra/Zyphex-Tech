@@ -13,6 +13,8 @@
     "start:next": "next start",
     "type-check": "tsc --noEmit",
     "db:seed": "node prisma/seed.js",
+    "db:seed:services": "tsx scripts/seed-services.ts",
+    "db:seed:cms": "tsx scripts/seed-cms-pages.ts",
     "generate-types": "tsx scripts/generate-api-types.ts",
     "test:email": "tsx scripts/test-email.ts",
     "test": "jest --passWithNoTests",
@@ -69,7 +71,7 @@
     "postinstall": "prisma generate"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "tsx prisma/seed-content-migration.ts"
   },
   "dependencies": {
     "@apidevtools/swagger-parser": "^12.0.0",

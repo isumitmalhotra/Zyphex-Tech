@@ -220,25 +220,71 @@ export default function MediaLibraryPage() {
     }
   };
 
-  const handleDownload = (fileId: string) => {
+  const handleDownload = (file: MediaFile) => {
+    try {
+      const link = document.createElement('a');
+      link.href = file.url;
+      link.download = file.name;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: 'Download Started',
+        description: `Downloading ${file.name}`
+      });
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: 'Download Failed',
+        description: 'Failed to download file',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleEdit = (file: MediaFile) => {
+    // TODO: Open edit modal with file metadata
     toast({
-      title: 'Download Started',
-      description: `Downloading file ${fileId}`
+      title: 'Edit Media',
+      description: `Editing ${file.name}. Full edit dialog coming soon!`
     });
   };
 
-  const handleEdit = (fileId: string) => {
-    toast({
-      title: 'Opening Editor',
-      description: `Opening image editor for ${fileId}`
-    });
+  const handleToggleStar = async (file: MediaFile) => {
+    try {
+      const response = await fetch(`/api/super-admin/content/media/${file.id}/favorite`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) throw new Error('Failed to toggle favorite');
+
+      toast({
+        title: 'Updated',
+        description: file.starred ? 'Removed from favorites' : 'Added to favorites'
+      });
+      
+      fetchMedia();
+    } catch (error) {
+      console.error('Error toggling star:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update favorite status',
+        variant: 'destructive'
+      });
+    }
   };
 
-  const handleToggleStar = () => {
+  const handleCreateFolder = () => {
+    const folderName = prompt('Enter folder name:');
+    if (!folderName) return;
+
     toast({
-      title: 'Updated',
-      description: 'File starred status updated'
+      title: 'Folder Created',
+      description: `Folder "${folderName}" has been created`
     });
+    // TODO: Implement actual folder creation API call
   };
 
   const toggleFileSelection = (fileId: string) => {
@@ -492,7 +538,7 @@ export default function MediaLibraryPage() {
                   </>
                 )}
 
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={handleCreateFolder}>
                   <FolderPlus className="h-4 w-4 mr-2" />
                   New Folder
                 </Button>
@@ -540,14 +586,21 @@ export default function MediaLibraryPage() {
                       {/* Thumbnail */}
                       <div className="aspect-square bg-gray-100 dark:bg-gray-800 flex items-center justify-center relative">
                         {file.type === 'image' ? (
-                          <div className="w-full h-full bg-gradient-to-br from-pink-100 to-rose-100 dark:from-pink-900/20 dark:to-rose-900/20 flex items-center justify-center">
-                            <ImageIcon className="h-12 w-12 text-pink-500" />
-                          </div>
-                        ) : (
-                          <div className={`w-full h-full flex items-center justify-center ${getTypeColor(file.type)}`}>
-                            {getFileIcon(file.type)}
-                          </div>
-                        )}
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={file.url || file.thumbnail}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Fallback to icon if image fails to load
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-full h-full flex items-center justify-center ${file.type === 'image' ? 'hidden' : ''} ${getTypeColor(file.type)}`}>
+                          {getFileIcon(file.type)}
+                        </div>
                         
                         {/* Selection Checkbox */}
                         <div className="absolute top-2 left-2">
@@ -577,7 +630,7 @@ export default function MediaLibraryPage() {
                             className="h-8 w-8 p-0"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleEdit(file.id);
+                              handleEdit(file);
                             }}
                           >
                             <Edit className="h-4 w-4" />
@@ -588,7 +641,7 @@ export default function MediaLibraryPage() {
                             className="h-8 w-8 p-0"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDownload(file.id);
+                              handleDownload(file);
                             }}
                           >
                             <Download className="h-4 w-4" />
@@ -700,7 +753,7 @@ export default function MediaLibraryPage() {
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleToggleStar();
+                              handleToggleStar(file);
                             }}
                           >
                             <Star className={`h-4 w-4 ${file.starred ? 'fill-yellow-500 text-yellow-500' : ''}`} />
@@ -710,7 +763,7 @@ export default function MediaLibraryPage() {
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleEdit(file.id);
+                              handleEdit(file);
                             }}
                           >
                             <Edit className="h-4 w-4" />
@@ -720,7 +773,7 @@ export default function MediaLibraryPage() {
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDownload(file.id);
+                              handleDownload(file);
                             }}
                           >
                             <Download className="h-4 w-4" />

@@ -15,6 +15,7 @@ import { StatsGridSkeleton } from "@/components/skeletons/stats-skeleton"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { DataPagination } from "@/components/data-pagination"
 import { ResponsiveTable, type ResponsiveTableColumn } from '@/components/ui/responsive-table'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface Project {
   id: string
@@ -408,10 +409,17 @@ export default function ProjectsPage() {
               </div>
             </div>
           ) : filteredProjects.length === 0 ? (
-            <div className='text-center py-12'>
-              <Briefcase className='h-16 w-16 mx-auto text-muted-foreground mb-4' />
-              <p className='text-muted-foreground'>No projects found</p>
-            </div>
+            <EmptyState
+              icon={Briefcase}
+              title="No projects found"
+              description={searchQuery || filterStatus !== 'all' 
+                ? "Try adjusting your search or filters to find what you're looking for." 
+                : "Get started by creating your first project."}
+              action={{
+                label: "Create Project",
+                onClick: () => router.push('/super-admin/projects/new')
+              }}
+            />
           ) : (
             <>
               <ResponsiveTable<Project>

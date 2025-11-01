@@ -508,7 +508,7 @@ export default async function HomePage() {
             <div className="relative scroll-reveal-right">
               <div className="zyphex-3d-card hover-zyphex-lift">
                 <Image
-                  src="/images/why-choose-us.jpg"
+                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&h=800&fit=crop"
                   alt="Why Choose Zyphex Tech - Expert Remote IT Team Collaboration"
                   width={500}
                   height={500}

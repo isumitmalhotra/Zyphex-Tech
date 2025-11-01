@@ -45,7 +45,7 @@ export async function GET(
 
     // Check CMS permissions
     const userRole = session.user.role;
-    const canViewLogs = ['admin', 'super_admin', 'content_editor'].includes(userRole);
+    const canViewLogs = userRole === 'super-admin';
 
     if (!canViewLogs) {
       return NextResponse.json(

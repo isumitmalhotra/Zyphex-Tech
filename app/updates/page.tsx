@@ -33,7 +33,7 @@ export default function UpdatesPage() {
   useEffect(() => {
     async function fetchBlogPosts() {
       try {
-        const response = await fetch('/api/content?type=Blog')
+        const response = await fetch('/api/content?type=blog')
         if (response.ok) {
           const data = await response.json()
           

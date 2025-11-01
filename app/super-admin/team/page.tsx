@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { EmptyState } from '@/components/ui/empty-state'
 import { 
   Users, 
   Search, 
@@ -339,9 +340,17 @@ export default function TeamManagementPage() {
         </CardHeader>
         <CardContent>
           {filteredMembers.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {searchQuery ? 'No team members found matching your search.' : 'No team members found.'}
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No team members found"
+              description={searchQuery 
+                ? "Try adjusting your search query or filters." 
+                : "Add team members to get started."}
+              action={{
+                label: "Add Team Member",
+                onClick: () => router.push('/super-admin/users/new')
+              }}
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredMembers.map((member) => {
