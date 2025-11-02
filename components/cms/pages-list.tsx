@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useCMSPermissions } from '@/hooks/use-cms-permissions';
 import {
   Table,
@@ -82,8 +82,12 @@ interface PaginationData {
 
 export function CmsPagesList() {
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   const { hasPermission, isLoading: permissionsLoading } = useCMSPermissions();
+
+  // Detect if we're in admin or super-admin section
+  const basePath = pathname?.startsWith('/super-admin') ? '/super-admin' : '/admin';
 
   // State
   const [pages, setPages] = useState<CmsPage[]>([]);
@@ -116,17 +120,23 @@ export function CmsPagesList() {
         params.append('search', searchQuery);
       }
 
+      console.log('🔍 Fetching CMS pages with params:', params.toString());
       const response = await fetch(`/api/cms/pages?${params}`);
+      console.log('📡 Response status:', response.status);
+      
       const data = await response.json();
+      console.log('📦 Response data:', data);
 
       if (data.success) {
+        console.log('✅ Pages loaded:', data.data.length);
         setPages(data.data);
         setPagination(data.pagination);
       } else {
+        console.error('❌ API returned error:', data.error);
         throw new Error(data.error || 'Failed to fetch pages');
       }
     } catch (error) {
-      console.error('Error fetching pages:', error);
+      console.error('❌ Error fetching pages:', error);
       toast({
         title: 'Error',
         description: 'Failed to load pages. Please try again.',
@@ -198,7 +208,7 @@ export function CmsPagesList() {
           title: 'Success',
           description: 'Page duplicated successfully',
         });
-        router.push(`/admin/cms/pages/${data.data.id}/edit`);
+        router.push(`${basePath}/cms/pages/${data.data.id}/edit`);
       } else {
         throw new Error(data.error || 'Failed to duplicate page');
       }
@@ -249,7 +259,7 @@ export function CmsPagesList() {
           </p>
         </div>
         {canCreate && (
-          <Button onClick={() => router.push('/admin/cms/pages/new')}>
+          <Button onClick={() => router.push(`${basePath}/cms/pages/new`)}>
             <Plus className="w-4 h-4 mr-2" />
             New Page
           </Button>
@@ -331,7 +341,7 @@ export function CmsPagesList() {
                     <Button
                       variant="outline"
                       className="mt-4"
-                      onClick={() => router.push('/admin/cms/pages/new')}
+                      onClick={() => router.push(`${basePath}/cms/pages/new`)}
                     >
                       Create your first page
                     </Button>
@@ -391,7 +401,7 @@ export function CmsPagesList() {
                         </DropdownMenuItem>
                         {canEdit && (
                           <DropdownMenuItem
-                            onClick={() => router.push(`/admin/cms/pages/${page.id}/edit`)}
+                            onClick={() => router.push(`${basePath}/cms/pages/${page.id}/edit`)}
                           >
                             <Edit className="w-4 h-4 mr-2" />
                             Edit

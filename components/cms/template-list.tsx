@@ -6,7 +6,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,8 +60,13 @@ interface Template {
 
 export function TemplateList() {
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   const { hasPermission } = useCMSPermissions();
+  
+  // Detect if we're in admin or super-admin section
+  const basePath = pathname?.startsWith('/super-admin') ? '/super-admin' : '/admin';
+  
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -196,7 +201,7 @@ export function TemplateList() {
           </p>
         </div>
         {canCreate && (
-          <Button onClick={() => router.push('/admin/cms/templates/new')}>
+          <Button onClick={() => router.push(`${basePath}/cms/templates/new`)}>
             <Plus className="w-4 h-4 mr-2" />
             Create Template
           </Button>
@@ -261,7 +266,7 @@ export function TemplateList() {
                   : 'Get started by creating your first template'}
               </p>
               {canCreate && !search && category === 'all' && (
-                <Button onClick={() => router.push('/admin/cms/templates/new')}>
+                <Button onClick={() => router.push(`${basePath}/cms/templates/new`)}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create Template
                 </Button>

@@ -410,29 +410,29 @@ export function parseFilterParams(searchParams: URLSearchParams): FilterOptions 
 
   // Status
   const status = searchParams.get('status');
-  if (status) {
+  if (status && status !== 'all') {
     filters.status = status.includes(',') ? status.split(',') : status;
   }
 
   // Types
   const pageType = searchParams.get('pageType');
-  if (pageType) {
+  if (pageType && pageType !== 'all') {
     filters.pageType = pageType.includes(',') ? pageType.split(',') : pageType;
   }
 
   const assetType = searchParams.get('assetType');
-  if (assetType) {
+  if (assetType && assetType !== 'all') {
     filters.assetType = assetType.includes(',') ? assetType.split(',') : assetType;
   }
 
   const sectionType = searchParams.get('sectionType');
-  if (sectionType) {
+  if (sectionType && sectionType !== 'all') {
     filters.sectionType = sectionType.includes(',') ? sectionType.split(',') : sectionType;
   }
 
   // Category
   const category = searchParams.get('category');
-  if (category) {
+  if (category && category !== 'all') {
     filters.category = category.includes(',') ? category.split(',') : category;
   }
 
