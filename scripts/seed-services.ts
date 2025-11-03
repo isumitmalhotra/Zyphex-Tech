@@ -50,7 +50,7 @@ async function seedServices() {
         data: {
           description: 'We build custom software solutions tailored to your business needs, from web applications to mobile apps and enterprise systems.',
           icon: 'Code',
-          imageUrl: '/images/services/custom-software.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=600&fit=crop&q=80',
           features: [
             'Custom Web Applications',
             'Mobile App Development (iOS & Android)',
@@ -72,7 +72,7 @@ async function seedServices() {
         data: {
           description: 'Migrate your infrastructure to the cloud with our expert guidance. We specialize in AWS, Azure, and Google Cloud Platform.',
           icon: 'Cloud',
-          imageUrl: '/images/services/cloud-solutions.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop&q=80',
           features: [
             'Cloud Migration Strategy',
             'AWS/Azure/GCP Implementation',
@@ -94,7 +94,7 @@ async function seedServices() {
         data: {
           description: 'Protect your business with comprehensive cybersecurity solutions including penetration testing, security audits, and compliance management.',
           icon: 'Shield',
-          imageUrl: '/images/services/cybersecurity.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=800&h=600&fit=crop&q=80',
           features: [
             'Security Audits & Assessments',
             'Penetration Testing',
@@ -116,7 +116,7 @@ async function seedServices() {
         data: {
           description: 'Transform your data into actionable insights with our business intelligence and analytics solutions.',
           icon: 'BarChart',
-          imageUrl: '/images/services/data-analytics.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop&q=80',
           features: [
             'Data Warehouse Design',
             'ETL Pipeline Development',
@@ -138,7 +138,7 @@ async function seedServices() {
         data: {
           description: 'Create stunning native and cross-platform mobile applications for iOS and Android with seamless user experiences.',
           icon: 'Smartphone',
-          imageUrl: '/images/services/mobile-apps.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop&q=80',
           features: [
             'iOS & Android Native Apps',
             'React Native Development',
@@ -160,7 +160,7 @@ async function seedServices() {
         data: {
           description: 'Streamline your development workflow with automated CI/CD pipelines, container orchestration, and infrastructure as code.',
           icon: 'Server',
-          imageUrl: '/images/services/devops.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=600&fit=crop&q=80',
           features: [
             'CI/CD Pipeline Setup',
             'Docker & Kubernetes',
