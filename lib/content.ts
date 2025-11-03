@@ -206,7 +206,7 @@ export const getPageContent = cache(async (
     }
 
     if (!includeDrafts) {
-      itemFilter.status = 'published'
+      itemFilter.status = 'PUBLISHED' // Database uses uppercase
     }
 
     // Fetch sections and items in parallel
@@ -370,7 +370,7 @@ export const getItemsByContentType = cache(async (
     }
 
     if (!includeDrafts) {
-      filter.status = 'published' // Match database value
+      filter.status = 'PUBLISHED' // Database uses uppercase
     }
 
     if (featured !== undefined) {
@@ -444,7 +444,7 @@ export const getItemBySlug = cache(async (
     }
 
     if (!includeDrafts) {
-      filter.status = 'published'
+      filter.status = 'PUBLISHED' // Database uses uppercase
     }
 
     const dbItem = await prisma.dynamicContentItem.findFirst({
