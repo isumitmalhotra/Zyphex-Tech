@@ -9,8 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { SubtleBackground } from '@/components/subtle-background';
+import { ScheduleFollowUpDialog } from '@/components/schedule-followup-dialog';
+import { StatsGridSkeleton } from '@/components/skeletons/stats-skeleton';
+import { LeadGridSkeleton } from '@/components/skeletons/lead-skeleton';
 import {
   UserPlus,
   Search,
@@ -31,21 +34,26 @@ import {
   MessageSquare,
   Users,
   Briefcase,
-  BarChart3,
   RefreshCw,
   ThumbsUp,
   ThumbsDown,
-  Loader2,
   AlertCircle
 } from 'lucide-react';
 
 export default function ClientLeadsPage() {
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
   const [scoreFilter, setScoreFilter] = useState('all');
   const [selectedLead, setSelectedLead] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  
+  // Schedule follow-up dialog state
+  const [followUpDialog, setFollowUpDialog] = useState({
+    open: false,
+    leadId: '',
+    leadName: '',
+    leadEmail: ''
+  });
 
   // Data fetching states
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,11 +94,31 @@ export default function ClientLeadsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
         <SubtleBackground />
-        <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" />
-            <p className="text-lg text-slate-600">Loading leads...</p>
+        <div className="container mx-auto p-6 space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <div className="h-8 w-48 bg-slate-200 rounded animate-pulse" />
+              <div className="h-4 w-64 bg-slate-200 rounded animate-pulse" />
+            </div>
+            <div className="flex gap-3">
+              <div className="h-10 w-32 bg-slate-200 rounded animate-pulse" />
+              <div className="h-10 w-32 bg-slate-200 rounded animate-pulse" />
+            </div>
           </div>
+
+          {/* Stats Grid Skeleton */}
+          <StatsGridSkeleton count={6} />
+
+          {/* Filters and Search Skeleton */}
+          <div className="flex gap-4">
+            <div className="h-10 flex-1 bg-slate-200 rounded animate-pulse" />
+            <div className="h-10 w-40 bg-slate-200 rounded animate-pulse" />
+            <div className="h-10 w-40 bg-slate-200 rounded animate-pulse" />
+          </div>
+
+          {/* Lead Grid Skeleton */}
+          <LeadGridSkeleton count={9} />
         </div>
       </div>
     )
@@ -187,31 +215,32 @@ export default function ClientLeadsPage() {
   const conversionRate = ((leads.filter(l => l.stage === 'negotiation' || l.stage === 'proposal').length / leads.length) * 100);
 
   const handleQualifyLead = (leadId: string) => {
-    toast({
-      title: 'Lead Qualified',
+    toast.success('Lead Qualified', {
       description: `Lead ${leadId} has been marked as qualified.`
     });
   };
 
   const handleDisqualifyLead = (leadId: string) => {
-    toast({
-      title: 'Lead Disqualified',
-      description: `Lead ${leadId} has been disqualified.`,
-      variant: 'destructive'
+    toast.error('Lead Disqualified', {
+      description: `Lead ${leadId} has been disqualified.`
     });
   };
 
   const handleConvertToClient = (leadId: string) => {
-    toast({
-      title: 'Converting to Client',
+    toast.success('Converting to Client', {
       description: `Lead ${leadId} is being converted to an active client.`
     });
   };
 
   const handleScheduleFollowUp = (leadId: string) => {
-    toast({
-      title: 'Follow-up Scheduled',
-      description: `Follow-up scheduled for lead ${leadId}.`
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+    
+    setFollowUpDialog({
+      open: true,
+      leadId: lead.id,
+      leadName: lead.companyName || lead.name || 'Unknown',
+      leadEmail: lead.email || ''
     });
   };
 
@@ -225,10 +254,10 @@ export default function ClientLeadsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 relative overflow-hidden flex flex-col">
       <SubtleBackground />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto px-4 py-8 flex-1 flex flex-col">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -447,45 +476,45 @@ export default function ClientLeadsPage() {
           </CardContent>
         </Card>
 
-        {/* Lead Pipeline Stages */}
-        <div className="mb-8">
-          <Card className="zyphex-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-green-500" />
-                Lead Pipeline Stages
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {stages.map((stage) => (
-                  <div key={stage.id} className="text-center">
-                    <div className={`${stage.color} text-white rounded-lg p-4 mb-2`}>
-                      <div className="text-2xl font-bold">{stage.count}</div>
-                      <div className="text-xs opacity-90 mt-1">{stage.name}</div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 flex-1">
+          {/* Leads List - Takes 3 columns */}
+          <div className="lg:col-span-3 flex flex-col">
+            {/* Lead Pipeline Stages - Inside main content area */}
+            <Card className="zyphex-card mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-green-500" />
+                  Lead Pipeline Stages
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                  {stages.map((stage) => (
+                    <div key={stage.id} className="text-center">
+                      <div className={`${stage.color} text-white rounded-lg p-4 mb-2`}>
+                        <div className="text-2xl font-bold">{stage.count}</div>
+                        <div className="text-xs opacity-90 mt-1">{stage.name}</div>
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        {leads.length > 0 ? ((stage.count / leads.length) * 100).toFixed(0) : 0}% of total
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      {((stage.count / leads.length) * 100).toFixed(0)}% of total
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Leads List */}
-          <div className="lg:col-span-2">
-            <ScrollArea className="h-[calc(100vh-600px)]">
-              <div className="space-y-4 pr-4">
+            {/* Leads List - Flex grow to fill remaining space */}
+            <Card className="zyphex-card flex-1 flex flex-col">
+              <CardContent className="p-0 flex-1 flex flex-col">
+                <ScrollArea className="flex-1">
+                  <div className="space-y-4 p-6">
                 {filteredLeads.map((lead) => (
                   <Card
                     key={lead.id}
-                    className={`zyphex-card hover-zyphex-lift cursor-pointer transition-all ${
+                    className={`zyphex-card hover-zyphex-lift transition-all ${
                       selectedLead === lead.id ? 'ring-2 ring-green-500' : ''
                     }`}
-                    onClick={() => setSelectedLead(lead.id)}
                   >
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -605,11 +634,11 @@ export default function ClientLeadsPage() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 relative z-10">
                         {lead.stage !== 'qualified' && lead.stage !== 'disqualified' && (
                           <Button
                             size="sm"
-                            className="bg-green-500 hover:bg-green-600"
+                            className="bg-green-500 hover:bg-green-600 pointer-events-auto"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleQualifyLead(lead.id);
@@ -623,7 +652,7 @@ export default function ClientLeadsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-red-500/20 text-red-600 hover:bg-red-500/10"
+                            className="border-red-500/20 text-red-600 hover:bg-red-500/10 pointer-events-auto"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDisqualifyLead(lead.id);
@@ -636,7 +665,7 @@ export default function ClientLeadsPage() {
                         {(lead.stage === 'negotiation' || lead.stage === 'proposal') && (
                           <Button
                             size="sm"
-                            className="zyphex-button-primary"
+                            className="zyphex-button-primary pointer-events-auto"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleConvertToClient(lead.id);
@@ -650,9 +679,12 @@ export default function ClientLeadsPage() {
                           size="sm"
                           variant="outline"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
+                            console.log('Schedule Follow-up clicked for lead:', lead.id);
                             handleScheduleFollowUp(lead.id);
                           }}
+                          className="pointer-events-auto cursor-pointer"
                         >
                           <Calendar className="h-3 w-3 mr-1" />
                           Schedule Follow-up
@@ -661,9 +693,13 @@ export default function ClientLeadsPage() {
                           size="sm"
                           variant="outline"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
+                            console.log('View Details clicked for lead:', lead.id, lead.name);
                             setSelectedLead(lead.id);
                           }}
+                          className="pointer-events-auto cursor-pointer"
+                          type="button"
                         >
                           <Eye className="h-3 w-3 mr-1" />
                           View Details
@@ -674,93 +710,188 @@ export default function ClientLeadsPage() {
                 ))}
 
                 {filteredLeads.length === 0 && (
-                  <Card className="zyphex-card">
-                    <CardContent className="flex flex-col items-center justify-center py-12">
-                      <UserPlus className="h-16 w-16 text-gray-400 mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">No Leads Found</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                        {searchTerm || stageFilter !== 'all' || scoreFilter !== 'all'
-                          ? 'Try adjusting your filters or search term'
-                          : 'Get started by adding your first lead'}
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="flex flex-col items-center justify-center min-h-[60vh] py-12">
+                    <UserPlus className="h-20 w-20 text-gray-400 mb-6" />
+                    <h3 className="text-2xl font-semibold mb-3">No Leads Found</h3>
+                    <p className="text-base text-gray-600 dark:text-gray-400 text-center max-w-md">
+                      {searchTerm || stageFilter !== 'all' || scoreFilter !== 'all'
+                        ? 'Try adjusting your filters or search term to find the leads you\'re looking for'
+                        : 'Get started by adding your first lead to begin tracking your sales pipeline'}
+                    </p>
+                    <Button className="zyphex-button-primary mt-6">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Your First Lead
+                    </Button>
+                  </div>
                 )}
-              </div>
-            </ScrollArea>
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Sidebar - Lead Details & Analytics */}
-          <div className="space-y-6">
-            {/* Selected Lead Activities */}
-            {selectedLead && (
-              <Card className="zyphex-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-green-500" />
-                    Recent Activities
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+          {/* Sidebar - Lead Details & Analytics - Takes 1 column */}
+          <div className="space-y-6 lg:col-span-1">
+            <div className="lg:sticky lg:top-6">
+              <ScrollArea className="h-[calc(100vh-8rem)]">
+                <div className="space-y-6 pr-4">
+                  
+                  {/* Selected Lead Details - Shows at top when lead is selected */}
+                  {selectedLead ? (
+                    <>
+                      {/* Selected Lead Info Card */}
+                      <Card className="zyphex-card border-2 border-green-500 shadow-lg">
+                        <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                              <Eye className="h-5 w-5 text-green-600" />
+                              Lead Details
+                            </CardTitle>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedLead(null)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <span className="sr-only">Close</span>
+                              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </Button>
+                          </div>
+                          <CardDescription className="text-base font-semibold mt-2">
+                            {leads.find(l => l.id === selectedLead)?.name || 'Unknown Lead'}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-6">
                   {(() => {
                     const lead = leads.find(l => l.id === selectedLead);
-                    if (!lead) return null;
+                    if (!lead) return (
+                      <div className="text-center py-8 text-gray-500">
+                        <p>Lead not found</p>
+                      </div>
+                    );
+
+                    // Get activities array safely
+                    const activities = Array.isArray(lead.recentActivities) ? lead.recentActivities : [];
 
                     return (
-                      <div className="space-y-4">
-                        <ScrollArea className="h-[200px]">
-                          <div className="space-y-3 pr-4">
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                            {lead.activities?.map((activity: any, index: number) => (
-                              <div key={index} className="flex items-start gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
-                                <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                                  {getActivityIcon(activity.type)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-medium">{activity.description}</div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
-                                    <Clock className="h-3 w-3" />
-                                    {activity.date}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                      <div className="space-y-6">
+                        {/* Lead Overview */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">
+                              Status
+                            </Label>
+                            <Badge className={getStageBadgeColor(lead.stage)}>
+                              {lead.stage.charAt(0).toUpperCase() + lead.stage.slice(1)}
+                            </Badge>
                           </div>
-                        </ScrollArea>
+                          <div>
+                            <Label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">
+                              Score
+                            </Label>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xl font-bold ${getScoreColor(lead.score)}`}>
+                                {lead.score}
+                              </span>
+                              <Badge className={getScoreBadgeColor(lead.score)} variant="outline">
+                                {getScoreLabel(lead.score)}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
 
                         <Separator />
 
+                        {/* Contact Information */}
                         <div>
-                          <Label className="text-xs text-gray-500 dark:text-gray-400 mb-2 block">
-                            Lead Status
-                          </Label>
-                          <Badge className={getStageBadgeColor(lead.stage)}>
-                            {lead.stage.charAt(0).toUpperCase() + lead.stage.slice(1)}
-                          </Badge>
+                          <Label className="text-sm font-semibold mb-3 block">Contact Information</Label>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Mail className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                              <a href={`mailto:${lead.email}`} className="text-blue-600 hover:underline break-all">
+                                {lead.email}
+                              </a>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                              <a href={`tel:${lead.phone}`} className="text-gray-700 dark:text-gray-300">
+                                {lead.phone}
+                              </a>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <Building2 className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                              <span className="text-gray-700 dark:text-gray-300">{lead.company}</span>
+                            </div>
+                          </div>
                         </div>
 
-                        <div>
-                          <Label className="text-xs text-gray-500 dark:text-gray-400 mb-2 block">
-                            Lead Score
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            <div className={`text-2xl font-bold ${getScoreColor(lead.score)}`}>
-                              {lead.score}
+                        <Separator />
+
+                        {/* Lead Value & Probability */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">
+                              Est. Value
+                            </Label>
+                            <div className="flex items-center gap-1 text-lg font-bold text-green-600">
+                              <DollarSign className="h-4 w-4" />
+                              {(lead.estimatedValue / 1000).toFixed(0)}K
                             </div>
-                            <Badge className={getScoreBadgeColor(lead.score)}>
-                              {getScoreLabel(lead.score)}
-                            </Badge>
                           </div>
-                          <Progress value={lead.score} className="h-2 mt-2" />
+                          <div>
+                            <Label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">
+                              Probability
+                            </Label>
+                            <div className="text-lg font-bold">{lead.probability}%</div>
+                            <Progress value={lead.probability} className="h-1.5 mt-1" />
+                          </div>
+                        </div>
+
+                        <Separator />
+
+                        {/* Recent Activities */}
+                        <div>
+                          <Label className="text-sm font-semibold mb-3 block">Recent Activities</Label>
+                          <ScrollArea className="h-[180px]">
+                            <div className="space-y-2 pr-4">
+                              {activities.length > 0 ? (
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                activities.map((activity: any, index: number) => (
+                                  <div key={index} className="flex items-start gap-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors">
+                                    <div className="h-7 w-7 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      {getActivityIcon(activity.type)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 leading-tight">
+                                        {activity.description}
+                                      </p>
+                                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        {activity.date}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-center py-6 text-gray-400">
+                                  <MessageSquare className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                                  <p className="text-xs">No recent activities</p>
+                                </div>
+                              )}
+                            </div>
+                          </ScrollArea>
                         </div>
                       </div>
                     );
                   })()}
-                </CardContent>
-              </Card>
-            )}
+                        </CardContent>
+                      </Card>
+                    </>
+                  ) : null}
 
-            {/* Lead Source Distribution */}
+            {/* Lead Source Distribution - Always visible */}
             <Card className="zyphex-card">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -851,9 +982,21 @@ export default function ClientLeadsPage() {
                 </Button>
               </CardContent>
             </Card>
+                </div>
+              </ScrollArea>
+            </div>
           </div>
         </div>
       </div>
+      
+      {/* Schedule Follow-up Dialog */}
+      <ScheduleFollowUpDialog
+        open={followUpDialog.open}
+        onOpenChange={(open) => setFollowUpDialog({ ...followUpDialog, open })}
+        leadId={followUpDialog.leadId}
+        leadName={followUpDialog.leadName}
+        leadEmail={followUpDialog.leadEmail}
+      />
     </div>
   );
 }

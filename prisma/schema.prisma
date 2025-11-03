@@ -3379,3 +3379,31 @@ model CmsApiDocumentation {
   @@map("cms_api_documentation")
 }
 
+// Contact Form Submissions
+model ContactSubmission {
+  id          String   @id @default(uuid())
+  firstName   String   @map("first_name")
+  lastName    String   @map("last_name")
+  email       String
+  phone       String?
+  company     String?
+  service     String
+  budget      String?
+  message     String   @db.Text
+  newsletter  Boolean  @default(false)
+  status      String   @default("new") // new, contacted, closed
+  notes       String?  @db.Text // Admin notes
+  ipAddress   String?  @map("ip_address") // Track IP for spam prevention
+  userAgent   String?  @map("user_agent") // Track user agent
+  emailSent   Boolean  @default(false) @map("email_sent") // Track if email was sent successfully
+  emailError  String?  @map("email_error") // Store email error if failed
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@index([emailSent])
+  @@map("contact_submissions")
+}
+

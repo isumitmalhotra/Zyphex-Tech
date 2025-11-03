@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { SubtleBackground } from '@/components/subtle-background';
+import { StatsGridSkeleton } from '@/components/skeletons/stats-skeleton';
+import { ClientGridSkeleton } from '@/components/skeletons/client-skeleton';
 import {
   Users,
   Search,
@@ -31,7 +33,6 @@ import {
   Download,
   Eye,
   CheckCircle,
-  Loader2,
   AlertCircle,
   Clock,
   Award,
@@ -41,7 +42,6 @@ import {
 } from 'lucide-react';
 
 export default function ActiveClientsPage() {
-  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [healthFilter, setHealthFilter] = useState('all');
@@ -85,11 +85,26 @@ export default function ActiveClientsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
         <SubtleBackground />
-        <div className="container mx-auto p-6 flex items-center justify-center min-h-[60vh]">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-600" />
-            <p className="text-lg text-slate-600">Loading active clients...</p>
+        <div className="container mx-auto p-6 space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2">
+              <div className="h-8 w-48 bg-slate-200 rounded animate-pulse" />
+              <div className="h-4 w-64 bg-slate-200 rounded animate-pulse" />
+            </div>
           </div>
+
+          {/* Stats Grid Skeleton */}
+          <StatsGridSkeleton count={4} />
+
+          {/* Search and Filter Skeleton */}
+          <div className="flex gap-4">
+            <div className="h-10 flex-1 bg-slate-200 rounded animate-pulse" />
+            <div className="h-10 w-32 bg-slate-200 rounded animate-pulse" />
+          </div>
+
+          {/* Client Grid Skeleton */}
+          <ClientGridSkeleton count={6} />
         </div>
       </div>
     )
@@ -168,22 +183,19 @@ export default function ActiveClientsPage() {
     : 0;
 
   const handleEditClient = (clientId: string) => {
-    toast({
-      title: 'Edit Client',
+    toast.info('Edit Client', {
       description: `Opening edit form for ${clientId}`
     });
   };
 
   const handleAddNote = (clientId: string) => {
-    toast({
-      title: 'Add Note',
+    toast.info('Add Note', {
       description: `Adding note to client ${clientId}`
     });
   };
 
   const handleScheduleMeeting = (clientId: string) => {
-    toast({
-      title: 'Schedule Meeting',
+    toast.info('Schedule Meeting', {
       description: `Opening calendar for client ${clientId}`
     });
   };

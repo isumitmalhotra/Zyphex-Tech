@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { prisma } from '@/lib/prisma';
 
 // Create email transporter
 const createTransporter = () => {
@@ -57,6 +58,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'You must accept the terms and conditions' },
         { status: 400 }
+      );
+    }
+
+    // Get client IP and user agent for tracking
+    const ipAddress = request.headers.get('x-forwarded-for') || 
+                     request.headers.get('x-real-ip') || 
+                     'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+
+    // Store in database FIRST (before email to ensure we don't lose data)
+    let submissionId: string;
+    let emailSentSuccessfully = false;
+    let emailErrorMessage: string | null = null;
+
+    try {
+      const contactSubmission = await prisma.contactSubmission.create({
+        data: {
+          firstName,
+          lastName,
+          email,
+          phone: phone || null,
+          company: company || null,
+          service,
+          budget: budget || null,
+          message,
+          newsletter,
+          ipAddress,
+          userAgent,
+        },
+      });
+      submissionId = contactSubmission.id;
+    } catch (dbError) {
+      console.error('[Contact Form] Database save failed:', dbError);
+      return NextResponse.json(
+        { 
+          error: 'Failed to save submission. Please try again.',
+          details: process.env.NODE_ENV === 'development' ? String(dbError) : undefined
+        },
+        { status: 500 }
       );
     }
 
@@ -166,11 +206,13 @@ Submission Date: ${new Date().toLocaleString()}
 
       await transporter.sendMail({
         from: process.env.SMTP_FROM || 'noreply@zyphextech.com',
-        to: process.env.CONTACT_EMAIL || 'contact@zyphextech.com',
+        to: process.env.CONTACT_EMAIL || 'info@zyphextech.com',
         subject: subject,
         html: htmlContent,
         text: textContent,
       });
+
+      emailSentSuccessfully = true;
 
       // Optional: Send confirmation email to user
       if (process.env.SEND_CONFIRMATION_EMAIL === 'true') {
@@ -215,40 +257,58 @@ Submission Date: ${new Date().toLocaleString()}
         });
       }
 
-    } catch (emailError) {
-      // Don't fail the request if email fails, but log it
-      // In production, you might want to use a queue system
+    } catch (_emailError) {
+      // Log email error
+      const emailError = _emailError as Error;
+      console.error('[Contact Form] Email send failed:', emailError);
+      emailErrorMessage = emailError.message;
+      
+      // Update database record with email failure
+      try {
+        await prisma.contactSubmission.update({
+          where: { id: submissionId },
+          data: {
+            emailSent: false,
+            emailError: emailError.message,
+          },
+        });
+      } catch (_updateError) {
+        console.error('[Contact Form] Failed to update email status:', _updateError);
+      }
+      
+      // Don't fail the request - data is saved in database
+      // Admin can manually follow up from dashboard
     }
 
-    // Store in database (optional - for record keeping)
-    try {
-      // You could add database storage here if needed
-      // const contactSubmission = await prisma.contactSubmission.create({
-      //   data: {
-      //     firstName,
-      //     lastName,
-      //     email,
-      //     phone,
-      //     company,
-      //     service,
-      //     budget,
-      //     message,
-      //     newsletter,
-      //   },
-      // });
-    } catch (dbError) {
-      // Don't fail if database storage fails
+    // Update database with email success status
+    if (emailSentSuccessfully) {
+      try {
+        await prisma.contactSubmission.update({
+          where: { id: submissionId },
+          data: {
+            emailSent: true,
+            emailError: null,
+          },
+        });
+      } catch (_updateError) {
+        console.error('[Contact Form] Failed to update email success status:', _updateError);
+      }
     }
 
     return NextResponse.json(
       {
         message: 'Contact form submitted successfully',
-        success: true
+        success: true,
+        submissionId,
+        emailSent: emailSentSuccessfully,
+        ...(emailErrorMessage && { emailError: emailErrorMessage })
       },
       { status: 200 }
     );
 
-  } catch (error) {
+  } catch (_error) {
+    const error = _error as Error;
+    console.error('[Contact Form] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

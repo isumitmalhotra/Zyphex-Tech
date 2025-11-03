@@ -64,7 +64,44 @@ export async function GET() {
       }
     })
 
-    // Calculate client statistics and health metrics
+    // Also fetch users with CLIENT role who may not have Client records yet
+    const clientUsers = await prisma.user.findMany({
+      where: {
+        role: 'CLIENT',
+        deletedAt: null,
+        // Only include users who don't already have a Client record
+        email: {
+          notIn: clients.map(c => c.email)
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+        projects: {
+          where: {
+            deletedAt: null
+          },
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            budget: true,
+            budgetUsed: true,
+            startDate: true,
+            endDate: true,
+            createdAt: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    // Calculate client statistics and health metrics for Client records
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const clientsWithStats = clients.map((client: any) => {
       const activeProjects = client.projects.filter(
@@ -144,6 +181,7 @@ export async function GET() {
         address: client.address,
         industry: client.company || 'General', // Use company as industry proxy
         status: 'active',
+        source: 'client_record',
         healthScore,
         healthStatus,
         activeProjects: activeProjects.length,
@@ -159,27 +197,89 @@ export async function GET() {
       }
     })
 
+    // Calculate statistics for User clients (those with CLIENT role)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userClientsWithStats = clientUsers.map((user: any) => {
+      const activeProjects = user.projects.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (p: any) => p.status === 'IN_PROGRESS' || p.status === 'PLANNING'
+      )
+      const completedProjects = user.projects.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (p: any) => p.status === 'COMPLETED'
+      )
+
+      // Calculate current project value (active projects budget)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const currentValue = activeProjects.reduce((sum: number, p: any) => {
+        return sum + (p.budget || 0)
+      }, 0)
+
+      // Calculate health score for user clients (simplified)
+      let healthScore = 0
+      
+      // Active projects score (max 60)
+      healthScore += Math.min(activeProjects.length * 20, 60)
+      
+      // New user clients get benefit of doubt (40 points)
+      healthScore += 40
+
+      // Determine health status
+      let healthStatus = 'excellent'
+      if (healthScore < 50) healthStatus = 'poor'
+      else if (healthScore < 70) healthStatus = 'fair'
+      else if (healthScore < 85) healthStatus = 'good'
+
+      return {
+        id: user.id,
+        name: user.name || 'Unknown',
+        email: user.email,
+        phone: null,
+        company: user.name || 'Unknown',
+        website: null,
+        address: null,
+        industry: 'General',
+        status: 'active',
+        source: 'user_account',
+        healthScore,
+        healthStatus,
+        activeProjects: activeProjects.length,
+        completedProjects: completedProjects.length,
+        totalProjects: user.projects.length,
+        totalRevenue: 0, // Users don't have invoices in Client model
+        currentValue,
+        lastContact: user.updatedAt,
+        contactPerson: user.name || 'Unknown',
+        recentActivity: [],
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
+    })
+
+    // Merge both client sources
+    const allClients = [...clientsWithStats, ...userClientsWithStats]
+
     // Calculate overall statistics
     const stats = {
-      totalClients: clientsWithStats.length,
+      totalClients: allClients.length,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      excellentHealth: clientsWithStats.filter((c: any) => c.healthStatus === 'excellent').length,
+      excellentHealth: allClients.filter((c: any) => c.healthStatus === 'excellent').length,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      goodHealth: clientsWithStats.filter((c: any) => c.healthStatus === 'good').length,
+      goodHealth: allClients.filter((c: any) => c.healthStatus === 'good').length,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      fairHealth: clientsWithStats.filter((c: any) => c.healthStatus === 'fair').length,
+      fairHealth: allClients.filter((c: any) => c.healthStatus === 'fair').length,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      poorHealth: clientsWithStats.filter((c: any) => c.healthStatus === 'poor').length,
+      poorHealth: allClients.filter((c: any) => c.healthStatus === 'poor').length,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      avgHealthScore: Math.round(clientsWithStats.reduce((sum: number, c: any) => sum + c.healthScore, 0) / clientsWithStats.length) || 0,
+      avgHealthScore: Math.round(allClients.reduce((sum: number, c: any) => sum + c.healthScore, 0) / allClients.length) || 0,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      totalRevenue: clientsWithStats.reduce((sum: number, c: any) => sum + c.totalRevenue, 0),
+      totalRevenue: allClients.reduce((sum: number, c: any) => sum + c.totalRevenue, 0),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      totalActiveProjects: clientsWithStats.reduce((sum: number, c: any) => sum + c.activeProjects, 0)
+      totalActiveProjects: allClients.reduce((sum: number, c: any) => sum + c.activeProjects, 0)
     }
 
     return NextResponse.json({
-      clients: clientsWithStats,
+      clients: allClients,
       stats
     })
 

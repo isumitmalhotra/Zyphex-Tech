@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Mail, Phone, MapPin, ArrowRight, Facebook, Twitter, Linkedin, Github } from "lucide-react"
+import { Mail, Phone, MapPin, Facebook, Twitter, Linkedin, Github } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -156,37 +155,31 @@ export default function Footer() {
               <div className="space-y-4">
                 <div className="flex items-center space-x-3 hover-zyphex-glow transition-all duration-300">
                   <Phone className="h-5 w-5 zyphex-accent-text" />
-                  <span className="zyphex-subheading">+1 (555) 123-4567</span>
+                  <div className="flex flex-col">
+                    <span className="zyphex-subheading">+91 7777010114</span>
+                    <span className="zyphex-subheading text-xs">+91 8901717173</span>
+                  </div>
                 </div>
                 <div className="flex items-center space-x-3 hover-zyphex-glow transition-all duration-300">
                   <Mail className="h-5 w-5 zyphex-accent-text" />
-                  <span className="zyphex-subheading">hello@zyphextech.com</span>
+                  <span className="zyphex-subheading">info@zyphextech.com</span>
                 </div>
                 <div className="flex items-start space-x-3 hover-zyphex-glow transition-all duration-300">
                   <MapPin className="h-5 w-5 zyphex-accent-text mt-1" />
                   <span className="zyphex-subheading">
-                    123 Tech Street
+                    Sector 115, Mohali
                     <br />
-                    San Francisco, CA 94105
+                    Punjab, India
                   </span>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h4 className="font-medium text-gray-200">Subscribe to Our Newsletter</h4>
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    className="zyphex-glass-effect border-gray-700 text-gray-200 placeholder:text-gray-400 flex-1"
-                  />
-                  <Button className="zyphex-button-primary hover-zyphex-lift w-full sm:w-auto">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                <h4 className="font-medium text-gray-200">Business Hours</h4>
+                <div className="text-sm zyphex-subheading space-y-1">
+                  <p>Mon - Fri: 9:00 AM - 10:00 PM IST</p>
+                  <p>Sat - Sun: 11:00 AM - 10:00 PM IST</p>
                 </div>
-                <p className="text-sm zyphex-subheading">
-                  Get the latest updates and insights delivered to your inbox.
-                </p>
               </div>
             </div>
           </div>

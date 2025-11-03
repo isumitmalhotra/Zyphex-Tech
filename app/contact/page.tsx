@@ -12,9 +12,13 @@ import { useScrollAnimation } from "@/components/scroll-animations"
 import { SubtleBackground, MinimalParticles } from "@/components/subtle-background"
 import { useState } from "react"
 import { toast } from "sonner"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 export default function ContactPage() {
   useScrollAnimation()
+  const { data: session } = useSession()
+  const router = useRouter()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -180,6 +184,28 @@ export default function ContactPage() {
       toast.error('Network error. Please check your connection and try again.')
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Handle navigation to messages with auth check
+  const handleLiveChatClick = () => {
+    if (session) {
+      // User is logged in, redirect directly
+      router.push('/user/messages')
+    } else {
+      // User not logged in, redirect to login with callback
+      router.push('/login?callbackUrl=/user/messages')
+    }
+  }
+
+  // Handle navigation to appointments with auth check
+  const handleScheduleCallClick = () => {
+    if (session) {
+      // User is logged in, redirect directly
+      router.push('/user/appointments')
+    } else {
+      // User not logged in, redirect to login with callback
+      router.push('/login?callbackUrl=/user/appointments')
     }
   }
 
@@ -573,22 +599,18 @@ export default function ContactPage() {
                   <Button
                     variant="outline"
                     className="w-full justify-start zyphex-button-secondary bg-transparent hover-zyphex-lift"
-                    asChild
+                    onClick={handleLiveChatClick}
                   >
-                    <Link href="/auth/login?redirect=/user/messages">
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      Live Chat Support
-                    </Link>
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Live Chat Support
                   </Button>
                   <Button
                     variant="outline"
                     className="w-full justify-start zyphex-button-secondary bg-transparent hover-zyphex-lift"
-                    asChild
+                    onClick={handleScheduleCallClick}
                   >
-                    <Link href="/auth/login?redirect=/user/appointments">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      Schedule a Call
-                    </Link>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Schedule a Call
                   </Button>
                   <Button
                     variant="outline"

@@ -69,8 +69,10 @@ export default function ClientsPage() {
       const response = await fetch('/api/admin/clients')
       if (!response.ok) throw new Error('Failed to fetch clients')
       const data = await response.json()
-      setClients(data)
-      calculateStats(data)
+      // API returns { clients: [...] }, extract the array
+      const clientsList = data.clients || data || []
+      setClients(clientsList)
+      calculateStats(clientsList)
       toast.success('Clients loaded successfully')
     } catch (error) {
       console.error('Error fetching clients:', error)
