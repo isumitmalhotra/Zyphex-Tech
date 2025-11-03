@@ -13,6 +13,9 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { cmsCache, cacheKeys, cacheTTL } from '@/lib/cache/redis';
 import { invalidatePageCache } from '@/lib/cache/invalidation';
+import { createVersion } from '@/lib/cms/version-service';
+import { logPageUpdated, logPageDeleted } from '@/lib/cms/audit-service';
+import { createAuditContext } from '@/lib/cms/audit-context';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -237,37 +240,21 @@ export async function PATCH(
       },
     });
 
-    // Create new version
-    const latestVersion = await prisma.cmsPageVersion.findFirst({
-      where: { pageId: id },
-      orderBy: { versionNumber: 'desc' },
+    // Create new version using version service
+    await createVersion(id, {
+      changedBy: session.user.id,
+      changeDescription: body.changeDescription || 'Updated page',
+      tags: validatedData.status === 'published' ? ['auto-save', 'published'] : ['auto-save'],
     });
 
-    await prisma.cmsPageVersion.create({
-      data: {
-        pageId: id,
-        versionNumber: (latestVersion?.versionNumber || 0) + 1,
-        pageSnapshot: JSON.parse(JSON.stringify(updatedPage)),
-        sectionsSnapshot: JSON.parse(JSON.stringify(updatedPage.sections)),
-        createdBy: session.user.id,
-        changeDescription: body.changeDescription || 'Updated page',
-        isPublished: validatedData.status === 'published',
-        publishedAt: validatedData.status === 'published' ? new Date() : null,
-      },
-    });
-
-    // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
-        userId: session.user.id,
-        action: 'update_page',
-        entityType: 'page',
-        entityId: id,
-        changes: validatedData,
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
-      },
-    });
+    // Log activity with comprehensive audit service
+    const auditContext = await createAuditContext(request, session.user.id);
+    await logPageUpdated(
+      id,
+      existingPage as Record<string, unknown>,
+      updatedPage as Record<string, unknown>,
+      auditContext
+    );
 
     // Invalidate cache for this page and all page lists
     await invalidatePageCache(id);
@@ -351,21 +338,9 @@ export async function DELETE(
       },
     });
 
-    // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
-        userId: session.user.id,
-        action: 'delete_page',
-        entityType: 'page',
-        entityId: id,
-        changes: {
-          pageKey: existingPage.pageKey,
-          pageTitle: existingPage.pageTitle,
-        },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
-      },
-    });
+    // Log activity with comprehensive audit service
+    const auditContext = await createAuditContext(request, session.user.id);
+    await logPageDeleted(id, existingPage as Record<string, unknown>, auditContext);
 
     // Invalidate cache for this page and all page lists
     await invalidatePageCache(id);

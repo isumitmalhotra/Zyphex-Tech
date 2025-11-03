@@ -3,29 +3,72 @@
  * List and create templates
  * 
  * @route /api/cms/templates
- * @access Protected - Requires CMS permissions
+ * @access Protected - Super Admin only
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import templateService from '@/lib/cms/template-service';
+import auditService from '@/lib/cms/audit-service';
+import { createAuditContext } from '@/lib/cms/audit-context';
 import { z } from 'zod';
-import { buildTemplateFilters, parseFilterParams } from '@/lib/cms/filter-builder';
-import { cmsCache, cacheKeys, cacheTTL } from '@/lib/cache/redis';
-import { invalidateTemplateCache } from '@/lib/cache/invalidation';
 
 // ============================================================================
 // VALIDATION SCHEMAS
 // ============================================================================
 
 const createTemplateSchema = z.object({
-  name: z.string().min(1).max(255),
-  description: z.string().max(500).nullable().optional(),
-  category: z.enum(['landing', 'blog', 'marketing', 'ecommerce', 'portfolio', 'corporate', 'other']),
-  thumbnailUrl: z.string().url().nullable().optional(),
-  templateStructure: z.any(), // JSON structure of the template (required)
-  defaultContent: z.any().nullable().optional(), // Optional default content
+  name: z.string().min(1).max(200),
+  description: z.string().max(1000).optional(),
+  category: z.enum(['landing', 'blog', 'portfolio', 'service', 'about', 'contact', 'general', 'custom']),
+  templateStructure: z.object({
+    sections: z.array(z.object({
+      sectionKey: z.string(),
+      sectionType: z.string(),
+      title: z.string(),
+      description: z.string().optional(),
+      isRequired: z.boolean(),
+      isEditable: z.boolean(),
+      defaultContent: z.record(z.unknown()).optional(),
+      order: z.number().int().min(0),
+      customStyles: z.record(z.unknown()).optional(),
+    })),
+    layout: z.object({
+      type: z.enum(['single-column', 'two-column', 'three-column', 'custom']),
+      gridColumns: z.number().int().min(1).max(12).optional(),
+      gap: z.string().optional(),
+    }).optional(),
+    metadata: z.object({
+      requiredSections: z.array(z.string()),
+      optionalSections: z.array(z.string()),
+      maxSections: z.number().int().min(1).optional(),
+      allowCustomSections: z.boolean(),
+    }).optional(),
+  }),
+  defaultContent: z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    metaTitle: z.string().optional(),
+    metaDescription: z.string().optional(),
+    ogImage: z.string().url().optional(),
+    sections: z.record(z.record(z.unknown())).optional(),
+  }).optional(),
+  thumbnailUrl: z.string().url().optional(),
+  isActive: z.boolean().optional(),
+  isSystem: z.boolean().optional(),
+  order: z.number().int().min(0).optional(),
+});
+
+const queryTemplatesSchema = z.object({
+  category: z.string().optional(),
+  isActive: z.enum(['true', 'false']).optional(),
+  includeSystem: z.enum(['true', 'false']).optional(),
+  search: z.string().optional(),
+  orderBy: z.enum(['name', 'category', 'order', 'createdAt', 'updatedAt']).optional(),
+  orderDirection: z.enum(['asc', 'desc']).optional(),
+  limit: z.string().optional(),
+  offset: z.string().optional(),
 });
 
 // ============================================================================
@@ -38,86 +81,64 @@ export async function GET(request: NextRequest) {
     
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'You must be logged in' },
+        { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    // Parse filter parameters from query string
-    const filterOptions = parseFilterParams(request.nextUrl.searchParams);
-    
-    // Build Prisma query with filters
-    const { where, orderBy, take, skip } = buildTemplateFilters(filterOptions);
+    // Only Super Admin can access templates
+    if (session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
 
-    // Create cache key based on filters
-    const cacheKey = cacheKeys.cmsTemplateList(JSON.stringify({ 
-      where, 
-      skip, 
-      take, 
-      orderBy
-    }));
+    // Parse query parameters
+    const { searchParams } = new URL(request.url);
+    const queryParams = Object.fromEntries(searchParams);
+    const validatedQuery = queryTemplatesSchema.parse(queryParams);
 
-    // Try to get from cache, or fetch from database
-    const cachedResult = await cmsCache(
-      cacheKey,
-      cacheTTL.contentTypes, // 30 minutes
-      async () => {
-        // Execute queries in parallel
-        const [templates, totalCount] = await Promise.all([
-          prisma.cmsTemplate.findMany({
-            where,
-            skip,
-            take,
-            orderBy,
-            include: {
-              _count: {
-                select: {
-                  pages: true,
-                },
-              },
-            },
-          }),
-          prisma.cmsTemplate.count({ where }),
-        ]);
+    // Build query options
+    const options = {
+      category: validatedQuery.category as 'landing' | 'blog' | 'portfolio' | 'service' | 'about' | 'contact' | 'general' | 'custom' | undefined,
+      isActive: validatedQuery.isActive === 'true' ? true : validatedQuery.isActive === 'false' ? false : undefined,
+      includeSystem: validatedQuery.includeSystem === 'true' ? true : validatedQuery.includeSystem === 'false' ? false : true,
+      search: validatedQuery.search,
+      orderBy: validatedQuery.orderBy as 'name' | 'category' | 'order' | 'createdAt' | 'updatedAt' | undefined,
+      orderDirection: validatedQuery.orderDirection as 'asc' | 'desc' | undefined,
+      limit: validatedQuery.limit ? parseInt(validatedQuery.limit) : undefined,
+      offset: validatedQuery.offset ? parseInt(validatedQuery.offset) : undefined,
+    };
 
-        // Calculate pagination metadata
-        const page = filterOptions.page || 1;
-        const limit = filterOptions.limit || 20;
-        const totalPages = Math.ceil(totalCount / limit);
-        const hasNextPage = page < totalPages;
-        const hasPrevPage = page > 1;
-
-        return {
-          templates,
-          pagination: {
-            page,
-            limit,
-            totalCount,
-            totalPages,
-            hasNextPage,
-            hasPrevPage,
-          },
-        };
-      }
-    );
+    // Get templates
+    const result = await templateService.listTemplates(options);
 
     return NextResponse.json({
       success: true,
-      data: cachedResult?.templates || [],
-      pagination: cachedResult?.pagination || {
-        page: 1,
-        limit: 20,
-        totalCount: 0,
-        totalPages: 0,
-        hasNextPage: false,
-        hasPrevPage: false,
+      data: result.templates,
+      pagination: {
+        total: result.total,
+        limit: result.limit,
+        offset: result.offset,
+        hasMore: result.hasMore,
       },
-      filters: filterOptions,
     });
 
   } catch (error) {
     console.error('CMS Templates GET Error:', error);
     
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { 
+          error: 'Validation Error',
+          message: 'Invalid query parameters',
+          details: error.errors 
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { 
         error: 'Internal Server Error',
@@ -138,50 +159,43 @@ export async function POST(request: NextRequest) {
     
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'You must be logged in' },
+        { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
       );
     }
 
+    // Only Super Admin can create templates
+    if (session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    // Parse and validate request body
     const body = await request.json();
     const validatedData = createTemplateSchema.parse(body);
 
     // Create template
-    const template = await prisma.cmsTemplate.create({
-      data: {
-        ...validatedData,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        templateStructure: validatedData.templateStructure as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        defaultContent: validatedData.defaultContent as any,
-      },
-      include: {
-        _count: {
-          select: {
-            pages: true,
-          },
-        },
-      },
-    });
+    const template = await templateService.createTemplate(validatedData);
 
     // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
+    const auditContext = await createAuditContext(request);
+    await auditService.logAudit({
+      action: 'create_template',
+      entityType: 'template',
+      entityId: template.id,
+      metadata: {
+        templateName: template.name,
+        category: template.category,
+        sectionCount: validatedData.templateStructure.sections.length,
+      },
+      context: {
         userId: session.user.id,
-        action: 'create_template',
-        entityType: 'template',
-        entityId: template.id,
-        changes: {
-          name: validatedData.name,
-          category: validatedData.category,
-        },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
       },
     });
-
-    // Invalidate template cache
-    await invalidateTemplateCache(template.id);
 
     return NextResponse.json(
       {
@@ -215,3 +229,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

@@ -137,9 +137,13 @@ const data = {
     },
     {
       title: "Content Management",
-      url: "/super-admin/cms",
+      url: "/super-admin/content-legacy",
       icon: FileText,
       items: [
+        {
+          title: "Dashboard",
+          url: "/super-admin/content-legacy",
+        },
         {
           title: "Pages",
           url: "/super-admin/cms/pages",

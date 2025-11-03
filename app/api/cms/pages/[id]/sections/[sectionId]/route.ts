@@ -11,6 +11,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import auditService from '@/lib/cms/audit-service';
+import { createAuditContext } from '@/lib/cms/audit-context';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -166,16 +168,26 @@ export async function PATCH(
       data: { lastEditedBy: session.user.id },
     });
 
-    // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
+    // Log activity with enhanced audit service
+    const auditContext = await createAuditContext(request);
+    
+    // Detect what changed
+    const changes = auditService.detectChanges(existingSection, updatedSection);
+    
+    await auditService.logAudit({
+      action: 'update_section',
+      entityType: 'section',
+      entityId: sectionId,
+      changes,
+      metadata: {
+        pageId,
+        sectionKey: updatedSection.sectionKey,
+        changedFields: Object.keys(validatedData),
+      },
+      context: {
         userId: session.user.id,
-        action: 'update_section',
-        entityType: 'section',
-        entityId: sectionId,
-        changes: validatedData,
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
       },
     });
 
@@ -255,19 +267,22 @@ export async function DELETE(
       data: { lastEditedBy: session.user.id },
     });
 
-    // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
+    // Log activity with enhanced audit service
+    const auditContext = await createAuditContext(request);
+    await auditService.logAudit({
+      action: 'delete_section',
+      entityType: 'section',
+      entityId: sectionId,
+      metadata: {
+        pageId,
+        sectionKey: existingSection.sectionKey,
+        sectionType: existingSection.sectionType,
+        title: existingSection.title,
+      },
+      context: {
         userId: session.user.id,
-        action: 'delete_section',
-        entityType: 'section',
-        entityId: sectionId,
-        changes: {
-          sectionKey: existingSection.sectionKey,
-          sectionType: existingSection.sectionType,
-        },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
       },
     });
 

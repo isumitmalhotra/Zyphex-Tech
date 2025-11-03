@@ -34,7 +34,7 @@ async function seedBlogPosts() {
       console.log('✅ Created blog content type')
     }
 
-    // Blog posts data
+    // Blog posts data with CDN image URLs
     const blogPosts = [
       {
         title: 'The Future of AI in Software Development',
@@ -42,7 +42,7 @@ async function seedBlogPosts() {
         data: {
           excerpt: 'Explore how artificial intelligence is transforming the way we build software and what it means for developers.',
           content: '<p>Artificial intelligence is revolutionizing software development...</p>',
-          imageUrl: '/images/blog/ai-development.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=600&fit=crop&q=80',
           author: 'Sarah Johnson',
           readTime: '5 min read'
         },
@@ -57,7 +57,7 @@ async function seedBlogPosts() {
         data: {
           excerpt: 'Learn best practices for designing and implementing microservices that can scale with your business.',
           content: '<p>Microservices architecture has become the standard...</p>',
-          imageUrl: '/images/blog/microservices.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=600&fit=crop&q=80',
           author: 'Michael Chen',
           readTime: '8 min read'
         },
@@ -72,7 +72,7 @@ async function seedBlogPosts() {
         data: {
           excerpt: 'Essential security measures every development team should implement to protect their applications.',
           content: '<p>In today\'s digital landscape, security is paramount...</p>',
-          imageUrl: '/images/blog/cybersecurity.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=800&h=600&fit=crop&q=80',
           author: 'David Martinez',
           readTime: '6 min read'
         },
@@ -87,7 +87,7 @@ async function seedBlogPosts() {
         data: {
           excerpt: 'A comprehensive guide to planning and executing successful cloud migration for large organizations.',
           content: '<p>Moving to the cloud requires careful planning...</p>',
-          imageUrl: '/images/blog/cloud-migration.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&h=600&fit=crop&q=80',
           author: 'Emily Rodriguez',
           readTime: '10 min read'
         },
@@ -102,7 +102,7 @@ async function seedBlogPosts() {
         data: {
           excerpt: 'Understanding how DevOps is more about culture and collaboration than just automation tools.',
           content: '<p>DevOps transformation starts with people...</p>',
-          imageUrl: '/images/blog/devops-culture.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&h=600&fit=crop&q=80',
           author: 'Alex Thompson',
           readTime: '7 min read'
         },
@@ -117,7 +117,7 @@ async function seedBlogPosts() {
         data: {
           excerpt: 'Key principles for designing applications that work beautifully on mobile devices first.',
           content: '<p>Mobile-first design is no longer optional...</p>',
-          imageUrl: '/images/blog/mobile-first.jpg',
+          imageUrl: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop&q=80',
           author: 'Jessica Kim',
           readTime: '5 min read'
         },

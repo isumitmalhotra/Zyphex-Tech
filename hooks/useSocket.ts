@@ -113,9 +113,9 @@ export function useSocket() {
         },
         autoConnect: true,
         reconnection: true,
-        reconnectionDelay: 15000, // Wait 15 seconds between reconnection attempts
-        reconnectionAttempts: 2, // Only try 2 times
-        timeout: 20000, // Increased timeout to 20 seconds
+        reconnectionDelay: 30000, // Wait 30 seconds between reconnection attempts (reduced noise)
+        reconnectionAttempts: 1, // Only try once (reduced from 2)
+        timeout: 10000, // Reduced timeout to 10 seconds (fail faster)
       });
 
       // Connection event handlers

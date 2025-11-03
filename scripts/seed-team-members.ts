@@ -38,7 +38,7 @@ async function seedTeamMembers() {
       console.log('✅ Created team_member content type')
     }
 
-    // Team members data
+    // Team members data with CDN avatar URLs
     const teamMembers = [
       {
         title: 'Sumit Malhotra',
@@ -46,7 +46,7 @@ async function seedTeamMembers() {
         data: {
           role: 'Founder & CEO',
           bio: 'Visionary technology leader with over 10 years of experience in building innovative IT solutions. Passionate about leveraging technology to solve complex business challenges and drive digital transformation.',
-          imageUrl: '/images/team/sumit-malhotra.jpg',
+          imageUrl: 'https://ui-avatars.com/api/?name=Sumit+Malhotra&size=400&background=0ea5e9&color=fff&bold=true',
           email: 'sumit@zyphextech.com',
           linkedin: 'https://linkedin.com/in/sumitmalhotra',
           specialties: ['Strategic Planning', 'Digital Transformation', 'Enterprise Architecture', 'Business Development'],
@@ -63,7 +63,7 @@ async function seedTeamMembers() {
         data: {
           role: 'Chief Technology Officer',
           bio: 'Technology expert specializing in cloud architecture and DevOps. Leads technical strategy and ensures delivery of cutting-edge solutions to clients across various industries.',
-          imageUrl: '/images/team/priya-sharma.jpg',
+          imageUrl: 'https://ui-avatars.com/api/?name=Priya+Sharma&size=400&background=8b5cf6&color=fff&bold=true',
           email: 'priya@zyphextech.com',
           linkedin: 'https://linkedin.com/in/priyasharma',
           github: 'priyasharma-dev',
@@ -81,7 +81,7 @@ async function seedTeamMembers() {
         data: {
           role: 'Lead Full-Stack Developer',
           bio: 'Full-stack development expert with a passion for creating elegant, scalable solutions. Specializes in modern JavaScript frameworks and cloud-native applications.',
-          imageUrl: '/images/team/rahul-verma.jpg',
+          imageUrl: 'https://ui-avatars.com/api/?name=Rahul+Verma&size=400&background=10b981&color=fff&bold=true',
           email: 'rahul@zyphextech.com',
           linkedin: 'https://linkedin.com/in/rahulverma',
           github: 'rahulverma-dev',
@@ -100,7 +100,7 @@ async function seedTeamMembers() {
         data: {
           role: 'Senior UX/UI Designer',
           bio: 'Creative designer focused on crafting intuitive and beautiful user experiences. Combines design thinking with user research to deliver exceptional digital products.',
-          imageUrl: '/images/team/ananya-patel.jpg',
+          imageUrl: 'https://ui-avatars.com/api/?name=Ananya+Patel&size=400&background=f59e0b&color=fff&bold=true',
           email: 'ananya@zyphextech.com',
           linkedin: 'https://linkedin.com/in/ananyapatel',
           twitter: '@ananya_designs',
@@ -118,7 +118,7 @@ async function seedTeamMembers() {
         data: {
           role: 'Senior DevOps Engineer',
           bio: 'Infrastructure and automation specialist with deep expertise in CI/CD, containerization, and cloud platforms. Ensures reliable and scalable deployments for all projects.',
-          imageUrl: '/images/team/vikram-singh.jpg',
+          imageUrl: 'https://ui-avatars.com/api/?name=Vikram+Singh&size=400&background=ef4444&color=fff&bold=true',
           email: 'vikram@zyphextech.com',
           linkedin: 'https://linkedin.com/in/vikramsingh',
           github: 'vikram-devops',
@@ -136,7 +136,7 @@ async function seedTeamMembers() {
         data: {
           role: 'Project Manager',
           bio: 'Experienced project manager skilled in agile methodologies and client relationship management. Ensures projects are delivered on time, within budget, and exceed client expectations.',
-          imageUrl: '/images/team/neha-kapoor.jpg',
+          imageUrl: 'https://ui-avatars.com/api/?name=Neha+Kapoor&size=400&background=ec4899&color=fff&bold=true',
           email: 'neha@zyphextech.com',
           linkedin: 'https://linkedin.com/in/nehakapoor',
           specialties: ['Agile/Scrum', 'Project Planning', 'Stakeholder Management', 'Risk Management'],

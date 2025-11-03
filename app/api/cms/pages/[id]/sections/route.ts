@@ -11,6 +11,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import auditService from '@/lib/cms/audit-service';
+import { createAuditContext } from '@/lib/cms/audit-context';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -174,20 +176,22 @@ export async function POST(
       data: { lastEditedBy: session.user.id },
     });
 
-    // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
+    // Log activity with enhanced audit service
+    const auditContext = await createAuditContext(request);
+    await auditService.logAudit({
+      action: 'create_section',
+      entityType: 'section',
+      entityId: section.id,
+      metadata: {
+        pageId,
+        sectionKey: validatedData.sectionKey,
+        sectionType: validatedData.sectionType,
+        title: validatedData.title,
+      },
+      context: {
         userId: session.user.id,
-        action: 'create_section',
-        entityType: 'section',
-        entityId: section.id,
-        changes: {
-          pageId,
-          sectionKey: validatedData.sectionKey,
-          sectionType: validatedData.sectionType,
-        },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
       },
     });
 
@@ -275,16 +279,21 @@ export async function PATCH(
       data: { lastEditedBy: session.user.id },
     });
 
-    // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
+    // Log activity with enhanced audit service
+    const auditContext = await createAuditContext(request);
+    await auditService.logAudit({
+      action: 'reorder_sections',
+      entityType: 'section',
+      entityId: pageId,
+      metadata: {
+        pageId,
+        sectionIds: validatedData.sectionIds,
+        sectionCount: validatedData.sectionIds.length,
+      },
+      context: {
         userId: session.user.id,
-        action: 'reorder_sections',
-        entityType: 'section',
-        entityId: pageId,
-        changes: { sectionIds: validatedData.sectionIds },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
       },
     });
 

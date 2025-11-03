@@ -9,18 +9,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import templateService from '@/lib/cms/template-service';
+import auditService from '@/lib/cms/audit-service';
+import { createAuditContext } from '@/lib/cms/audit-context';
 import { z } from 'zod';
-import { cmsCache, cacheKeys, cacheTTL } from '@/lib/cache/redis';
-import { invalidateTemplateCache } from '@/lib/cache/invalidation';
 
 const updateTemplateSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
-  description: z.string().max(500).nullable().optional(),
-  category: z.enum(['landing', 'blog', 'marketing', 'ecommerce', 'portfolio', 'corporate', 'other']).optional(),
-  thumbnailUrl: z.string().url().nullable().optional(),
-  templateStructure: z.any().optional(),
-  defaultContent: z.any().optional(),
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(1000).optional(),
+  category: z.enum(['landing', 'blog', 'portfolio', 'service', 'about', 'contact', 'general', 'custom']).optional(),
+  templateStructure: z.object({
+    sections: z.array(z.object({
+      sectionKey: z.string(),
+      sectionType: z.string(),
+      title: z.string(),
+      description: z.string().optional(),
+      isRequired: z.boolean(),
+      isEditable: z.boolean(),
+      defaultContent: z.record(z.unknown()).optional(),
+      order: z.number().int().min(0),
+      customStyles: z.record(z.unknown()).optional(),
+    })),
+    layout: z.object({
+      type: z.enum(['single-column', 'two-column', 'three-column', 'custom']),
+      gridColumns: z.number().int().min(1).max(12).optional(),
+      gap: z.string().optional(),
+    }).optional(),
+    metadata: z.object({
+      requiredSections: z.array(z.string()),
+      optionalSections: z.array(z.string()),
+      maxSections: z.number().int().min(1).optional(),
+      allowCustomSections: z.boolean(),
+    }).optional(),
+  }).optional(),
+  defaultContent: z.object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    metaTitle: z.string().optional(),
+    metaDescription: z.string().optional(),
+    ogImage: z.string().url().optional(),
+    sections: z.record(z.record(z.unknown())).optional(),
+  }).optional(),
+  thumbnailUrl: z.string().url().optional(),
+  isActive: z.boolean().optional(),
+  order: z.number().int().min(0).optional(),
 });
 
 interface RouteParams {
@@ -42,29 +74,22 @@ export async function GET(
     
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'You must be logged in' },
+        { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const template = await cmsCache(
-      cacheKeys.cmsTemplate(params.id),
-      cacheTTL.contentTypes, // 30 minutes
-      async () => {
-        return await prisma.cmsTemplate.findFirst({
-          where: {
-            id: params.id,
-          },
-          include: {
-            _count: {
-              select: {
-                pages: true,
-              },
-            },
-          },
-        });
-      }
-    );
+    // Only Super Admin can access templates
+    if (session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
+    const { id } = params;
+
+    const template = await templateService.getTemplateById(id);
 
     if (!template) {
       return NextResponse.json(
@@ -104,59 +129,65 @@ export async function PATCH(
     
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'You must be logged in' },
+        { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const template = await prisma.cmsTemplate.findFirst({
-      where: {
-        id: params.id,
-      },
-    });
+    // Only Super Admin can update templates
+    if (session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
 
-    if (!template) {
+    const { id } = params;
+
+    // Get existing template for audit
+    const existing = await templateService.getTemplateById(id);
+    if (!existing) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Template not found' },
         { status: 404 }
       );
     }
 
+    // Parse and validate request body
     const body = await request.json();
     const validatedData = updateTemplateSchema.parse(body);
 
-    const updatedTemplate = await prisma.cmsTemplate.update({
-      where: { id: params.id },
-      data: validatedData,
-      include: {
-        _count: {
-          select: {
-            pages: true,
-          },
-        },
-      },
-    });
+    // Update template
+    const template = await templateService.updateTemplate(id, validatedData);
+
+    // Detect changes
+    const changes = auditService.detectChanges(
+      { name: existing.name, category: existing.category, isActive: existing.isActive },
+      { name: template.name || existing.name, category: validatedData.category, isActive: validatedData.isActive }
+    );
 
     // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
+    const auditContext = await createAuditContext(request);
+    await auditService.logAudit({
+      action: 'update_template',
+      entityType: 'template',
+      entityId: id,
+      changes,
+      metadata: {
+        templateName: template.name,
+        updatedFields: Object.keys(validatedData),
+      },
+      context: {
         userId: session.user.id,
-        action: 'update_template',
-        entityType: 'template',
-        entityId: template.id,
-        changes: validatedData,
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
       },
     });
-
-    // Invalidate template cache and all pages using this template
-    await invalidateTemplateCache(params.id);
 
     return NextResponse.json({
       success: true,
       message: 'Template updated successfully',
-      data: updatedTemplate,
+      data: template,
     });
 
   } catch (error) {
@@ -170,6 +201,20 @@ export async function PATCH(
           details: error.errors 
         },
         { status: 400 }
+      );
+    }
+
+    if (error instanceof Error && error.message.includes('not found')) {
+      return NextResponse.json(
+        { error: 'Not Found', message: error.message },
+        { status: 404 }
+      );
+    }
+
+    if (error instanceof Error && error.message.includes('system template')) {
+      return NextResponse.json(
+        { error: 'Forbidden', message: error.message },
+        { status: 403 }
       );
     }
 
@@ -196,24 +241,23 @@ export async function DELETE(
     
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'You must be logged in' },
+        { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    const template = await prisma.cmsTemplate.findFirst({
-      where: {
-        id: params.id,
-      },
-      include: {
-        _count: {
-          select: {
-            pages: true,
-          },
-        },
-      },
-    });
+    // Only Super Admin can delete templates
+    if (session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
 
+    const { id } = params;
+
+    // Get template before deletion for audit
+    const template = await templateService.getTemplateById(id);
     if (!template) {
       return NextResponse.json(
         { error: 'Not Found', message: 'Template not found' },
@@ -221,30 +265,26 @@ export async function DELETE(
       );
     }
 
-    // Delete template (hard delete since no deletedAt field)
-    await prisma.cmsTemplate.delete({
-      where: { id: params.id },
-    });
+    // Delete template
+    await templateService.deleteTemplate(id);
 
     // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
+    const auditContext = await createAuditContext(request);
+    await auditService.logAudit({
+      action: 'delete_template',
+      entityType: 'template',
+      entityId: id,
+      metadata: {
+        templateName: template.name,
+        category: template.category,
+        wasSystem: template.isSystem,
+      },
+      context: {
         userId: session.user.id,
-        action: 'delete_template',
-        entityType: 'template',
-        entityId: template.id,
-        changes: {
-          name: template.name,
-          category: template.category,
-          pagesUsing: template._count.pages,
-        },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
       },
     });
-
-    // Invalidate template cache and all pages using this template
-    await invalidateTemplateCache(params.id);
 
     return NextResponse.json({
       success: true,
@@ -254,6 +294,20 @@ export async function DELETE(
   } catch (error) {
     console.error('CMS Template DELETE Error:', error);
     
+    if (error instanceof Error && error.message.includes('not found')) {
+      return NextResponse.json(
+        { error: 'Not Found', message: error.message },
+        { status: 404 }
+      );
+    }
+
+    if (error instanceof Error && (error.message.includes('system template') || error.message.includes('page(s) are using'))) {
+      return NextResponse.json(
+        { error: 'Forbidden', message: error.message },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       { 
         error: 'Internal Server Error',

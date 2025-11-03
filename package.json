@@ -49,6 +49,8 @@
     "db:studio": "npx prisma studio",
     "db:verify-indexes": "tsx scripts/verify-indexes.ts",
     "test:query-library": "tsx scripts/test-query-library.ts",
+    "seed:blog-posts": "tsx scripts/seed-blog-posts.ts",
+    "update:blog-images": "tsx scripts/update-blog-images.ts",
     "test:connection-pool": "tsx scripts/test-connection-pool.ts",
     "test:redis-cache": "tsx scripts/test-redis-cache.ts",
     "test:query-monitoring": "tsx scripts/test-query-monitoring.ts",

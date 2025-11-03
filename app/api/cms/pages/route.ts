@@ -17,6 +17,8 @@ import { CmsApiError } from '@/lib/cms/error-handler';
 import { buildPageFilters, parseFilterParams } from '@/lib/cms/filter-builder';
 import { cmsCache, cacheKeys, cacheTTL } from '@/lib/cache/redis';
 import { invalidatePageCache } from '@/lib/cache/invalidation';
+import { logPageCreated } from '@/lib/cms/audit-service';
+import { createAuditContext } from '@/lib/cms/audit-context';
 
 // ============================================================================
 // VALIDATION SCHEMAS
@@ -249,21 +251,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
-        userId: user.id,
-        action: 'create_page',
-        entityType: 'page',
-        entityId: page.id,
-        changes: {
-          pageKey: validatedData.pageKey,
-          pageTitle: validatedData.pageTitle,
-        },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
-      },
-    });
+    // Log activity with comprehensive audit service
+    const auditContext = await createAuditContext(request, user.id);
+    await logPageCreated(page.id, page as unknown as Record<string, unknown>, auditContext);
 
     // Invalidate page list cache
     await invalidatePageCache(page.id);

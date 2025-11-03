@@ -81,6 +81,9 @@ model User {
   // Workflow automation (Task 8)
   createdWorkflows Workflow[] @relation("WorkflowCreator")
 
+  // CMS Relations (Tasks #21 & #22)
+  cmsComments CmsComment[] // Task #22: Comment system
+
   // Optimized Indexes for Performance
   @@index([email]) // Existing - Login queries
   @@index([role]) // Existing - Authorization queries
@@ -1356,6 +1359,8 @@ model CmsPage {
   versions  CmsPageVersion[]
   workflows CmsWorkflow[]
   schedules CmsSchedule[]
+  comments  CmsComment[] // Task #22: Comment system
+  approvals CmsApproval[] // Task #23: Approval system
 
   // Indexes
   @@index([pageKey])
@@ -3032,5 +3037,345 @@ model SystemSettings {
   cacheEnabled           Boolean  @default(true)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+}
+
+// ============================================================================
+// CMS AUTOMATION SYSTEM (Tasks #21 & #22)
+// ============================================================================
+
+// Automation Rules - Event-driven workflow automation for CMS
+model CmsAutomationRule {
+  id          String   @id @default(cuid())
+  name        String // Rule name (e.g., "Auto-publish approved pages")
+  description String? // Description of what the rule does
+  isActive    Boolean  @default(true) // Whether rule is active
+
+  // Automation Configuration (JSON structures)
+  trigger     Json // AutomationTrigger type { type, config }
+  conditions  Json // AutomationCondition[] type - array of conditions
+  actions     Json // AutomationAction[] type - array of actions to execute
+
+  // Metadata
+  createdBy String // User ID who created the rule
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  executions CmsAutomationExecution[]
+
+  // Indexes
+  @@index([isActive])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@index([isActive, createdAt])
+  @@map("cms_automation_rules")
+}
+
+// Automation Execution History - Track automation rule executions
+model CmsAutomationExecution {
+  id          String   @id @default(cuid())
+  ruleId      String // Reference to automation rule
+  triggeredBy String // TriggerType (e.g., 'page_created', 'status_changed')
+  triggeredAt DateTime @default(now())
+
+  // Execution Status
+  status String @default("pending") // pending, running, completed, failed, cancelled
+
+  // Execution Context
+  context Json // ExecutionContext type { pageId, sectionId, userId, triggerData, metadata }
+  actions Json // ActionExecution[] type - results from each action
+
+  // Completion Info
+  completedAt DateTime? // When execution finished
+  error       String?   @db.Text // Error message if failed
+
+  // Relations
+  rule CmsAutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([ruleId])
+  @@index([status])
+  @@index([triggeredAt])
+  @@index([ruleId, status])
+  @@index([ruleId, triggeredAt])
+  @@index([status, triggeredAt])
+  @@map("cms_automation_executions")
+}
+
+// CMS Comments - Internal team collaboration on CMS pages
+model CmsComment {
+  id          String   @id @default(cuid())
+  pageId      String // Reference to CMS page
+  sectionId   String? // Optional: specific section being commented on
+  content     String   @db.Text // Comment text
+  authorId    String // User ID of comment author
+  authorName  String // Author name (denormalized for performance)
+  authorEmail String // Author email
+
+  // Threading
+  parentId String? // For nested replies
+  parent   CmsComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  CmsComment[] @relation("CommentReplies")
+
+  // Resolution Tracking
+  isResolved Boolean   @default(false)
+  resolvedBy String? // User ID who resolved
+  resolvedAt DateTime? // When resolved
+
+  // Mentions
+  mentions Json @default("[]") // Array of user IDs mentioned (@username)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  page   CmsPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  author User    @relation(fields: [authorId], references: [id])
+
+  // Indexes
+  @@index([pageId])
+  @@index([sectionId])
+  @@index([authorId])
+  @@index([parentId])
+  @@index([isResolved])
+  @@index([createdAt])
+  @@index([pageId, isResolved])
+  @@index([pageId, createdAt])
+  @@index([authorId, createdAt])
+  @@map("cms_comments")
+}
+
+// CMS Approval System - Multi-step content approval workflow
+model CmsApproval {
+  id                String   @id @default(cuid())
+  pageId            String // Reference to CMS page
+  requestedBy       String // User ID who requested approval
+  requestedByName   String
+  requestedByEmail  String
+  status            String   @default("pending") // pending, in_progress, approved, rejected, cancelled
+  currentStep       Int      @default(1)
+  totalSteps        Int
+  steps             Json // ApprovalStep[] - array of approval steps
+  comments          String?  @db.Text
+  metadata          Json     @default("{}")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  completedAt       DateTime?
+
+  // Relations
+  page    CmsPage               @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  history CmsApprovalHistory[]
+
+  // Indexes
+  @@index([pageId])
+  @@index([requestedBy])
+  @@index([status])
+  @@index([createdAt])
+  @@index([pageId, status])
+  @@index([status, createdAt])
+  @@map("cms_approvals")
+}
+
+// CMS Approval History - Audit trail for approval actions
+model CmsApprovalHistory {
+  id               String   @id @default(cuid())
+  approvalId       String
+  action           String // created, approved, rejected, delegated, cancelled
+  stepNumber       Int?
+  performedBy      String // User ID
+  performedByName  String
+  performedByEmail String
+  comments         String?  @db.Text
+  metadata         Json     @default("{}")
+  timestamp        DateTime @default(now())
+
+  // Relations
+  approval CmsApproval @relation(fields: [approvalId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([approvalId])
+  @@index([action])
+  @@index([performedBy])
+  @@index([timestamp])
+  @@index([approvalId, timestamp])
+  @@map("cms_approval_history")
+}
+
+// CMS Backup - Backup management for disaster recovery
+model CmsBackup {
+  id          String    @id @default(cuid())
+  name        String
+  type        String // full, incremental, manual
+  status      String    @default("pending") // pending, in_progress, completed, failed, expired
+  size        BigInt    @default(0) // File size in bytes
+  filePath    String // Path to backup file
+  compressed  Boolean   @default(false)
+  createdBy   String // User ID
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+  expiresAt   DateTime?
+  metadata    Json      @default("{}") // BackupMetadata
+  error       String?   @db.Text
+
+  // Relations
+  restoreHistory CmsRestoreHistory[]
+
+  // Indexes
+  @@index([type])
+  @@index([status])
+  @@index([createdBy])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([status, createdAt])
+  @@map("cms_backups")
+}
+
+// CMS Restore History - Track restore operations
+model CmsRestoreHistory {
+  id         String   @id @default(cuid())
+  backupId   String
+  restoredBy String // User ID
+  restoredAt DateTime @default(now())
+  success    Boolean  @default(true)
+  error      String?  @db.Text
+  metadata   Json     @default("{}")
+
+  // Relations
+  backup CmsBackup @relation(fields: [backupId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([backupId])
+  @@index([restoredBy])
+  @@index([restoredAt])
+  @@map("cms_restore_history")
+}
+
+// ============================================================================
+// Task #25: Performance Monitoring Models
+// ============================================================================
+
+model CmsPerformanceMetric {
+  id          String   @id @default(cuid())
+  metricType  String // api_response_time, page_load_time, database_query_time, cache_hit_rate, memory_usage, cpu_usage, error_rate, throughput, custom
+  metricName  String
+  value       Float
+  unit        String // ms, %, MB, requests/sec, etc.
+  context     Json     @default("{}")
+  recordedBy  String // User ID or 'system'
+  recordedAt  DateTime @default(now())
+  tags        String[] @default([])
+
+  // Indexes
+  @@index([metricType])
+  @@index([metricName])
+  @@index([recordedAt])
+  @@index([recordedBy])
+  @@index([metricType, recordedAt])
+  @@map("cms_performance_metrics")
+}
+
+model CmsPerformanceAlert {
+  id              String    @id @default(cuid())
+  alertType       String // threshold_exceeded, anomaly_detected, degradation, outage
+  severity        String // low, medium, high, critical
+  message         String    @db.Text
+  metricType      String
+  threshold       Float
+  currentValue    Float
+  triggeredAt     DateTime  @default(now())
+  resolvedAt      DateTime?
+  acknowledged    Boolean   @default(false)
+  acknowledgedBy  String? // User ID
+  context         Json      @default("{}")
+
+  // Indexes
+  @@index([alertType])
+  @@index([severity])
+  @@index([metricType])
+  @@index([triggeredAt])
+  @@index([resolvedAt])
+  @@index([acknowledged])
+  @@map("cms_performance_alerts")
+}
+
+// ============================================================================
+// Task #26: Error Handling Models
+// ============================================================================
+
+model CmsErrorLog {
+  id              String    @id @default(cuid())
+  errorType       String // validation_error, authentication_error, authorization_error, not_found_error, database_error, network_error, timeout_error, rate_limit_error, internal_server_error, external_api_error, business_logic_error, unknown_error
+  severity        String // low, medium, high, critical
+  message         String    @db.Text
+  stackTrace      String?   @db.Text
+  context         Json      @default("{}")
+  userId          String? // User who encountered the error
+  endpoint        String? // API endpoint or route
+  method          String? // HTTP method (GET, POST, etc.)
+  statusCode      Int?
+  userAgent       String?   @db.Text
+  ipAddress       String?
+  resolved        Boolean   @default(false)
+  resolvedAt      DateTime?
+  resolvedBy      String? // User ID
+  occurrences     Int       @default(1)
+  firstOccurrence DateTime  @default(now())
+  lastOccurrence  DateTime  @default(now())
+  tags            String[]  @default([])
+
+  // Indexes
+  @@index([errorType])
+  @@index([severity])
+  @@index([resolved])
+  @@index([userId])
+  @@index([endpoint])
+  @@index([lastOccurrence])
+  @@index([errorType, lastOccurrence])
+  @@index([severity, resolved])
+  @@map("cms_error_logs")
+}
+
+// Task #27: API Documentation Models
+model CmsApiDocumentation {
+  id          String   @id @default(cuid())
+  endpoint    String   // API endpoint path (e.g., /api/cms/pages)
+  method      String   // HTTP method (GET, POST, PUT, DELETE, PATCH)
+  category    String   // Category (Pages, Media, Workflows, etc.)
+  title       String   // Short description
+  description String   @db.Text // Detailed description
+  
+  // Request documentation
+  requestSchema    Json? // JSON schema for request body
+  requestExample   Json? // Example request body
+  queryParameters  Json? // Query parameter definitions
+  pathParameters   Json? // Path parameter definitions
+  headers          Json? // Required/optional headers
+  
+  // Response documentation
+  responseSchema   Json? // JSON schema for response
+  responseExample  Json? // Example response
+  errorResponses   Json? // Possible error responses
+  
+  // Metadata
+  version          String   @default("1.0.0")
+  deprecated       Boolean  @default(false)
+  requiresAuth     Boolean  @default(true)
+  requiredRoles    String[] // Required user roles
+  rateLimits       Json?    // Rate limiting info
+  tags             String[] // Categorization tags
+  
+  // Tracking
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  createdBy        String?
+  updatedBy        String?
+  
+  @@index([endpoint])
+  @@index([method])
+  @@index([category])
+  @@index([deprecated])
+  @@index([endpoint, method])
+  @@map("cms_api_documentation")
 }
 

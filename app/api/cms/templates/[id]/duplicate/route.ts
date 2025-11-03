@@ -1,15 +1,24 @@
 /**
- * CMS Template Duplicate API Route
- * Duplicate a template with all sections
+ * CMS Template Duplicate API
  * 
  * @route POST /api/cms/templates/[id]/duplicate
- * @access Protected - Requires CMS permissions
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import templateService from '@/lib/cms/template-service';
+import auditService from '@/lib/cms/audit-service';
+import { createAuditContext } from '@/lib/cms/audit-context';
+import { z } from 'zod';
+
+// ============================================================================
+// Validation Schema
+// ============================================================================
+
+const duplicateTemplateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+}).optional();
 
 interface RouteParams {
   params: {
@@ -26,97 +35,89 @@ export async function POST(
     
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'You must be logged in' },
+        { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    // Get original template
-    const originalTemplate = await prisma.cmsTemplate.findFirst({
-      where: {
-        id: params.id,
-      },
-    });
-
-    if (!originalTemplate) {
+    // Only Super Admin can duplicate templates
+    if (session.user.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
-        { error: 'Not Found', message: 'Template not found' },
-        { status: 404 }
+        { error: 'Forbidden', message: 'Insufficient permissions' },
+        { status: 403 }
       );
     }
 
-    // Generate unique name
-    let duplicateCount = 1;
-    let newName = `${originalTemplate.name} (Copy)`;
+    const { id } = params;
 
-    while (true) {
-      const existing = await prisma.cmsTemplate.findFirst({
-        where: {
-          name: newName,
-        },
-      });
-
-      if (!existing) break;
-
-      duplicateCount++;
-      newName = `${originalTemplate.name} (Copy ${duplicateCount})`;
+    // Parse and validate request body (optional)
+    let validatedData: { name?: string } | undefined;
+    try {
+      const body = await request.json();
+      validatedData = duplicateTemplateSchema.parse(body);
+    } catch {
+      // Body is optional, use undefined
+      validatedData = undefined;
     }
 
-    // Create duplicated template
-    const duplicatedTemplate = await prisma.cmsTemplate.create({
-      data: {
-        name: newName,
-        description: originalTemplate.description,
-        category: originalTemplate.category,
-        thumbnailUrl: originalTemplate.thumbnailUrl,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        templateStructure: originalTemplate.templateStructure as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        defaultContent: originalTemplate.defaultContent as any,
-        isActive: originalTemplate.isActive,
-        isSystem: false, // Duplicated templates are never system templates
-        order: 0,
-      },
-    });
-
-    // Fetch complete template
-    const completeTemplate = await prisma.cmsTemplate.findUnique({
-      where: { id: duplicatedTemplate.id },
-      include: {
-        _count: {
-          select: {
-            pages: true,
-          },
-        },
-      },
-    });
+    // Duplicate template
+    const newTemplate = await templateService.duplicateTemplate(
+      id,
+      validatedData?.name
+    );
 
     // Log activity
-    await prisma.cmsActivityLog.create({
-      data: {
+    const auditContext = await createAuditContext(request);
+    await auditService.logAudit({
+      action: 'create_template',
+      entityType: 'template',
+      entityId: newTemplate.id,
+      metadata: {
+        sourceTemplateId: id,
+        newTemplateName: newTemplate.name,
+        isDuplicate: true,
+      },
+      context: {
         userId: session.user.id,
-        action: 'duplicate_template',
-        entityType: 'template',
-        entityId: duplicatedTemplate.id,
-        changes: {
-          originalTemplateId: originalTemplate.id,
-          originalTemplateName: originalTemplate.name,
-          newTemplateName: newName,
-        },
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
+        ipAddress: auditContext.ipAddress,
+        userAgent: auditContext.userAgent,
       },
     });
 
     return NextResponse.json({
       success: true,
       message: 'Template duplicated successfully',
-      data: completeTemplate,
-    });
+      data: newTemplate,
+    }, { status: 201 });
 
   } catch (error) {
     console.error('CMS Template Duplicate Error:', error);
     
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { 
+          error: 'Validation Error',
+          message: 'Invalid duplicate data',
+          details: error.errors 
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error && error.message.includes('not found')) {
+      return NextResponse.json(
+        { error: 'Not Found', message: error.message },
+        { status: 404 }
+      );
+    }
+
+    if (error instanceof Error && error.message.includes('already exists')) {
+      return NextResponse.json(
+        { error: 'Conflict', message: error.message },
+        { status: 409 }
+      );
+    }
+
     return NextResponse.json(
       { 
         error: 'Internal Server Error',
