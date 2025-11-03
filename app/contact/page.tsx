@@ -516,8 +516,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold zyphex-heading">Phone</h4>
-                      <p className="zyphex-subheading">+1 (555) 123-4567</p>
-                      <p className="text-sm zyphex-subheading">Mon-Fri 9AM-6PM EST</p>
+                      <p className="zyphex-subheading">7777010114 / 8901717173</p>
+                      <p className="text-sm zyphex-subheading">Mon-Fri 9AM-10PM IST</p>
                     </div>
                   </div>
 
@@ -527,7 +527,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold zyphex-heading">Email</h4>
-                      <p className="zyphex-subheading">hello@zyphextech.com</p>
+                      <p className="zyphex-subheading">info@zyphextech.com</p>
                       <p className="text-sm zyphex-subheading">We&apos;ll respond within 24 hours</p>
                     </div>
                   </div>
@@ -539,11 +539,11 @@ export default function ContactPage() {
                     <div>
                       <h4 className="font-semibold zyphex-heading">Office</h4>
                       <p className="zyphex-subheading">
-                        123 Tech Street
+                        Sector 115
                         <br />
-                        Innovation District
+                        Mohali, Punjab
                         <br />
-                        San Francisco, CA 94105
+                        India
                       </p>
                     </div>
                   </div>
@@ -554,9 +554,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold zyphex-heading">Business Hours</h4>
-                      <p className="zyphex-subheading">Monday - Friday: 9:00 AM - 6:00 PM</p>
-                      <p className="zyphex-subheading">Saturday: 10:00 AM - 4:00 PM</p>
-                      <p className="zyphex-subheading">Sunday: Closed</p>
+                      <p className="zyphex-subheading">Monday - Friday: 9:00 AM - 10:00 PM IST</p>
+                      <p className="zyphex-subheading">Saturday - Sunday: 11:00 AM - 10:00 PM IST</p>
                     </div>
                   </div>
                 </CardContent>
@@ -702,7 +701,7 @@ export default function ContactPage() {
                 className="text-lg px-8 py-6 zyphex-button-secondary hover-zyphex-lift"
               >
                 <Phone className="mr-2 h-5 w-5" />
-                Call Now: (555) 123-4567
+                Call Now: 7777010114
               </Button>
               <Button
                 size="lg"
