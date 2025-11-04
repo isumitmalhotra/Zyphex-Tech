@@ -13,6 +13,7 @@ import { generateGradientPlaceholder } from "@/lib/utils/images"
 
 interface BlogPost {
   id: string
+  slug: string
   title: string
   excerpt: string
   author: string
@@ -22,6 +23,7 @@ interface BlogPost {
   views: string
   image: string
   featured: boolean
+  tags?: string[]
 }
 
 export default function UpdatesPage() {
@@ -33,26 +35,40 @@ export default function UpdatesPage() {
   useEffect(() => {
     async function fetchBlogPosts() {
       try {
-        const response = await fetch('/api/content?type=blog')
+        const response = await fetch('/api/blog')
         if (response.ok) {
-          const data = await response.json()
+          const result = await response.json()
           
-          // Transform CMS content items to blog post format
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const posts = (data.items || []).map((item: any, index: number) => ({
-            id: item.id || String(index + 1),
-            title: item.title || 'Untitled Post',
-            excerpt: item.data?.excerpt || item.data?.description || 'No excerpt available',
-            author: item.author || 'Zyphex Team',
-            date: item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Recently',
-            category: (item.categories && item.categories[0]) || 'Technology',
-            readTime: item.data?.readTime || '5 min read',
-            views: item.data?.views || '1k',
-            image: item.data?.image || item.data?.imageUrl || generateGradientPlaceholder(600, 300, `blog-${index}`),
-            featured: item.featured || false,
-          }))
-          
-          setBlogPosts(posts)
+          if (result.success && result.data) {
+            // Transform blog posts from API
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const posts = result.data.map((post: any) => {
+              // Calculate read time from content word count
+              const wordCount = post.content ? post.content.split(' ').length : 0
+              const readTime = Math.ceil(wordCount / 200)
+              
+              return {
+                id: post.id,
+                slug: post.slug,
+                title: post.title,
+                excerpt: post.excerpt || 'No excerpt available',
+                author: post.author || 'Zyphex Team',
+                date: new Date(post.publishedAt).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                }),
+                category: (post.tags && post.tags[0]) || 'Technology',
+                readTime: `${readTime} min read`,
+                views: '1.2k', // This can be dynamic later with view tracking
+                image: post.imageUrl || generateGradientPlaceholder(600, 300, post.slug),
+                featured: true, // Mark all as featured for now
+                tags: post.tags || []
+              }
+            })
+            
+            setBlogPosts(posts)
+          }
         }
       } catch (error) {
         console.error('Error fetching blog posts:', error)
@@ -192,7 +208,7 @@ export default function UpdatesPage() {
                       className="p-0 h-auto font-medium zyphex-accent-text hover:text-blue-300 hover:translate-x-1 transition-all duration-300"
                       asChild
                     >
-                      <Link href={`/updates/${post.id}`}>
+                      <Link href={`/blog/${post.slug}`}>
                         Read Full Article
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
@@ -270,7 +286,7 @@ export default function UpdatesPage() {
                         className="p-0 h-auto font-medium zyphex-accent-text hover:text-blue-300 hover:translate-x-1 transition-all duration-300"
                         asChild
                       >
-                        <Link href={`/updates/${post.id}`}>
+                        <Link href={`/blog/${post.slug}`}>
                           Read More
                           <ArrowRight className="ml-1 h-3 w-3" />
                         </Link>
