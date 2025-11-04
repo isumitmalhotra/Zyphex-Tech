@@ -7,17 +7,19 @@ import { Button } from '@/components/ui/button'
 import { Search, X } from 'lucide-react'
 
 interface BlogSearchProps {
-  categories: Array<{
+  categories?: Array<{
     name: string
     count: number
   }>
+  tags?: string[]
 }
 
-export function BlogSearch({ categories }: BlogSearchProps) {
+export function BlogSearch({ categories = [], tags = [] }: BlogSearchProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
+  const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || '')
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,10 +31,10 @@ export function BlogSearch({ categories }: BlogSearchProps) {
       params.delete('q')
     }
 
-    if (selectedCategory) {
-      params.set('category', selectedCategory)
+    if (selectedTag) {
+      params.set('tag', selectedTag)
     } else {
-      params.delete('category')
+      params.delete('tag')
     }
 
     params.set('page', '1') // Reset to first page on new search
@@ -42,6 +44,7 @@ export function BlogSearch({ categories }: BlogSearchProps) {
   const clearSearch = () => {
     setSearchQuery('')
     setSelectedCategory('')
+    setSelectedTag('')
     router.push('/blog')
   }
 
@@ -61,19 +64,21 @@ export function BlogSearch({ categories }: BlogSearchProps) {
             />
           </div>
 
-          {/* Category Filter */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Categories</option>
-            {categories.map((category) => (
-              <option key={category.name} value={category.name}>
-                {category.name} ({category.count})
-              </option>
-            ))}
-          </select>
+          {/* Tag Filter */}
+          {tags.length > 0 && (
+            <select
+              value={selectedTag}
+              onChange={(e) => setSelectedTag(e.target.value)}
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Tags</option>
+              {tags.map((tag) => (
+                <option key={tag} value={tag}>
+                  {tag}
+                </option>
+              ))}
+            </select>
+          )}
 
           {/* Search Button */}
           <Button type="submit" className="px-6">
@@ -82,7 +87,7 @@ export function BlogSearch({ categories }: BlogSearchProps) {
         </div>
 
         {/* Clear Filters */}
-        {(searchQuery || selectedCategory) && (
+        {(searchQuery || selectedTag) && (
           <div className="flex items-center gap-2">
             <Button
               type="button"
@@ -96,8 +101,8 @@ export function BlogSearch({ categories }: BlogSearchProps) {
             </Button>
             <span className="text-sm text-slate-600 dark:text-slate-400">
               {searchQuery && `Searching: "${searchQuery}"`}
-              {searchQuery && selectedCategory && ' • '}
-              {selectedCategory && `Category: ${selectedCategory}`}
+              {searchQuery && selectedTag && ' • '}
+              {selectedTag && `Tag: ${selectedTag}`}
             </span>
           </div>
         )}

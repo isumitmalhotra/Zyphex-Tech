@@ -53,10 +53,6 @@ interface BlogApiResponse {
   }
   filters: {
     tags: string[]
-    categories: Array<{
-      name: string
-      count: number
-    }>
   }
 }
 
@@ -101,8 +97,7 @@ async function fetchBlogData(searchParams: BlogPageProps['searchParams']): Promi
         hasPrev: false
       },
       filters: {
-        tags: [],
-        categories: []
+        tags: []
       }
     }
   }
@@ -132,8 +127,8 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            <BlogSearch categories={filters.categories} />
-            <BlogCategories categories={filters.categories} />
+            <BlogSearch tags={filters.tags} />
+            <BlogCategories categories={filters.tags.map(tag => ({ name: tag, count: 0 }))} />
           </div>
 
           {/* Main Content Area */}
