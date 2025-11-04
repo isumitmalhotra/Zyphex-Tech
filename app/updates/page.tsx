@@ -231,7 +231,6 @@ export default function UpdatesPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogPosts
-              .filter((post) => !post.featured)
               .map((post, index) => (
                 <Card
                   key={post.id}

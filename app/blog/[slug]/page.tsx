@@ -119,7 +119,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         {/* Back to Blog Link */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
           <Link
-            href="/blog"
+            href="/updates"
             className="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
