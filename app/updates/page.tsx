@@ -1,5 +1,3 @@
-"use client"
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -7,9 +5,9 @@ import { Input } from "@/components/ui/input"
 import { ArrowRight, Calendar, User, Search, Filter, Clock, Eye } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useScrollAnimation } from "@/components/scroll-animations"
 import { SubtleBackground, MinimalParticles } from "@/components/subtle-background"
 import { generateGradientPlaceholder } from "@/lib/utils/images"
+import ClientAnimations from "@/components/client-animations"
 
 interface BlogPost {
   id: string
@@ -26,59 +24,65 @@ interface BlogPost {
   tags?: string[]
 }
 
-export default function UpdatesPage() {
-  useScrollAnimation()
-
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
-  const [_loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchBlogPosts() {
-      try {
-        const response = await fetch('/api/blog')
-        if (response.ok) {
-          const result = await response.json()
+// Fetch blog posts on the server
+async function getBlogPosts(): Promise<BlogPost[]> {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/blog`, {
+      cache: 'no-store', // Always fetch fresh data
+    })
+    
+    if (response.ok) {
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        // Transform blog posts from API
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return result.data.map((post: any) => {
+          // Calculate read time from content word count
+          const wordCount = post.content ? post.content.split(' ').length : 0
+          const readTime = Math.ceil(wordCount / 200)
           
-          if (result.success && result.data) {
-            // Transform blog posts from API
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const posts = result.data.map((post: any) => {
-              // Calculate read time from content word count
-              const wordCount = post.content ? post.content.split(' ').length : 0
-              const readTime = Math.ceil(wordCount / 200)
-              
-              return {
-                id: post.id,
-                slug: post.slug,
-                title: post.title,
-                excerpt: post.excerpt || 'No excerpt available',
-                author: post.author || 'Zyphex Team',
-                date: new Date(post.publishedAt).toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                }),
-                category: (post.tags && post.tags[0]) || 'Technology',
-                readTime: `${readTime} min read`,
-                views: '1.2k', // This can be dynamic later with view tracking
-                image: post.imageUrl || generateGradientPlaceholder(600, 300, post.slug),
-                featured: true, // Mark all as featured for now
-                tags: post.tags || []
-              }
-            })
-            
-            setBlogPosts(posts)
+          // Parse tags if they're a JSON string
+          let tags = []
+          if (post.tags) {
+            try {
+              tags = typeof post.tags === 'string' ? JSON.parse(post.tags) : post.tags
+            } catch {
+              tags = []
+            }
           }
-        }
-      } catch (error) {
-        console.error('Error fetching blog posts:', error)
-      } finally {
-        setLoading(false)
+          
+          return {
+            id: post.id,
+            slug: post.slug,
+            title: post.title,
+            excerpt: post.excerpt || 'No excerpt available',
+            author: post.author || 'Zyphex Team',
+            date: new Date(post.publishedAt).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }),
+            category: tags[0] || 'Technology',
+            readTime: `${readTime} min read`,
+            views: '1.2k', // This can be dynamic later with view tracking
+            image: post.imageUrl || generateGradientPlaceholder(600, 300, post.slug),
+            featured: true, // Mark all as featured for now
+            tags: tags
+          }
+        })
       }
     }
+  } catch (error) {
+    console.error('Error fetching blog posts:', error)
+  }
+  
+  return []
+}
 
-    fetchBlogPosts()
-  }, [])
+export default async function UpdatesPage() {
+  // Fetch blog posts on the server
+  const blogPosts = await getBlogPosts()
 
   const categories = [
     "All",
@@ -93,7 +97,9 @@ export default function UpdatesPage() {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
+      <ClientAnimations />
+      <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="zyphex-gradient-bg section-padding overflow-hidden relative">
         <SubtleBackground />
@@ -370,6 +376,7 @@ export default function UpdatesPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   )
 }
