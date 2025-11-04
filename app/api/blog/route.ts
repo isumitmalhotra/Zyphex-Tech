@@ -9,30 +9,17 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const tag = searchParams.get('tag')
-    const category = searchParams.get('category')
     const search = searchParams.get('search') || searchParams.get('q')
-    const featured = searchParams.get('featured')
     const limit = searchParams.get('limit')
     const page = searchParams.get('page') || '1'
     
     const currentPage = parseInt(page)
     const itemsPerPage = limit ? parseInt(limit) : 12
 
-    // Build filter conditions
-    const where: {
-      status: string
-      contentType: { name: string }
-      publishedAt?: { lte: Date }
-      tags?: { contains: string }
-      categories?: { contains: string }
-      featured?: boolean
-      OR?: Array<{
-        title?: { contains: string }
-        data?: { contains: string }
-      }>
-    } = {
-      status: 'PUBLISHED',
-      contentType: { name: 'blog' },
+    // Build filter conditions for BlogPost table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {
+      published: true,
       publishedAt: {
         lte: new Date()
       }
@@ -43,88 +30,71 @@ export async function GET(request: NextRequest) {
       where.tags = { contains: tag }
     }
 
-    // Filter by category
-    if (category) {
-      where.categories = { contains: category }
-    }
-
-    // Filter by featured
-    if (featured === 'true') {
-      where.featured = true
-    }
-
     // Search functionality
     if (search) {
       where.OR = [
-        { title: { contains: search } },
-        { data: { contains: search } }
+        { title: { contains: search, mode: 'insensitive' } },
+        { excerpt: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } }
       ]
     }
 
     // Get total count for pagination
-    const totalPosts = await prisma.dynamicContentItem.count({ where })
+    const totalPosts = await prisma.blogPost.count({ where })
     const totalPages = Math.ceil(totalPosts / itemsPerPage)
 
-    // Query options
-    const queryOptions = {
+    // Fetch blog posts from BlogPost table
+    const blogPosts = await prisma.blogPost.findMany({
       where,
-      include: {
-        contentType: true
-      },
-      orderBy: [
-        { featured: 'desc' as const },
-        { publishedAt: 'desc' as const },
-        { createdAt: 'desc' as const }
-      ],
+      orderBy: { publishedAt: 'desc' },
       take: itemsPerPage,
       skip: (currentPage - 1) * itemsPerPage
-    }
-
-    // Fetch blog posts from DynamicContentItem
-    const blogPosts = await prisma.dynamicContentItem.findMany(queryOptions)
+    })
 
     // Transform the data for frontend consumption
     const transformedPosts = blogPosts.map(post => {
-      const postData = post.data ? JSON.parse(post.data) : {}
+      // Parse tags if it's a JSON string
+      let tags: string[] = []
+      try {
+        tags = post.tags ? JSON.parse(post.tags) : []
+      } catch {
+        tags = post.tags ? post.tags.split(',').map((t: string) => t.trim()) : []
+      }
+
+      // Calculate read time from content word count
+      const wordCount = post.content.split(' ').length
+      const readTime = Math.ceil(wordCount / 200)
+
       return {
         id: post.id,
         slug: post.slug,
         title: post.title,
-        excerpt: postData.excerpt || '',
-        content: postData.content || '',
-        image: postData.image || '',
-        readTime: postData.readTime || '5 min read',
-        author: post.author || postData.author || 'Zyphex Tech',
-        featured: post.featured,
+        excerpt: post.excerpt,
+        content: post.content,
+        imageUrl: post.imageUrl,
+        readTime: `${readTime} min read`,
+        author: post.author,
         publishedAt: post.publishedAt,
         createdAt: post.createdAt,
         updatedAt: post.updatedAt,
-        categories: post.categories ? JSON.parse(post.categories) : [],
-        tags: post.tags ? JSON.parse(post.tags) : []
+        tags
       }
     })
 
-    // Get unique categories and tags for filtering
-    const allPosts = await prisma.dynamicContentItem.findMany({
-      where: {
-        status: 'PUBLISHED',
-        contentType: { name: 'blog' }
-      },
-      select: {
-        categories: true,
-        tags: true
-      }
+    // Get unique tags for filtering
+    const allPosts = await prisma.blogPost.findMany({
+      where: { published: true },
+      select: { tags: true }
     })
 
-    const categories = new Set<string>()
     const tags = new Set<string>()
-
     allPosts.forEach(post => {
-      const postCategories = post.categories ? JSON.parse(post.categories) : []
-      const postTags = post.tags ? JSON.parse(post.tags) : []
-
-      postCategories.forEach(cat => categories.add(cat))
-      postTags.forEach(tag => tags.add(tag))
+      try {
+        const postTags = post.tags ? JSON.parse(post.tags) : []
+        postTags.forEach((tag: string) => tags.add(tag))
+      } catch {
+        // Ignore parsing errors
+      }
     })
 
     return NextResponse.json({
@@ -139,12 +109,11 @@ export async function GET(request: NextRequest) {
         hasPrevPage: currentPage > 1
       },
       filters: {
-        categories: Array.from(categories),
         tags: Array.from(tags)
       }
     })
 
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { 
         success: false,
