@@ -63,17 +63,37 @@ export const dynamic = 'force-dynamic';
 export default async function HomePage() {
   // Fetch content from CMS
   let pageContent
-  let blogPosts: ContentItem[] = []
+  let blogPosts: Array<{
+    id: string
+    title: string
+    slug: string
+    excerpt: string
+    author: string
+    imageUrl: string | null
+    tags: string | null
+    publishedAt: Date | null
+  }> = []
   let services: ContentItem[] = []
   let testimonials: ContentItem[] = []
   
   try {
     pageContent = await getPageContent('home')
-    // Also fetch some featured blog posts for the updates section
-    blogPosts = await getItemsByContentType('blog', {
-      featured: true,
-      limit: 3
-    })
+    
+    // Fetch real blog posts from the BlogPost table
+    try {
+      const blogResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/blog?limit=3`, {
+        cache: 'no-store'
+      })
+      if (blogResponse.ok) {
+        const blogData = await blogResponse.json()
+        if (blogData.success && blogData.data) {
+          blogPosts = blogData.data
+        }
+      }
+    } catch (blogError) {
+      console.error('Error fetching blog posts:', blogError)
+    }
+    
     // Fetch featured services for the services overview section
     services = await getItemsByContentType('services', {
       featured: true,
@@ -112,29 +132,54 @@ export default async function HomePage() {
   }
 
   // Helper functions for blog post data
-  const getPostImage = (post: ContentItem | FallbackPost): string => {
+  const getPostImage = (post: typeof blogPosts[0] | FallbackPost): string => {
+    if ('imageUrl' in post && post.imageUrl) {
+      return post.imageUrl
+    }
     if ('data' in post && post.data && typeof post.data === 'object') {
       return (post.data as { imageUrl?: string }).imageUrl || "/images/blog/default.jpg"
     }
     return "/images/blog/default.jpg"
   }
 
-  const getPostCategory = (post: ContentItem | FallbackPost): string => {
-    return post.categories?.[0] || "Blog"
+  const getPostCategory = (post: typeof blogPosts[0] | FallbackPost): string => {
+    if ('tags' in post && post.tags) {
+      try {
+        const tags = JSON.parse(post.tags)
+        return tags[0] || "Blog"
+      } catch {
+        return "Blog"
+      }
+    }
+    if ('categories' in post && post.categories) {
+      return post.categories[0] || "Blog"
+    }
+    return "Blog"
   }
 
-  const getPostDate = (post: ContentItem | FallbackPost): string => {
+  const getPostDate = (post: typeof blogPosts[0] | FallbackPost): string => {
     if (post.publishedAt) {
-      return post.publishedAt.toLocaleDateString()
+      return new Date(post.publishedAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
     }
     return new Date().toLocaleDateString()
   }
 
-  const getPostExcerpt = (post: ContentItem | FallbackPost): string => {
+  const getPostExcerpt = (post: typeof blogPosts[0] | FallbackPost): string => {
+    if ('excerpt' in post && post.excerpt) {
+      return post.excerpt
+    }
     if ('data' in post && post.data && typeof post.data === 'object') {
       return (post.data as { excerpt?: string }).excerpt || ""
     }
     return ""
+  }
+
+  const getPostSlug = (post: typeof blogPosts[0] | FallbackPost): string => {
+    return post.slug || ""
   }
 
   // Helper functions for service data
@@ -183,10 +228,6 @@ export default async function HomePage() {
   const getTestimonialRating = (testimonial: ContentItem): number => {
     const data = getTestimonialData(testimonial)
     return (data.rating as number) || 5
-  }
-
-  const getPostSlug = (post: ContentItem | FallbackPost): string => {
-    return post.slug || post.id
   }
 
   return (
