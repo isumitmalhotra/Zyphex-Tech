@@ -4,6 +4,7 @@ import { format } from 'date-fns'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, Calendar, Clock, User } from 'lucide-react'
+import { SocialShare } from '@/components/blog/social-share'
 
 interface BlogPostPageProps {
   params: {
@@ -167,6 +168,9 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
               </p>
             )}
           </header>
+
+          {/* Social Share */}
+          <SocialShare slug={post.slug} title={post.title} />
 
           {/* Article Content */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-12">
