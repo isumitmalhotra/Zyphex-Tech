@@ -104,10 +104,13 @@ export default function RootLayout({
     logo: "https://zyphextech.com/zyphex-logo.png",
     description:
       "Transform your business with cutting-edge remote IT solutions. Custom software development, cloud migration, mobile apps, and more.",
-    email: "contact@zyphextech.com",
+    email: "info@zyphextech.com",
     address: {
       "@type": "PostalAddress",
-      addressCountry: "Global",
+      streetAddress: "Sector 115",
+      addressLocality: "Mohali",
+      addressRegion: "Punjab",
+      addressCountry: "India",
     },
     sameAs: [
       "https://www.linkedin.com/company/zyphextech",
@@ -116,7 +119,8 @@ export default function RootLayout({
     ],
     contactPoint: {
       "@type": "ContactPoint",
-      email: "contact@zyphextech.com",
+      telephone: "+91-7777010114",
+      email: "info@zyphextech.com",
       contactType: "Customer Service",
     },
     offers: {

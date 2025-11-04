@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
 import { ErrorTemplate } from '@/components/error/ErrorTemplate'
 import { useErrorContext } from '@/lib/error/error-context'
 import { getErrorConfig, getErrorMessage, generateErrorCode } from '@/lib/error/error-config'
@@ -55,18 +56,17 @@ export default function ClientError({ error, reset }: ClientErrorProps) {
     if (hasReported) return
     
     try {
-      const clientContext = {
+      // Log error details for debugging
+      console.error('Client error context:', {
         ...errorDetails,
         clientSection: context.route.split('/').pop() || 'portal',
         clientId: context.clientId,
         projectId: context.projectId,
         userAgent: navigator.userAgent,
-        lastAction: context.lastAction,
-        breadcrumbs: context.breadcrumbs,
         timestamp: new Date().toISOString()
-      }
+      })
       
-      await reportError(error, clientContext)
+      await reportError(error)
       setHasReported(true)
     } catch (reportingError) {
       console.error('Failed to report client error:', reportingError)
@@ -120,7 +120,12 @@ export default function ClientError({ error, reset }: ClientErrorProps) {
         onClick: handleRetry
       }}
       secondaryActions={clientActions}
-      context={context}
+      context={{
+        route: context.route,
+        userRole: context.userRole as 'client' | 'admin' | 'user' | 'guest' | undefined,
+        projectId: context.projectId,
+        timestamp: new Date()
+      }}
       showDetails={config.showDetails}
       showReportButton={config.showReportButton}
       onRetry={handleRetry}
@@ -146,7 +151,7 @@ export default function ClientError({ error, reset }: ClientErrorProps) {
                   <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <div>
                     <div className="font-medium text-blue-900 dark:text-blue-100">Phone Support</div>
-                    <div className="text-blue-700 dark:text-blue-300">+1 (555) 123-4567</div>
+                    <div className="text-blue-700 dark:text-blue-300">+91 7777010114</div>
                   </div>
                 </div>
                 
@@ -154,7 +159,7 @@ export default function ClientError({ error, reset }: ClientErrorProps) {
                   <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <div>
                     <div className="font-medium text-blue-900 dark:text-blue-100">Email Support</div>
-                    <div className="text-blue-700 dark:text-blue-300">support@zyphex-tech.com</div>
+                    <div className="text-blue-700 dark:text-blue-300">info@zyphextech.com</div>
                   </div>
                 </div>
               </div>
@@ -202,37 +207,37 @@ export default function ClientError({ error, reset }: ClientErrorProps) {
               Quick Actions
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <a
+              <Link
                 href="/client/help"
                 className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 <FileText className="w-4 h-4" />
                 <span>View Help Documentation</span>
-              </a>
+              </Link>
               
-              <a
+              <Link
                 href="/client/status"
                 className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 <Calendar className="w-4 h-4" />
                 <span>Check Project Status</span>
-              </a>
+              </Link>
               
-              <a
+              <Link
                 href="/client/billing"
                 className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 <Mail className="w-4 h-4" />
                 <span>Billing & Invoices</span>
-              </a>
+              </Link>
               
-              <a
+              <Link
                 href="/client/feedback"
                 className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 <MessageSquare className="w-4 h-4" />
                 <span>Send Feedback</span>
-              </a>
+              </Link>
             </div>
           </div>
         </div>

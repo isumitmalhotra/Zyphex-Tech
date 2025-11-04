@@ -370,7 +370,7 @@ export const getItemsByContentType = cache(async (
     }
 
     if (!includeDrafts) {
-      filter.status = 'PUBLISHED' // Database uses uppercase
+      filter.status = 'published' // Match actual database values (lowercase)
     }
 
     if (featured !== undefined) {

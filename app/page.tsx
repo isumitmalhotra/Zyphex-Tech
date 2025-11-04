@@ -667,24 +667,24 @@ export default async function HomePage() {
               // Fallback testimonials if database is empty
               [
                 {
-                  name: "Sarah Johnson",
-                  role: "CTO, TechStart Inc.",
+                  name: "Shubham Khillan",
+                  role: "CEO, Doortoindia.in",
                   content:
-                    "The team delivered an exceptional cloud migration solution that reduced our infrastructure costs by 40% while improving performance. Their expertise and professionalism are unmatched.",
+                    "Zyphex Tech created an astonishing tour and travel website for our company that we absolutely loved. The website helped us showcase our professionalism and significantly contributed to our business growth. Their attention to detail and understanding of our industry was impressive.",
                   rating: 5,
                 },
                 {
-                  name: "Michael Chen",
-                  role: "CEO, DataFlow Solutions",
+                  name: "Mr. Ketan",
+                  role: "Founder, Cybethix",
                   content:
-                    "Working with Zyphex Tech transformed our data analytics capabilities. The custom dashboard they built gives us insights we never had before, directly impacting our decision-making process.",
+                    "As a cybersecurity company helping clients safeguard their systems, we needed a robust web presence and LMS system for our educational awareness goals. Zyphex Tech delivered beyond our expectations, creating solutions that helped us improve our reach and impact in the cybersecurity education space.",
                   rating: 5,
                 },
                 {
-                  name: "Emily Rodriguez",
-                  role: "Operations Director, RetailMax",
+                  name: "ILH Nutrition",
+                  role: "Health & Fitness Company",
                   content:
-                    "Their mobile app development team created an amazing customer experience for our retail business. Sales through the app increased by 60% in the first quarter after launch.",
+                    "Zyphex Tech helped us build our online presence and marketplace, which has been instrumental in growing our business even more. The platform they created allows us to reach more clients and provide better service in the health and fitness industry. We couldn't be happier with the results.",
                   rating: 5,
                 },
               ].map((testimonial, index) => (

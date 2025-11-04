@@ -273,9 +273,9 @@ export default function PrivacyPage() {
                   <div className="space-y-3 zyphex-subheading leading-relaxed">
                     <p>If you have any questions about this privacy policy or our data practices, please contact us:</p>
                     <div className="bg-slate-800/50 p-4 rounded-lg">
-                      <p><strong>Email:</strong> privacy@zyphextech.com</p>
-                      <p><strong>Phone:</strong> +1 (555) 123-4567</p>
-                      <p><strong>Address:</strong> 123 Tech Street, San Francisco, CA 94105</p>
+                      <p><strong>Email:</strong> info@zyphextech.com</p>
+                      <p><strong>Phone:</strong> +91 7777010114 / +91 8901717173</p>
+                      <p><strong>Address:</strong> Sector 115, Mohali, Punjab, India</p>
                     </div>
                     <p>We will respond to your inquiries within 30 days.</p>
                   </div>

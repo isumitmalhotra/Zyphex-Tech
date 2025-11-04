@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -34,7 +33,7 @@ export default function PaymentFailedPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [emailSent, setEmailSent] = useState(false)
+  const [_emailSent, setEmailSent] = useState(false)
 
   // Get error details from URL params
   const errorCode = searchParams.get('error_code')
@@ -213,7 +212,7 @@ export default function PaymentFailedPage() {
             Payment Failed
           </h1>
           <p className="text-xl zyphex-subheading">
-            We couldn't process your payment
+            We couldn&apos;t process your payment
           </p>
         </div>
 
@@ -363,7 +362,7 @@ export default function PaymentFailedPage() {
                 asChild
                 className="w-full sm:w-auto"
               >
-                <a href={`mailto:support@zyphex.com?subject=Payment Failed - Invoice ${invoice.invoiceNumber}`}>
+                <a href={`mailto:info@zyphextech.com?subject=Payment Failed - Invoice ${invoice.invoiceNumber}`}>
                   Email Support Directly
                 </a>
               </Button>

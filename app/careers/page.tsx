@@ -657,10 +657,10 @@ export default function CareersPage() {
               </CardHeader>
               <CardContent>
                 <a 
-                  href="tel:+1-555-ZYPHEX" 
+                  href="tel:+917777010114" 
                   className="zyphex-accent-text hover:underline"
                 >
-                  +1 (555) ZYPHEX
+                  +91 7777010114
                 </a>
               </CardContent>
             </Card>
