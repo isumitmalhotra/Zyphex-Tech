@@ -7,18 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Search, X } from 'lucide-react'
 
 interface BlogSearchProps {
-  categories?: Array<{
-    name: string
-    count: number
-  }>
   tags?: string[]
 }
 
-export function BlogSearch({ categories = [], tags = [] }: BlogSearchProps) {
+export function BlogSearch({ tags = [] }: BlogSearchProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '')
   const [selectedTag, setSelectedTag] = useState(searchParams.get('tag') || '')
 
   const handleSearch = (e: React.FormEvent) => {
@@ -43,7 +38,6 @@ export function BlogSearch({ categories = [], tags = [] }: BlogSearchProps) {
 
   const clearSearch = () => {
     setSearchQuery('')
-    setSelectedCategory('')
     setSelectedTag('')
     router.push('/blog')
   }
