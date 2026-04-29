@@ -100,6 +100,13 @@ Comprehensive project documentation is organized in the `/docs` folder:
 - **[Email Service Setup](./docs/guides/EMAIL_SERVICE_SETUP_COMPLETE.md)** - Email integration
 - **[FAANG Level Code Audit](./docs/audits/FAANG_LEVEL_CODE_AUDIT.md)** - Code quality review
 
+## Deployment (CI/CD)
+
+This repo deploys via GitHub Actions.
+
+- **Automatic deploy:** any push to the `main` branch triggers [`.github/workflows/deploy-simple.yml`](./.github/workflows/deploy-simple.yml)
+- **Manual deploy:** the same workflow can be run from the GitHub Actions tab (workflow supports `workflow_dispatch`)
+
 ## Next Steps
 
 - Implement authentication with NextAuth.js
